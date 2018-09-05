@@ -3,6 +3,9 @@
 from argparse import ArgumentParser
 from subprocess import check_output, CalledProcessError, STDOUT
 from shlex import split
+import plac_core as pl
+
+commands = "compush", "add", "pull"
 
 def cmd(Cmd, debug=False):
     """
@@ -47,15 +50,20 @@ def cmd(Cmd, debug=False):
         
     return cmd_out
 
-def compush(args):
-    cmd("git commit -am \"{}\"".format(args.message))
+@pl.annotations(message=("Commit message.", "option"))
+def compush(message):
+    cmd("git commit -am \"{}\"".format(message))
     cmd("git push origin master")
 
-def add(args):
+@pl.annotations(files=("List of files to add."))
+def add(files):
     cmd("git add {}".format(" ".join(args.files)))
 
-def pull(args):
+def pull():
     cmd("git pull origin master")
+
+def __missing__(name):
+    return "Command {} does not exist".format(name)
 
 def parse_arguments():
 
@@ -98,9 +106,8 @@ def parse_arguments():
     
     return ap.parse_args()
 
-def main():
-    args = parse_arguments()
-    args.func(args)
-    
+
+main = __import__(__name__)
+
 if __name__ == "__main__":
-    main()
+    pl.call(main)
