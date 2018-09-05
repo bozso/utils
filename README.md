@@ -23,3 +23,5 @@ If you have found any bugs or have any suggestions feel free to contact me.
 
 I took a couple of code snippets and concepts from
 [gnuplot-py](http://gnuplot-py.sourceforge.net/).
+
+`plac_core.py` is from the [plac](https://github.com/micheles/plac) package.
