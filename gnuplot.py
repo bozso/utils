@@ -439,8 +439,9 @@ class Gnuplot(object):
         
         self("set term {} font '{},{}'".format(term, font, fontsize))
         
-    def set(self, var):
-        self("set {}".format(var))
+    def set(self, *texts):
+        for text in texts:
+            self("set {}".format(text))
 
     def unset(self, *objs):
         for obj in objs:
