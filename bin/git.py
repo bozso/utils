@@ -3,20 +3,12 @@
 from utils import cmd
 import plac_core as pl
 
-commands = "compush", "add", "pull", "radd"
-
+commands = "compush", "pull", "radd"
 
 @pl.annotations(message=("Commit message.", "positional", None, str))
 def compush(message):
     cmd("git commit -am \"{}\"".format(message))
     cmd("git push origin master")
-
-@pl.annotations(files=("List of files to add.", "positional", None, str))
-def add(files):
-    if isinstance(files, str):
-        cmd("git add {}".format(files))
-    else:
-        cmd("git add {}".format(" ".join(files)))
 
 @pl.annotations(remote=("Remote repository to add.", "positional", None, str))
 def radd(remote):
