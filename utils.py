@@ -37,7 +37,7 @@ def cmd(Cmd, debug=False):
         cmd_out = check_output(split(Cmd), stderr=STDOUT)
 
     except CalledProcessError as e:
-        print("ERROR: Non zero returncode from command: '{}'".format(" ".join(Cmd)))
+        print("ERROR: Non zero returncode from command: '{}'".format(Cmd))
         print("OUTPUT OF THE COMMAND: \n{}".format(e.output.decode()))
         print("RETURNCODE was: {}".format(e.returncode))
         
