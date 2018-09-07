@@ -383,12 +383,28 @@ class Gnuplot(object):
         self("set style line 12 lc rgb '#808080' lt 0 lw 1")
         self("set grid back ls 12")
         
-        # red
-        self("set style line 1 lc rgb '#8b1a0e' pt 1 ps 1 lt 1 lw 2")
+        colors = {
+            "red": "#8b1a0e",
+            "green": "#5e9c36",
+            "lightgreen": "#4d9178",
+            "blue": "#0074D9",
+            "darkblue": "#140a60",
+            "navy": "#001f3f",
+            "aqua": "#7FDBFF",
+            "teal": "#39CCCC",
+            "olive": "#3D9970",
+            "yellow" :"#FFDC00",
+            "lime" :"#01FF70",
+            "orange": "#FF851B",
+            "maroon": "#85144b",
+            "fuchsia": "#F012BE",
+            "purple": "#B10DC9",
+            "black": "#111111",
+            "gray": "#AAAAAA",
+            "silver": "#DDDDDD"
+        }
         
-        # green
-        self("set style line 2 lc rgb '#5e9c36' pt 6 ps 1 lt 1 lw 2")
-
+        return colors
     
     def reset(self):
         self("reset")
