@@ -48,22 +48,22 @@ def cmd(Cmd, debug=False):
 class argp(ap.ArgumentParser):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.subp = None
+        self.subparser = None
         
     def addargs(self, *args):
         for arg in args:
             _ap_add_arg(self, arg)
 
-    def subp(**kwargs):
-        if self.subp is None:
-            self.subp = self.add_subparsers(**kwargs)
+    def subp(self, **kwargs):
+        if self.subparser is None:
+            self.subparser = self.add_subparsers(**kwargs)
     
     def subcmd(self, name, fun, *args, **kwargs):
         
-        subtmp = self.subp.add_parser(name, **kwargs)
+        subtmp = self.subparser.add_parser(name, **kwargs)
         
         for arg in args:
-            _ap_add_arg(subtmp, arg)
+            _ap_add_arg(subtmp,  arg)
         
         subtmp.set_defaults(func=fun)
         
@@ -80,8 +80,7 @@ def _ap_add_arg(obj, arg):
                 type=arg[5],
                 default=arg[2],
                 nargs=arg[7],
-                choices=arg[6]
-            )
+                choices=arg[6])
         else:
             obj.add_argument(
                 "--{}".format(arg[0]),
@@ -89,12 +88,10 @@ def _ap_add_arg(obj, arg):
                 type=arg[5],
                 default=arg[2],
                 nargs=arg[7],
-                choices=arg[6]
-            )
+                choices=arg[6])
     else:
         obj.add_argument(
             arg[0],
             help=arg[1],
             type=arg[5],
-            choices=arg[6]
-        )
+            choices=arg[6])

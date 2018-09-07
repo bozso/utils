@@ -1,26 +1,34 @@
 #! /usr/bin/env python
 
-from utils import cmd
-import plac_core as pl
+from utils import cmd, argp, narg
 
-commands = "compush", "pull", "radd"
-
-@pl.annotations(message=("Commit message.", "positional", None, str))
-def compush(message):
-    cmd("git commit -am \"{}\"".format(message))
+def compush(args):
+    cmd("git commit -am \"{}\"".format(args.message))
     cmd("git push origin master")
 
-@pl.annotations(remote=("Remote repository to add.", "positional", None, str))
-def radd(remote):
-    cmd("git remote add origin {}".format(remote))
+def radd(args):
+    cmd("git remote add origin {}".format(args.remote))
         
 def pull():
     cmd("git pull origin master")
 
-def __missing__(name):
-    return "Command {} does not exist".format(name)
+def main():
 
-main = __import__(__name__)
+    ap = argp()
+    ap.subp(title="subcommands")
+    
+    ap.subcmd("compush", compush,
+        narg("message", help="Commit message.")
+    )
+
+    ap.subcmd("radd", radd,
+        narg("remote", help="Remote repository to add.")
+    )
+    
+    ap.subcmd("pull", pull)
+    
+    args = ap.parse_args()
+    args.func(args)
 
 if __name__ == "__main__":
-    pl.call(main)
+    main()
