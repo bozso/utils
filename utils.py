@@ -67,7 +67,7 @@ class argp(ap.ArgumentParser):
         
         subtmp.set_defaults(func=fun)
         
-def narg(name, help=None, kind="pos", alt=None, type=str, choices=None,
+def narg(name, help=None, kind="opt", alt=None, type=str, choices=None,
          default=None, nargs=None):
     return (name, help, default, kind, alt, type, choices, nargs)
 
@@ -89,9 +89,15 @@ def _ap_add_arg(obj, arg):
                 default=arg[2],
                 nargs=arg[7],
                 choices=arg[6])
-    else:
+    elif arg[3] == "pos":
         obj.add_argument(
             arg[0],
             help=arg[1],
             type=arg[5],
             choices=arg[6])
+    
+    elif arg[3] == "flag":
+        obj.add_argument(
+            "--{}".format(arg[0]),
+            help=arg[1],
+            action="store_true")
