@@ -20,11 +20,7 @@ function echoerr {
     printf "%s\n" "$*" >&2;
 }
 
-function gstat {
-    git status
-}
-
-function gpush {
+function gs_push {
     if [[ $# -ne 1 ]]; then
         echoerr "error: gpush: One argument (message) is required!"
         return 1
@@ -34,7 +30,7 @@ function gpush {
     git push origin master
 }
 
-function gradd {
+function gs_radd {
 
     if [[ $# -ne 1 ]]; then
         echoerr "error: gradd: One argument (remote repository address) is required!"
@@ -44,6 +40,6 @@ function gradd {
     git remote add origin $1
 }
 
-function gpull {
+function gs_pull {
     git pull origin master
 }
