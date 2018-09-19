@@ -5,6 +5,8 @@ MAIN_DIR="/home/istvan/progs/utils"
 export PATH="$PATH:$MAIN_DIR/bin"
 export PYTHONPATH="$PYTHONPATH:$MAIN_DIR"
 
+export CDPATH=.:~:~/progs:/mnt/bozso_i
+
 alias sbrc='source ~/.bashrc'
 
 function update_clean {
