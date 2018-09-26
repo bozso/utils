@@ -8,6 +8,8 @@ export PYTHONPATH="$PYTHONPATH:$MAIN_DIR"
 export CDPATH=.:~:~/progs:/mnt/bozso_i
 
 alias sbrc='source ~/.bashrc'
+alias compress='tar -czvf'
+
 
 function update_clean {
     sudo apt-get update
@@ -18,9 +20,18 @@ function update_clean {
     sudo apt-get autoremove
 }
 
+function tar_com {
+    tar -czvf $1.tar.gz $1
+}
+
+function tar_ext {
+    tar -xzvf $1.tar.gz $1
+}
+
 function echoerr {
     printf "%s\n" "$*" >&2;
 }
+
 
 function gs_push {
     if [[ $# -ne 1 ]]; then
@@ -32,6 +43,7 @@ function gs_push {
     git push origin master
 }
 
+
 function gs_radd {
 
     if [[ $# -ne 1 ]]; then
@@ -41,6 +53,7 @@ function gs_radd {
 
     git remote add origin $1
 }
+
 
 function gs_pull {
     git pull origin master
