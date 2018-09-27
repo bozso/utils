@@ -498,9 +498,90 @@ def rand(A, B):
     """Uniform random values between A and B"""
     return RPN._op("RAND", A, B)
 
-def rcdf(A, B):
+def rcdf(A):
     """Rayleigh cumulative distribution function for z = A"""
-    return RPN._op("RAND", A, B)
+    return RPN._op("RCDF", A)
+
+def rcrit(A):
+    """Rayleigh distribution critical value for alpha = A"""
+    return RPN._op("RCRIT", A)
+
+def rpdf(A):
+    """Rayleigh probability density function for z = A"""
+    return RPN._op("RPDF", A)
+
+def roll(A, B):
+    """Cyclicly shifts the top A stack items by an amount B"""
+    return RPN._op("ROLL", A, B)
+
+def rott(A, B):
+    """Rotate A by the (constant) shift B in the t-direction"""
+    return RPN._op("ROTT", A, B)
+
+def sec(A):
+    """sec (A) (A in radians)"""
+    return RPN._op("SEC", A)
+
+def secd(A):
+    """secd (A) (A in degrees)"""
+    return RPN._op("SECD", A)
+
+def sign(A):
+    """sign (+1 or -1) of A"""
+    return RPN._op("SIGN", A)
+
+def sin(A):
+    """sin (A) (A in radians)"""
+    return RPN._op("SIN", A)
+
+def sinc(A):
+    """sinc (A) (sin (pi*A)/(pi*A))"""
+    return RPN._op("SINC", A)
+
+def sinc(A):
+    """sinc (A) (sin (pi*A)/(pi*A))"""
+    return RPN._op("SINC", A)
+
+def sind(A):
+    """sind (A) (A in degrees)"""
+    return RPN._op("SIND", A)
+
+def sinh(A):
+    """sinh (A)"""
+    return RPN._op("SINH", A)
+
+def skew(A):
+    """Skewness of A"""
+    return RPN._op("SKEW", A)
+
+def sqr(A):
+    """A^2"""
+    return RPN._op("SQR", A)
+
+def sqrt(A):
+    """sqrt (A)"""
+    return RPN._op("SQRT", A)
+
+def std(A):
+    """Standard deviation of A"""
+    return RPN._op("STD", A)
+
+def step(A):
+    """Heaviside step function H(A)"""
+    return RPN._op("STEP", A)
+
+def stept(A):
+    """Heaviside step function H(t - A)"""
+    return RPN._op("STEPT", A)
+
+def csum(A):
+    """Cumulative sum of A"""
+    return RPN._op("SUM", A)
+
+def tanh(A):
+    """tanh (A)"""
+    return RPN._op("TANH", A)
+
 
 
 def spec(a, b, c):
