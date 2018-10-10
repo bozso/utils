@@ -42,7 +42,8 @@ _ps2raster = {
 ".tiff": "t",
 }
 
-def gmt(module, *args, ret=False, **kwargs):
+
+def gmt(module, *args, **kwargs):
     
     if module not in _gmt_commands and "gmt" + module not in _gmt_commands:
         raise ValueError("Unrecognized gmt module: {}".format(module))
@@ -53,8 +54,8 @@ def gmt(module, *args, ret=False, **kwargs):
     Cmd = module + " " + " ".join(str(arg) for arg in args)
 
     if len(kwargs) > 0:
-        Cmd += " " + " ".join(["-{}{}".format(key, proc_flag(flag))
-                               for key, flag in kwargs.items()])
+        Cmd += " " + " ".join(("-{}{}".format(key, proc_flag(flag))
+                               for key, flag in kwargs.items()))
     
     try:
         cmd_out = subp.check_output(split(Cmd), stderr=subp.STDOUT)
@@ -63,11 +64,9 @@ def gmt(module, *args, ret=False, **kwargs):
         print("OUTPUT OF THE COMMAND: \n{}".format(e.output.decode()))
         print("RETURNCODE was: {}".format(e.returncode))
     
-    if ret:
-        # filter out gmt messages
-        return " ".join(elem for elem in cmd_out.decode().split("\n")
-                        if not elem.startswith("gmt:"))
-    
+    return cmd_out
+
+
 def gen_tuple(cast):
     """
     Returns a function that creates a tuple of elements found in x.
@@ -173,6 +172,9 @@ from six import string_types
 class GMT(object):
     def __init__(self, out, debug=False, config=None, **common_flags):
         
+        for cmd in _gmt_commands:
+            setattr(self, cmd, GMT._gmtcmd(cmd))
+        
         # no margins by default
         self.left, self.right, self.top, self.bottom = 0.0, 0.0, 0.0, 0.0
         
@@ -224,11 +226,12 @@ class GMT(object):
         
         # if we have common flags parse them
         if len(common_flags) > 0:
-            self.common = " ".join(["-{}{}".format(key, proc_flag(flag))
-                                    for key, flag in common_flags.items()])
+            self.common = " ".join(("-{}{}".format(key, proc_flag(flag))
+                                    for key, flag in common_flags.items()))
         else:
             self.common = ""
-        
+    
+    
     def __del__(self):
         commands = self.commands
         
@@ -248,11 +251,11 @@ class GMT(object):
                 commands[ii][1] += " -P"
         
         if self.is_gmt5:
-            commands = [["gmt " + Cmd[0], Cmd[1], Cmd[2], Cmd[3]]
-                        for Cmd in commands]
+            commands = (("gmt " + Cmd[0], Cmd[1], Cmd[2], Cmd[3])
+                        for Cmd in commands)
         
+        # print commands for debugging
         if self.debug:
-            # print commands for debugging
             print("\n".join(" ".join(elem for elem in Cmd[0:2])
                                           for Cmd in commands))
         
@@ -268,8 +271,10 @@ class GMT(object):
             execute_gmt_cmd(Cmd)
         
         # Cleanup
-        if pth.isfile("gmt.history"): os.remove("gmt.history")
+        if pth.isfile("gmt.history"):
+            os.remove("gmt.history")
         os.remove("gmt.conf")
+
 
     def raster(self, out, **kwargs):
         
@@ -322,40 +327,41 @@ class GMT(object):
         
         cmd(Cmd)
     
-    def _gmtcmd(self, gmt_exec, data=None, byte_swap=False, outfile=None, **flags):
-        
-        if data is not None:
-            if isinstance(data, string_types) and pth.isfile(data):
-            # data is a path to a file
-                gmt_flags = "{} ".format(data)
-                data = None
-            elif isinstance(data, list) or isinstance(data, tuple):
-                data = ("\n".join(elem for elem in data)).encode()
-                gmt_flags = ""
+    
+    @staticmethod
+    def _gmtcmd(gmt_exec):
+        def f(gmt_exec, data=None, byte_swap=False, outfile=None, **flags):
+            if data is not None:
+                if isinstance(data, string_types) and pth.isfile(data):
+                # data is a path to a file
+                    gmt_flags = "{} ".format(data)
+                    data = None
+                elif isinstance(data, list) or isinstance(data, tuple):
+                    data = ("\n".join(elem for elem in data)).encode()
+                    gmt_flags = ""
+                else:
+                    raise ValueError("`data` should be a path to an existing file!")
             else:
-                raise ValueError("`data` should be a path to an existing file!")
-        else:
-            gmt_flags = ""
+                gmt_flags = ""
+            
+            # if we have flags parse them
+            if len(flags) > 0:
+                gmt_flags += " ".join(["-{}{}".format(key, proc_flag(flag))
+                                       for key, flag in flags.items()])
+            
+            # if we have common flags add them
+            if self.common is not None:
+                gmt_flags += " " + self.common
+            
+            if outfile is not None:
+                self.commands.append([gmt_exec, gmt_flags, data, outfile])
+            else:
+                self.commands.append([gmt_exec, gmt_flags, data, self.out])
+        #end f
         
-        # if we have flags parse them
-        if len(flags) > 0:
-            gmt_flags += " ".join(["-{}{}".format(key, proc_flag(flag))
-                                   for key, flag in flags.items()])
-        
-        # if we have common flags add them
-        if self.common is not None:
-            gmt_flags += " " + self.common
-        
-        if outfile is not None:
-            self.commands.append([gmt_exec, gmt_flags, data, outfile])
-        else:
-            self.commands.append([gmt_exec, gmt_flags, data, self.out])
-    
-    def __getattr__(self, command, *args, **kwargs):
-        def f(*args, **kwargs):
-            self._gmtcmd(command, *args, **kwargs)
         return f
-    
+
+
     def reform(self, **common_flags):
         # if we have common flags parse them
         if len(common_flags) > 0:
@@ -363,6 +369,7 @@ class GMT(object):
                                     for key, flag in common_flags.items()])
         else:
             self.common = None
+
     
     def makecpt(self, outfile, **flags):
         keys = flags.keys()
@@ -372,13 +379,16 @@ class GMT(object):
                          for key in keys]
         
         self.commands.append(("makecpt", " ".join(gmt_flags), None, outfile))
+
     
     def Set(self, parameter, value):
         self.commands.append(("set {}={}".format(parameter, value),
                               None, None, None))
 
+
     def get_config(self, param):
         return self.config[param.upper()]
+
     
     def get_width(self):
         
@@ -398,6 +408,7 @@ class GMT(object):
             Cmd += " -Ww"
             return float(cmd(Cmd, ret=True))
 
+
     def get_height(self):
         
         if self.is_gmt5:
@@ -415,9 +426,11 @@ class GMT(object):
         else:
             Cmd += " -Wh"
             return float(cmd(Cmd, ret=True))
+
         
     def get_common_flag(self, flag):
         return self.common.split(flag)[1].split()[0]
+
     
     def multiplot(self, nplots, proj, nrows=None, **kwargs):
         """
@@ -470,6 +483,7 @@ class GMT(object):
         self.bottom = height - top - nrows * pheight
         
         return tuple(x), tuple(y)
+
     
     def scale_pos(self, mode, offset=100, flong=0.8, fshort=0.2):
         left, right, top, bottom = self.left, self.right, self.top, self.bottom
@@ -498,6 +512,7 @@ class GMT(object):
         
         return str(x) + "p", str(y) + "p", str(length) + "p",\
                str(width) + "p" +  hor
+
     
     def colorbar(self, mode="v", offset=100, flong=0.8, fshort=0.2, **flags):
         
@@ -506,11 +521,13 @@ class GMT(object):
     
         self.psscale(D=(0.0, 0.0, length, width), Xf=xx, Yf=yy, **flags)
 
-    # end GMT
+# end GMT
+
     
 def get_version():
     """ Get the version of the installed GMT as a Strict Version object. """
     return StrictVersion(cmd("gmt --version", ret=True).strip())
+
 
 def get_paper_size(paper, is_portrait=False):
     """ Get paper width and height. """
@@ -524,6 +541,7 @@ def get_paper_size(paper, is_portrait=False):
         height, width = _gmt_paper_sizes[paper]
     
     return width, height
+
     
 def proc_flag(flag):
     """ Parse GMT flags. """
@@ -535,6 +553,7 @@ def proc_flag(flag):
         return ""
     else:
         return flag
+
 
 def execute_gmt_cmd(Cmd, ret_out=False):
     # join command and flags
@@ -554,6 +573,7 @@ def execute_gmt_cmd(Cmd, ret_out=False):
     
     if ret_out:
         return cmd_out
+
 
 def cmd(Cmd, ret=False):
     """
@@ -576,6 +596,7 @@ dem_dtypes = {
     "r4":"f"
 }
 
+
 def get_par(parameter, search):
     search_type = type(search)
     
@@ -597,12 +618,14 @@ def get_par(parameter, search):
 
     return parameter_value
 
+
 _gmt_defaults_header = \
 r'''#
 # GMT 5.1.2 Defaults file
 # vim:sw=8:ts=8:sts=8
 #
 '''
+
 
 _gmt_defaults = {
 # ********************
@@ -771,266 +794,3 @@ _gmt_paper_sizes = {
 "11x17":      [792, 1224],
 "ledger":     [1224, 792],
 }
-
-def shunt(tokens):
-    try:
-        cmd_out = subp.check_output("shunt2.sh", input=tokens.encode(),
-                                   stderr=subp.STDOUT).decode
-    except subp.CalledProcessError as e:
-        print("ERROR: Non zero returncode from command: '{}'".format(gmt_cmd))
-        print("OUTPUT OF THE COMMAND: \n{}".format(e.output.decode()))
-        print("RETURNCODE was: {}".format(e.returncode))
-    
-    cmd_out = cmd_out.replace("+", "ADD")
-    cmd_out = cmd_out.replace("-", "SUB")
-    cmd_out = cmd_out.replace("/", "DIV")
-    cmd_out = cmd_out.replace("*", "MULT")
-    
-    return sub(r"FUNARG*INVOKE", "", cmd_out)
-
-# **********************************************
-# * Infix to Reverse Polish Notation converter *
-# **********************************************
-
-# from http://andreinc.net/2010/10/05/converting-infix-to-rpn-shunting-yard-algorithm/
-
-# Associativity constants for operators
-LEFT_ASSOC = 0
-RIGHT_ASSOC = 1
-FUN = 2
-
-# Supported operators
-OPERATORS = {
-    # A
-    "ABS"       : (5, FUN),
-    "ACOS"      : (5, FUN),
-    "ACOSH"     : (5, FUN),
-    "ACSC"      : (5, FUN),
-    "ACOT"      : (5, FUN),
-    "ADD"       : (0, LEFT_ASSOC),
-    "AND"       : (5, LEFT_ASSOC),
-    "ASEC"      : (5, FUN),
-    "ASIN"      : (5, FUN),
-    "ASINH"     : (5, FUN),
-    "ATAN"      : (5, FUN),
-    "ATAN2"     : (5, FUN),
-    "ATANH"     : (5, FUN),
-    # B
-    "BEI"       : (5, FUN),
-    "BER"       : (5, FUN),
-    "BITAND"    : (5, LEFT_ASSOC),
-    "BITNOT"    : (5, RIGHT_ASSOC),
-    "BITOR"     : (5, LEFT_ASSOC),
-    "BITRIGHT"  : (5, LEFT_ASSOC),
-    "BITTEST"   : (5, LEFT_ASSOC),
-    "BITXOR"    : (5, LEFT_ASSOC),
-    # C
-    "CEIL"      : (5, FUN),
-    "CHICRIT"   : (5, FUN),
-    "CHIDIST"   : (5, FUN),
-    "COL"       : (5, RIGHT_ASSOC),
-    "CORRCOEFF" : (5, LEFT_ASSOC),
-    "COS"       : (5, FUN),
-    "COSD"      : (5, FUN),
-    "COSH"      : (5, FUN),
-    "COT"       : (5, FUN),
-    "COTD"      : (5, FUN),
-    "CSC"       : (5, FUN),
-    "CSCD"      : (5, FUN),
-    "CPOISS"    : (5, LEFT_ASSOC),
-    # D
-    "DDT"       : (5, FUN),
-    "D2DT2"     : (5, FUN),
-    "D2R"       : (5, FUN),
-    "DILOG"     : (5, FUN),
-    "DIFF"      : (5, FUN),
-    "DIV"       : (5, LEFT_ASSOC),
-    "DUP"       : (5, RIGHT_ASSOC),
-    # E
-    "ERF"       : (5, FUN),
-    "ERFC"      : (5, FUN),
-    "ERFINV"    : (5, FUN),
-    "EQ"        : (5, LEFT_ASSOC),
-    "EXCH"      : (5, LEFT_ASSOC),
-    "EXP"       : (5, FUN),
-    # F
-    "FACT"      : (5, FUN),
-    "FCRIT"     : (5, FUN),
-    "FDIST"     : (5, FUN),
-    "FLIPUD"    : (5, RIGHT_ASSOC),
-    "FLOOR"     : (5, FUN),
-    "FMOD"      : (5, FUN),
-    # G
-    "GE"        : (5, LEFT_ASSOC),
-    "GT"        : (5, LEFT_ASSOC),
-    # H
-    "HYPOT"     : (5, FUN),
-    # I
-    "I0"        : (5, FUN),
-    "I1"        : (5, FUN),
-    "IFELSE"    : (5, LEFT_ASSOC),
-    "IN"        : (5, FUN),
-    "INRANGE"   : (5, LEFT_ASSOC),
-    "INT"       : (5, FUN),
-    "INV"       : (5, RIGHT_ASSOC),
-    "ISFINITE"  : (5, RIGHT_ASSOC),
-    "ISNAN"     : (5, RIGHT_ASSOC),
-    # J
-    "J0"        : (5, FUN),
-    "J1"        : (5, FUN),
-    "JN"        : (5, LEFT_ASSOC),
-    # K
-    "K0"        : (5, FUN),
-    "K1"        : (5, FUN),
-    "KN"        : (5, LEFT_ASSOC),
-    "KEI"       : (5, FUN),
-    "KER"       : (5, FUN),
-    "KURT"      : (5, FUN),
-    # L
-    "LE"        : (5, LEFT_ASSOC),
-    "LMSSCL"    : (5, FUN),
-    "LOG"       : (5, FUN),
-    "LOG10"     : (5, FUN),
-    "LOG1P"     : (5, FUN),
-    "LOG2"      : (5, FUN),
-    "LOWER"     : (5, FUN),
-    "LRAND"     : (5, LEFT_ASSOC),
-    "LSQFIT"    : (5, RIGHT_ASSOC),
-    "LT"        : (5, LEFT_ASSOC),
-    # M
-    "MAD"        : (5, FUN),
-    "MAX"        : (5, LEFT_ASSOC),
-    # Fury Road
-    "MEAN"       : (5, FUN),
-    "MED"        : (5, FUN),
-    "MIN"        : (5, LEFT_ASSOC),
-    "MOD"        : (5, LEFT_ASSOC),
-    "MODE"       : (5, FUN),
-    "MUL"        : (5, LEFT_ASSOC),
-    # N
-    "NAN"        : (5, FUN),
-    "NEG"        : (5, RIGHT_ASSOC),
-    "NEQ"        : (5, FUN),
-    "NORM"       : (5, FUN),
-    "NOT"        : (5, RIGHT_ASSOC),
-    "NRAND"      : (5, FUN),
-    # O
-    "OR"         : (5, LEFT_ASSOC),
-    # P
-    "PLM"        : (5, FUN),
-    "PLMg"       : (5, FUN),
-    "POP"        : (5, FUN),
-    "POW"        : (10, FUN),
-    "PQUANT"     : (5, FUN),
-    "PSI"        : (5, FUN),
-    "PV"         : (5, FUN),
-    # Q
-    "QV"         : (5, FUN),
-    # R
-    "R2"         : (5, FUN),
-    "R2D"        : (5, FUN),
-    "RAND"       : (5, FUN),
-    "RINT"       : (5, FUN),
-    "ROTT"       : (5, FUN),
-    # S
-    "SEC"        : (5, FUN),
-    "SECD"       : (5, FUN),
-    "SIGN"       : (5, FUN),
-    "SIN"        : (5, FUN),
-    "SINC"       : (5, FUN),
-    "SIND"       : (5, FUN),
-    "SINH"       : (5, FUN),
-    "SKEW"       : (5, FUN),
-    "SQR"        : (5, FUN),
-    "SQRT"       : (5, FUN),
-    "STD"        : (5, FUN),
-    "STEP"       : (5, FUN),
-    "STEPT"      : (5, FUN),
-    "SUB"        : (0, LEFT_ASSOC),
-    "SUM"        : (5, FUN),
-    # T
-    "TAN"        : (5, FUN),
-    "TAND"       : (5, FUN),
-    "TANH"       : (5, FUN),
-    "TAPER"      : (5, FUN),
-    "TN"         : (5, FUN),
-    "TCRIT"      : (5, FUN),
-    "TDIST"      : (5, FUN),
-    # U
-    "UPPER"      : (5, FUN),
-    # X
-    "XOR"        : (5, LEFT_ASSOC),
-    # Y
-    "Y0"         : (5, FUN),
-    "Y1"         : (5, FUN),
-    "YN"         : (5, FUN),
-    # Z
-    "ZCRIT"      : (5, FUN),
-    "ZDIST"      : (5, FUN),
-    # R
-    "ROOTS"      : (5, FUN)
-}
-
-# Test if a certain token is operator
-def is_operator(token):
-    return token in OPERATORS.keys() and OPERATORS[token][1] != 2
-
-# Test the associativity type of a certain token
-def is_associative(token, assoc):
-    if not is_operator(token):
-        raise ValueError("Invalid token: {}".format(token))
-    return OPERATORS[token][1] == assoc
-
-# Compare the precedence of two tokens
-def cmp_precedence(token1, token2):
-    if not is_operator(token1) or not is_operator(token2):
-        raise ValueError('Invalid tokens: {} {}'.format(token1, token2))
-    return OPERATORS[token1][0] - OPERATORS[token2][0]
-
-def is_fun(token):
-    return token in OPERATORS.keys() and OPERATORS[token][1] == 2
-
-# Transforms an infix expression to RPN
-def infix2RPN(tokens):
-    out = []
-    stack = []
-    
-    print(tokens)
-    
-    # For all the input tokens [S1] read the next token [S2]
-    for token in tokens:
-        isfun = is_fun(token)
-        isop  = is_operator(token)
-        
-        if not isop and not isfun:
-            out.append(token)
-        if isfun:
-            stack.append(token)
-        if isop:
-            # If token is an operator (x) [S3]
-            while len(stack) != 0 and is_fun(stack[-1]):
-                # [S4]
-                print(stack)
-                if (is_associative(token, LEFT_ASSOC) \
-                    and cmp_precedence(token, stack[-1]) <= 0) or \
-                    (is_associative(token, RIGHT_ASSOC) \
-                    and cmp_precedence(token, stack[-1]) < 0):
-                    # [S5] [S6]
-                    out.append(stack.pop())
-                    continue
-                break
-            # [S7]
-            stack.append(token)
-        elif token == '(':
-            stack.append(token) # [S8]
-        elif token == ')':
-            # [S9]
-            while len(stack) != 0 and stack[-1] != '(':
-                out.append(stack.pop()) # [S10]
-            stack.pop() # [S11]
-        else:
-            out.append(token) # [S12]
-    while len(stack) != 0:
-        # [S13]
-        out.append(stack.pop())
-    return out
