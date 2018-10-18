@@ -16,7 +16,6 @@
 from __future__ import print_function
 from builtins import str
 
-import subprocess as sub
 import os.path as pth
 import numpy as np
 
@@ -50,6 +49,7 @@ class Gnuplot(object):
         term = str(kwargs.get("term", "x11"))
         font = str(kwargs.get("font", "Verdena"))
         fontsize = int(kwargs.get("fontsize", 8))
+        self.attributes = dict()
         
         size = kwargs.get("size")
         
@@ -88,6 +88,29 @@ class Gnuplot(object):
             self.process.close()
             self.process = None
 
+
+    def __del__(self):
+        if self.multi:
+            self("unset multiplot")
+        
+        self.close()
+        
+        for temp in self.temps:
+            remove(temp)
+
+    
+    def __getitem__(self, name):
+        return self.attributes[name]
+    
+    def __setitem__(self, name, value):
+        self.attributes[name] = value
+        self("set {} {}".format(name, value))
+
+    def __delitem__(self, name):
+        #self.attributes[name] reset to default
+        self("unset {}".format(self.attributes[name]))
+    
+    
     def __call__(self, command):
 
         if self.debug:
@@ -96,15 +119,31 @@ class Gnuplot(object):
         self.write(command + "\n")
         self.flush()
     
+    
+    def sets(self):
+        sets = "\n".join("set {} {}".format(key, value)
+               for key, value in self.attributes.items())
+
+        if self.debug:
+            stderr.write("SETS:\n{}\n".format(sets))
+
+        self.write(sets + "\n")
+        self.flush()
+        
+    
     def refresh(self):
         plot_cmd = self.plot_cmd
         plot_objects = self.plot_items
         
         plot_cmds = ", ".join(plot.command for plot in plot_objects)
         
+        self.sets()
+        
         if self.debug:
             stderr.write("gnuplot> {} {}\n".format(plot_cmd, plot_cmds))
-
+        
+        self.write(sets)
+        
         self.write(plot_cmd + " " + plot_cmds + "\n")
         
         data = tuple(plot.data for plot in plot_objects
@@ -270,7 +309,7 @@ class Gnuplot(object):
         
         """
         
-        if not isinstance(data, str) and not pth.isfile(data):
+        if not (isinstance(data, str) or pth.isfile(data)):
             raise ValueError("data should be a string path to a data file!")
         
         text = "'{}'".format(data)
@@ -312,7 +351,7 @@ class Gnuplot(object):
     def size(self, scale, square=False, ratio=None):
         Cmd = "set size"
         
-        if sqaure:
+        if square:
             Cmd += " square"
         else:
             Cmd += " no square"
@@ -454,14 +493,7 @@ class Gnuplot(object):
             term += " enhanced"
         
         self("set term {} font '{},{}'".format(term, font, fontsize))
-        
-    def set(self, *texts):
-        for text in texts:
-            self("set {}".format(text))
 
-    def unset(self, *objs):
-        for obj in objs:
-            self("unset {}".format(obj))
     
     def arrow(self, _from, to, style=None, tag=""):
         temp = "set arrow {} from {},{} to {},{}"\
@@ -546,14 +578,6 @@ class Gnuplot(object):
         
         self.temps = []
         
-    def __del__(self):
-        if self.multi:
-            self("unset multiplot")
-        
-        self.close()
-        
-        for temp in self.temps:
-            remove(temp)
 
 
 class PlotDescription(object):
@@ -563,6 +587,9 @@ class PlotDescription(object):
     
     def __str__(self):
         return "\nData:\n{}\nCommand: {}\n".format(self.data, self.command)
+
+    def __repr__(self):
+        return "<PlotDescription data: {} command: {}>".format(self.data, self.command)
 
 
 # *************************
