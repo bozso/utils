@@ -1,15 +1,15 @@
 #! /usr/bin/env sh
 
 MAIN_DIR="/home/istvan/progs/utils"
+PYM="/home/istvan/progs/pymatlab"
 
 export PATH="$PATH:$MAIN_DIR/bin"
-export PYTHONPATH="$PYTHONPATH:$MAIN_DIR"
+export PYTHONPATH="$PYTHONPATH:$MAIN_DIR:$PYM"
 
 export CDPATH=.:~:~/progs:/mnt/bozso_i
 
 alias sbrc='source ~/.bashrc'
-alias compress='tar -czvf'
-
+alias gs_stat='git status'
 
 function update_clean {
     sudo apt-get update
