@@ -83,6 +83,7 @@ class Gnuplot(object):
 
         self(term_cmd)
 
+
     def close(self):
         if self.process is not None:
             self.process.close()
@@ -102,12 +103,18 @@ class Gnuplot(object):
     def __getitem__(self, name):
         return self.attributes[name]
     
+    
     def __setitem__(self, name, value):
         self.attributes[name] = value
-        self("set {} {}".format(name, value))
+        
+        if value is True:
+            self("set {}".format(name))
+        else:
+            self("set {} {}".format(name, value))
 
+    
     def __delitem__(self, name):
-        #self.attributes[name] reset to default
+        #self.attributes[name] reset to default ?
         self("unset {}".format(self.attributes[name]))
     
     
@@ -258,6 +265,7 @@ class Gnuplot(object):
         
         return PlotDescription(array, text)
     
+
     # TODO: rewrite docs
     def infile(self, data, matrix=None, binary=None, array=None,
                endian="default", **kwargs):
@@ -328,6 +336,7 @@ class Gnuplot(object):
         
         return PlotDescription(None, text)
     
+
     def plot(self, *plot_objects):
         
         self.plot_items = plot_objects
@@ -335,6 +344,7 @@ class Gnuplot(object):
         
         if not self.silent:
             self.refresh()
+
 
     def splot(self, *plot_objects):
         
@@ -348,6 +358,7 @@ class Gnuplot(object):
     # * SETTERS *
     # ***********
     
+
     def size(self, scale, square=False, ratio=None):
         Cmd = "set size"
         
@@ -359,15 +370,12 @@ class Gnuplot(object):
         if ratio is not None:
             Cmd += " ratio {}".format(ratio)
         
-        Cmd += " {},{}".format(scale[0], scale[1])
+        self("{} {},{}".format(Cmd, scale[0], scale[1]))
         
-        self(Cmd)
-        
+
     def palette(self, pal):
-        self("set palette {}".format(pal))
+        self(_color_palettes[pal])
     
-    def binary(self, definition):
-        self("set datafile binary {}".format(definition))
 
     def margins(self, screen=False, **kwargs):
         
@@ -380,6 +388,7 @@ class Gnuplot(object):
             if key in ("lmargin", "rmargin", "tmargin", "bmargin"):
                 self(fmt.format(key, value))
     
+
     def multiplot(self, nplot, title=None, nrows=None, order="rowsfirst",
                   portrait=False):
 
@@ -401,6 +410,7 @@ class Gnuplot(object):
         else:
             self("set multiplot layout {},{} {}".format(nrows, ncols, order))
     
+
     def colorbar(self, cbrange=None, cbtics=None, cbformat=None):
         if cbrange is not None:
             self("set cbrange [{}:{}]" .format(cbrange[0], cbrange[1]))
@@ -411,10 +421,12 @@ class Gnuplot(object):
         if cbformat is not None:
             self("set format cb '{}'".format(cbformat))
         
+
     def unset_multi(self):
         self("unset multiplot")
         self.multi = False
     
+
     def nicer(self):
         self(
         """
@@ -448,18 +460,23 @@ class Gnuplot(object):
         
         return colors
     
+
     def reset(self):
         self("reset")
     
+
     def xtics(self, *args):
         self("set xtics {}".format(_parse_range(*args)))
+
 
     def ytics(self, *args):
         self("set ytics {}".format(_parse_range(*args)))
 
+
     def ztics(self, *args):
         self("set ztics {}".format(_parse_range(*args)))
     
+
     def style(self, stylenum, styledef):
         """
         Parameters
@@ -467,24 +484,15 @@ class Gnuplot(object):
         """
         self("set style line {} {}".format(stylenum, styledef))
     
-    def autoscale(self):
-        self("set autoscale")
-    
-    def axis_format(self, axis, fmt):
-        self("set format {} '{}'".format(axis, fmt))
-    
-    def axis_time(self, axis):
-        self("set {}data time".format(axis))
-    
-    def timefmt(self, fmt):
-        self("set timefmt '{}'".format(fmt))
-    
+
     def output(self, outfile, **kwargs):
         self.term(**kwargs)
         self("set out '{}'".format(outfile))
 
+
     def title(self, title):
         self("set title '{}'".format(title))
+
 
     def term(self, **kwargs):
         term     = str(kwargs.get("term", "pngcairo"))
@@ -507,11 +515,13 @@ class Gnuplot(object):
         
         self(temp)
     
+
     def obj(self, kind):
         pass
     
     # LABELS
     
+
     def label(self, definition, position, **kwargs):
         font = str(kwargs.get("font", "Verdena"))
         fontsize = int(kwargs.get("fontsize", 8))
@@ -519,6 +529,7 @@ class Gnuplot(object):
         self("set label '{}' at {},{} font '{}, {}'"
              .format(definition, position[0], position[1], font, fontsize))
     
+
     def labels(self, x="x", y="y", z=None):
         self("set xlabel '{}'".format(x))
         self("set ylabel '{}'".format(y))
@@ -547,6 +558,7 @@ class Gnuplot(object):
         if z is not None and len(z) == 2:
             self("set zrange [{}:{}]".format(z[0], z[1]))
 
+
     def xrange(self, xmin, xmax):
         self("set xrange [{}:{}]".format(xmin, xmax))
 
@@ -555,6 +567,7 @@ class Gnuplot(object):
 
     def zrange(self, zmin, zmax):
         self("set zrange [{}:{}]".format(zmin, zmax))
+
 
     def replot(self):
         self("replot")
@@ -574,6 +587,7 @@ class Gnuplot(object):
         
         self("set term wxt")
         self("set output")
+    
     
     def remove_temps(self):
         for temp in self.temps:
@@ -770,9 +784,31 @@ _line_type_dict = {
 
 _additional_keys = frozenset(("index", "every", "using", "smooth", "axes"))
 
-"""
-# MATLAB jet color pallete
 
+# New matplotlib colormaps by Nathaniel J. Smith, Stefan van der Walt,
+# and (in the case of viridis) Eric Firing.
+#
+# This file and the colormaps in it are released under the CC0 license /
+# public domain dedication. We would appreciate credit if you use or
+# redistribute these colormaps, but do not impose any legal restrictions.
+#
+# To the extent possible under law, the persons who associated CC0 with
+# mpl-colormaps have waived all copyright and related or neighboring rights
+# to mpl-colormaps.
+#
+# You should have received a copy of the CC0 legalcode along with this
+# work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+
+#https://github.com/BIDS/colormap/blob/master/colormaps.py
+
+_color_palettes = {
+
+#********
+# * JET *
+#********
+
+"jet":\
+"""
 # line styles
 set style line 1 lt 1 lc rgb '#000080' #
 set style line 2 lt 1 lc rgb '#0000ff' #
@@ -791,7 +827,6 @@ set style line 14 lt 1 lc rgb '#00bfbf' # cyan
 set style line 15 lt 1 lc rgb '#bf00bf' # pink
 set style line 16 lt 1 lc rgb '#bfbf00' # yellow
 set style line 17 lt 1 lc rgb '#3f3f3f' # black
-
 # palette
 set palette defined (0  0.0 0.0 0.5, \
                      1  0.0 0.0 1.0, \
@@ -803,8 +838,14 @@ set palette defined (0  0.0 0.0 0.5, \
                      7  1.0 0.0 0.0, \
                      8  0.5 0.0 0.0 )
 
+""",
 
-# Parula
+#***********
+# * PARULA *
+#***********
+
+"parula":\
+"""
 # line styles
 set style line  1 lt 1 lc rgb '#352a87' # blue
 set style line  2 lt 1 lc rgb '#0f5cdd' # blue
@@ -824,7 +865,6 @@ set style line 14 lt 1 lc rgb '#7e2f8e' # purple
 set style line 15 lt 1 lc rgb '#77ac30' # green
 set style line 16 lt 1 lc rgb '#4dbeee' # light-blue
 set style line 17 lt 1 lc rgb '#a2142f' # red
-
 # palette
 set palette defined (\
 0 '#352a87',\
@@ -836,26 +876,14 @@ set palette defined (\
 6 '#d9ba56',\
 7 '#fcce2e',\
 8 '#f9fb0e')
+""",
 
-#Plasma
+#***********
+# * PLASMA *
+#***********
 
-# New matplotlib colormaps by Nathaniel J. Smith, Stefan van der Walt,
-# and (in the case of viridis) Eric Firing.
-#
-# This file and the colormaps in it are released under the CC0 license /
-# public domain dedication. We would appreciate credit if you use or
-# redistribute these colormaps, but do not impose any legal restrictions.
-#
-# To the extent possible under law, the persons who associated CC0 with
-# mpl-colormaps have waived all copyright and related or neighboring rights
-# to mpl-colormaps.
-#
-# You should have received a copy of the CC0 legalcode along with this
-# work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-
-#https://github.com/BIDS/colormap/blob/master/colormaps.py
-
-
+"plasma":\
+"""
 # line styles
 set style line  1 lt 1 lc rgb '#0c0887' # blue
 set style line  2 lt 1 lc rgb '#4b03a1' # purple-blue
@@ -866,8 +894,6 @@ set style line  6 lt 1 lc rgb '#e56b5d' # red
 set style line  7 lt 1 lc rgb '#f89441' # orange
 set style line  8 lt 1 lc rgb '#fdc328' # orange
 set style line  9 lt 1 lc rgb '#f0f921' # yellow
-
-
 # palette
 set palette defined (\
 0   0.050383 0.029803 0.527975,\
@@ -1126,27 +1152,14 @@ set palette defined (\
 253 0.944152 0.961916 0.146861,\
 254 0.941896 0.968590 0.140956,\
 255 0.940015 0.975158 0.131326)
+"""
 
+#************
+# * VIRIDIS *
+#************
 
-#Viridis
-
-# New matplotlib colormaps by Nathaniel J. Smith, Stefan van der Walt,
-# and (in the case of viridis) Eric Firing.
-#
-# This file and the colormaps in it are released under the CC0 license /
-# public domain dedication. We would appreciate credit if you use or
-# redistribute these colormaps, but do not impose any legal restrictions.
-#
-# To the extent possible under law, the persons who associated CC0 with
-# mpl-colormaps have waived all copyright and related or neighboring rights
-# to mpl-colormaps.
-#
-# You should have received a copy of the CC0 legalcode along with this
-# work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-
-#https://github.com/BIDS/colormap/blob/master/colormaps.py
-
-
+"viridis":\
+"""
 # line styles
 set style line  1 lt 1 lc rgb '#440154' # dark purple
 set style line  2 lt 1 lc rgb '#472c7a' # purple
@@ -1157,8 +1170,6 @@ set style line  6 lt 1 lc rgb '#27ad81' # green
 set style line  7 lt 1 lc rgb '#5cc863' # green
 set style line  8 lt 1 lc rgb '#aadc32' # lime green
 set style line  9 lt 1 lc rgb '#fde725' # yellow
-
-
 # palette
 set palette defined (\
 0   0.267004 0.004874 0.329415,\
@@ -1417,15 +1428,19 @@ set palette defined (\
 253 0.974417 0.903590 0.130215,\
 254 0.983868 0.904867 0.136897,\
 255 0.993248 0.906157 0.143936)
+"""
 
-#ylgnbu
-
+#***********
+# * YLGNBU *
+#***********
 # line styles for ColorBrewer YlGnBu
 # for use with sequential data
 # provides 8 yellow-green-blue colors of increasing saturation
 # compatible with gnuplot >=4.2
 # author: Anna Schneider
 
+"ylgnbu":\
+"""
 # line styles
 set style line 1 lt 1 lc rgb '#FFFFD9' # very light yellow-green-blue
 set style line 2 lt 1 lc rgb '#EDF8B1' # 
@@ -1435,7 +1450,6 @@ set style line 5 lt 1 lc rgb '#41B6C4' #
 set style line 6 lt 1 lc rgb '#1D91C0' # medium yellow-green-blue
 set style line 7 lt 1 lc rgb '#225EA8' #
 set style line 8 lt 1 lc rgb '#0C2C84' # dark yellow-green-blue
-
 # palette
 set palette defined ( 0 '#FFFFD9',\
                       1 '#EDF8B1',\
@@ -1445,3 +1459,5 @@ set palette defined ( 0 '#FFFFD9',\
               5 '#1D91C0',\
               6 '#225EA8',\
               7 '#0C2C84' )
+"""
+}
