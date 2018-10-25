@@ -201,6 +201,7 @@ class Gnuplot(object):
             array = content
         
         return array, text + add
+
         
     def data(self, *arrays, **kwargs):
         
@@ -217,18 +218,14 @@ class Gnuplot(object):
         
         array, text = self._convert_data(data, **kwargs)
         
-        text += _parse_plot_arguments(**kwargs)
-        
-        return PlotDescription(array, text)
+        return PlotDescription(array, text + _parse_plot_arguments(**kwargs))
+
     
     def grid_data(self, data, x=None, y=None, **kwargs):
         
         _check_kwargs(**kwargs)
 
         data = np.asarray(data, np.float32)
-
-        if data.ndim != 2:
-            raise DataError("Only 2 dimensional arrays can be plotted!")
         
         try:
             (rows, cols) = data.shape
@@ -259,11 +256,9 @@ class Gnuplot(object):
         grid[1:,0]  = y
         grid[1:,1:] = data.astype(np.float32)
         
-        text = _parse_plot_arguments(**kwargs)
-        
         array, text = self._convert_data(grid, grid=True, **kwargs)
         
-        return PlotDescription(array, text)
+        return PlotDescription(array, text + _parse_plot_arguments(**kwargs))
     
 
     # TODO: rewrite docs
@@ -332,9 +327,7 @@ class Gnuplot(object):
         elif binary:
             text += " binary"
         
-        text += _parse_plot_arguments(**kwargs)
-        
-        return PlotDescription(None, text)
+        return PlotDescription(None, text + _parse_plot_arguments(**kwargs))
     
 
     def plot(self, *plot_objects):
