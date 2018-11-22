@@ -149,8 +149,6 @@ class Gnuplot(object):
         if self.debug:
             stderr.write("gnuplot> {} {}\n".format(plot_cmd, plot_cmds))
         
-        self.write(sets)
-        
         self.write(plot_cmd + " " + plot_cmds + "\n")
         
         data = tuple(plot.data for plot in plot_objects
@@ -164,9 +162,11 @@ class Gnuplot(object):
         self.flush()
         
     def _convert_data(self, data, grid=False, **kwargs):
-        
         binary = bool(kwargs.get("binary", False))
         temp   = bool(kwargs.get("temp", False))
+
+        if not temp and binary:
+            raise OptionError("Inline binary format is not supported!")
         
         if binary:
             content = data.tobytes()
@@ -205,10 +205,8 @@ class Gnuplot(object):
         
     def data(self, *arrays, **kwargs):
         
-        _check_kwargs(**kwargs)
-        
         try:
-            data = np.array(arrays).T
+            data = np.vstack(arrays).T
         except TypeError:
             raise DataError("Input arrays should be convertible to a "
                             "numpy array!")
@@ -222,15 +220,13 @@ class Gnuplot(object):
 
     
     def grid_data(self, data, x=None, y=None, **kwargs):
-        
-        _check_kwargs(**kwargs)
 
         data = np.asarray(data, np.float32)
         
         try:
             (rows, cols) = data.shape
         except ValueError:
-            raise DataError("data array must be two-dimensional!")
+            raise DataError("data array must be 2-dimensional!")
         
         if x is None:
             x = np.arange(cols)
@@ -260,7 +256,17 @@ class Gnuplot(object):
         
         return PlotDescription(array, text + _parse_plot_arguments(**kwargs))
     
-
+    
+    def histo(self, data, color="red", **kwargs):
+        hist, edges = np.histogram(data, **kwargs)
+        
+        edges = edges[:-1] + (edges[1] - edges[0]) / 2.0
+        
+        vith = "boxes fill solid lc '{}'".format(color)
+        
+        return self.data(edges, hist, vith=vith)
+    
+    
     # TODO: rewrite docs
     def infile(self, data, matrix=None, binary=None, array=None,
                endian="default", **kwargs):
@@ -423,10 +429,10 @@ class Gnuplot(object):
     def nicer(self):
         self(
         """
-        set style line 11 lc rgb '#808080' lt 1
+        set style line 11 lc rgb 'black' lt 1
         set border 3 back ls 11
         set tics nomirror
-        set style line 12 lc rgb '#808080' lt 0 lw 1
+        set style line 12 lc rgb 'black' lt 0 lw 1
         set grid back ls 12
         """)
         
@@ -719,12 +725,6 @@ def linedef(**kwargs):
         text += "lines lt rgb {} lw {}".format(rgb, line_width)
     
     return text
-    
-
-def _check_kwargs(**kwargs):
-
-    if not kwargs.get("temp", False) and kwargs.get("binary", False):
-        raise OptionError("Inline binary format is not supported!")
     
 
 # **************
@@ -1145,7 +1145,7 @@ set palette defined (\
 253 0.944152 0.961916 0.146861,\
 254 0.941896 0.968590 0.140956,\
 255 0.940015 0.975158 0.131326)
-"""
+""",
 
 #************
 # * VIRIDIS *
@@ -1421,7 +1421,7 @@ set palette defined (\
 253 0.974417 0.903590 0.130215,\
 254 0.983868 0.904867 0.136897,\
 255 0.993248 0.906157 0.143936)
-"""
+""",
 
 #***********
 # * YLGNBU *
