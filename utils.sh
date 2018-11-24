@@ -20,6 +20,15 @@ function update_clean {
     sudo apt-get autoremove
 }
 
+function extract_music {
+    IFS=$'\n'
+    for zipfile in $(ls /tmp/*.zip); do
+        outpath="/home/istvan/Zenék/$(basename $zipfile .zip)"
+        mkdir $outpath
+        unzip $zipfile -d $outpath
+    done
+}
+
 function tar_com {
     tar -czvf $1.tar.gz $1
 }

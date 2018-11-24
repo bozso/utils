@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from inmet.gnuplot import Gnuplot, linedef
+from utils.gnuplot import linedef
+import numpy as np
 
-def plot_scatter(data, ncols, out=None, title=None, idx=None, titles=None,
+def plot_scatter(gp, data, ncols, out=None, title=None, idx=None, titles=None,
                  palette="rgb", endian="default", portrait=False):
     
     binary = "%double" * (ncols + 2)
@@ -26,30 +27,26 @@ def plot_scatter(data, ncols, out=None, title=None, idx=None, titles=None,
     # parse titles
     if titles is None:
         titles = range(1, ncols + 1)
-    
-    gpt = Gnuplot()
-    
-    # output has to be set before multiplot
-    if out is not None:
-        gpt.output(out)
-    
-    #gpt.margins(rmargin=0.1, screen=True)
-    
-    gpt.multiplot(len(idx), title=title, portrait=portrait)
-    
-    # gpt.binary("format='{}' endian={}".format(binary, endian))
-    
-    gpt.xtics(0.4)
-    
-    # gpt.palette(palette)
-    # gpt.colorbar(cbfomat="%4.2f")
-    
-    #gpt.unset("colorbox")
-    
-    for ii in idx:
-        inp_format = "1:2:{}".format(ii + 3)
         
-        plotd = gpt.infile(data, binary=binary, endian=endian,
-                           using=inp_format, vith=linedef(pt_type="dot")
-                           + " palette")
-        gpt.plot(plotd)
+    gp.binary("format='{}' endian={}".format(binary, endian))
+    
+    # gp.palette(palette)
+    # gp.colorbar(cbfomat="%4.2f")
+    # gp.unset("colorbox")
+    
+    return (gp.infile(data, binary=binary, endian=endian,
+                      using="1:2:{}".format(ii + 3),
+                      vith=linedef("points", pt="dot", palette=True))
+            for ii in idx)
+    
+
+def groupby_plot(gp, x, y, data, by, colors, **kwargs):
+    fields = np.unique(data[by])
+    
+    
+    indices = (np.where(data[by] == field) for field in fields)
+    ldefs = (linedef("points", rgb=cols[color], **kwargs) for color in colors)
+    
+    return (gp.data(data[x][idx], data[y][idx], vith=ldef,
+            title="{} {}".format(by, field))
+            for field, idx, ldef in zip(fields, indices, ldefs))
