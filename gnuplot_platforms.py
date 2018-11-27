@@ -506,6 +506,7 @@ else:
     gnuplot_proc = GnuplotProcessUnix
 
 
+
 def parse_range(args):
     if len(args) == 1:
         return str(args[0])
@@ -516,27 +517,26 @@ def parse_range(args):
 additional_keys = frozenset(("index", "every", "using", "smooth", "axes"))
 
 
+def parse_kwargs(**kwargs):
+    return (parse_linedef(key, value) for key, value in kwargs.items())
+
+
 def parse_plot_arguments(**kwargs):
-    
     _with = kwargs.get("vith")
-    title = kwargs.get("title")
-    
-    text = ""
-    
-    add = tuple("{} {}".format(key, value) for key,value in kwargs.items()
-                                           if key in additional_keys)
-    
-    if add:
-        text += " {}".format(" ".join(add))
+    ptype = kwargs.pop("ptype", "points")
+    title = kwargs.pop("title", None)
     
     if _with is not None:
-        text += " with {}".format(_with)
-    
-    if title is not None:
-        text += " title '{}'".format(title)
+        text = " with {}".format(_with)
     else:
-        text += " notitle"
+        add = (parse_linedef(key, value) for key, value in kwargs.items())
+        text = " with {} {}".format(ptype, " ".join(add))
     
+    if title is None:
+        text += " notitle"
+    else:
+        text += " title '{}'".format(title)
+        
     return text
 
 
@@ -561,6 +561,7 @@ def parse_linedef(key, value):
 # ************************
 # * Private dictionaries *
 # ************************
+
 
 fmt_dict = {
     dtype("float64"): "%float64",

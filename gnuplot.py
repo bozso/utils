@@ -191,7 +191,7 @@ class Gnuplot(object):
         return array, text + add
 
         
-    def data(self, *arrays, **kwargs):
+    def data(self, *arrays, ltype="points", **kwargs):
         try:
             data = np.vstack(arrays).T
         except TypeError:
@@ -244,19 +244,26 @@ class Gnuplot(object):
         return PlotDescription(array, text + gp.parse_plot_arguments(**kwargs))
     
     
-    def histo(self, data, color="red", title=None, **kwargs):
-        density = kwargs.get("density", False)
+    def line(self, pos, mode, start=0.0, stop=1.0, ref="graph", **kwargs):
+        add = gp.parse_kwargs(**kwargs)
         
-        hist, edges = np.histogram(data, **kwargs)
+        if mode == "h" or mode == "horizontal":
+            self("set arrow from {ref} {}, {p} to {ref} {}, {p} nohead {}"
+              .format(start, stop, " ".join(add), p=pos, ref=ref))
+        elif mode == "v" or mode == "vertical":
+            self("set arrow from {p}, {ref} {} to {p}, {ref} {} nohead {}"
+                  .format(start, stop, " ".join(add), p=pos, ref=ref))
+        else:
+            raise ValueError('"mode" should be either "h", "horizontal", "v" '
+                             'or "vertical"')
+    
+    
+    def histo(self, hist, edges, **kwargs):
+        title = kwargs.pop("title", None)
         
         edges = edges[:-1] + (edges[1] - edges[0]) / 2.0
         
-        vith = "boxes fill solid lc '{}'".format(color)
-        
-        if density:
-            self.ylabel("Probability Density")
-        else:
-            self.ylabel("Number of elements")
+        vith = "boxes fill solid {}".format(" ".join(gp.parse_kwargs(**kwargs)))
         
         return self.data(edges, hist, title=title, vith=vith)
     
