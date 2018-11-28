@@ -1,10 +1,9 @@
 #! /usr/bin/env sh
 
 MAIN_DIR="/home/istvan/progs/utils"
-PYM="/home/istvan/progs/pymatlab"
 
 export PATH="$PATH:$MAIN_DIR/bin"
-export PYTHONPATH="$PYTHONPATH:$MAIN_DIR:$PYM"
+export PYTHONPATH="$PYTHONPATH:$MAIN_DIR"
 
 export CDPATH=.:~:~/progs:/mnt/bozso_i
 

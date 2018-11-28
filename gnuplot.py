@@ -258,7 +258,7 @@ class Gnuplot(object):
                              'or "vertical"')
     
     
-    def histo(self, hist, edges, **kwargs):
+    def histo(self, edges, hist, **kwargs):
         title = kwargs.pop("title", None)
         
         edges = edges[:-1] + (edges[1] - edges[0]) / 2.0
