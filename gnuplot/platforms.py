@@ -631,6 +631,7 @@ point_type_dict = {
     "empty_square": 4,
     "filed_square": 5,
     "empty_circle": 6,
+    "o": 6,
     "filled_circle": 7,
     "empty_up_triangle": 8,
     "filled_up_triangle": 9,

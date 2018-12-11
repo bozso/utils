@@ -1,4 +1,43 @@
 import numpy as np
+import numpy.linalg as la
+from numpy.random import randn
+import gnuplot.gnuplot as gp
+
+def cov(X):
+    """
+    Covariance matrix
+    note: specifically for mean-centered data
+    note: numpy's `cov` uses N-1 as normalization
+    """
+    return np.dot(X.T, X) / X.shape[0]
+
+
+def pca(data, fraction=0.8, n_comp=None):
+    """
+    Principal component analysis using eigenvalues
+    note: this mean-centers and auto-scales the data (in-place)
+    """
+    data -= np.mean(data, 0)
+    data /= np.std(data, 0)
+    C = cov(data)
+    E, V = la.eigh(C)
+
+    if n_comp is not None:
+        key = np.argsort(E)[::-1][:pc_count]
+
+        E, V = E[key], V[:, key]
+    else:
+        sumvariance = np.cumsum(E)
+        sumvariance /= sumvariance[-1]
+        key = data.shape[1] - np.searchsorted(sumvariance, fraction) + 1
+        
+        E, V = E[:key], V[:, :key]
+
+        U = np.dot(data, V)
+
+        return U, E, V
+    
+    
 
 
 def hmean(array, **kwargs):
@@ -63,7 +102,7 @@ class PDF(Distro):
 
     
     def mean(self, **kwargs):
-        Distro.mean(np.trapz, (self.pdf, self.x),
+        #Distro.mean(np.trapz, (self.pdf, self.x),
         if self._mean is None or kwargs.get("update", False):
             self._mean = np.trapz(self.x * self.pdf, self.x, **kwargs)
         
@@ -146,3 +185,31 @@ class Histo(Distro):
     def skewness(self, **kwargs):
         return 3 * (self.mean(**kwargs) - np.nanmedian(self.histo, **kwargs)) \
                / self.std(**kwargs)
+
+
+
+def main():
+    """ test data """
+    data = np.array([randn(8) for k in range(150)])
+    data[:50, 2:4] += 5
+    data[50:, 2:5] += 5
+    
+    """ visualize """
+    trans = pca(data, fraction=0.8)[0]
+    print(data.shape, trans.shape)
+    
+    gp.output("pca.png", term="pngcairo")
+    gp.multiplot(2)
+    
+    gp.title("Original")
+    gp.plot_data(data[:50, 0], data[:50, 1], ptype="points", pt="o")
+    gp.plot_data(data[50:, 0], data[50:, 1], ptype="points", pt="x")
+    gp.plot()
+    gp.title("PCA")
+    gp.plot_data(trans[:50, 0], trans[:50, 1], ptype="points", pt="o")
+    gp.plot_data(trans[50:, 0], trans[50:, 1], ptype="points", pt="x")
+    gp.plot()
+
+
+if __name__ == "__main__":
+    main()
