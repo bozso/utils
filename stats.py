@@ -21,7 +21,9 @@ def pca(data, fraction=0.8, n_comp=None):
     data /= np.std(data, 0)
     C = cov(data)
     E, V = la.eigh(C)
-
+    
+    print(E)
+    
     if n_comp is not None:
         key = np.argsort(E)[::-1][:n_comp]
 
