@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sys import platform
-from os import linesep, popen
+from sys import platform, stderr
+from os import linesep, popen, remove
 from numpy import dtype
 
 if platform == "mac":
@@ -505,6 +505,50 @@ elif platform == "cygwin":
 else:
     gnuplot_proc = GnuplotProcessUnix
 
+
+class Session(object):
+    def __init__(self, persist=False, debug=False, silent=False, **kwargs):
+        if persist:
+            #cmd = ["gnuplot", "--persist"]
+            cmd = "gnuplot --persist"
+        else:
+            #cmd = ["gnuplot"]
+            cmd = "gnuplot"
+        
+        #self.process = sub.Popen(cmd, stderr=sub.STDOUT, stdin=sub.PIPE)
+        self.process = popen(cmd, mode="w")
+        
+        self.write = self.process.write
+        self.flush = self.process.flush
+
+        self.persist, self.debug, self.silent = persist, debug, silent
+        self.multi, self.closed = False, False
+        self.plot_items, self.temps = [], []
+        
+
+    def close(self):
+        if self.process is not None:
+            self.process.close()
+            self.process = None
+
+
+    def __del__(self):
+        if self.multi:
+            self("unset multiplot")
+        
+        self.close()
+        
+        for temp in self.temps:
+            remove(temp)
+
+
+    def __call__(self, command):
+
+        if self.debug:
+            stderr.write("gnuplot> {}\n".format(command))
+        
+        self.write(command + "\n")
+        self.flush()
 
 
 def parse_range(args):
@@ -1283,3 +1327,23 @@ set palette defined ( 0 '#FFFFD9',\
               7 '#0C2C84' )
 """
 }
+
+
+
+#if platform == "mac":
+    #from gnuplot_platforms import GnuplotProcessMac as gpp
+
+#elif platform == "win32" or platform == "cli":
+    #from gnuplot_platforms import GnuplotProcessWin32 as gpp
+
+#elif platform == "darwin":
+    #from gnuplot_platforms import GnuplotProcessMacOSX as gpp
+
+#elif platform[:4] == "java":
+    #from gnuplot_platforms import GnuplotProcessJava as gpp
+
+#elif platform == "cygwin":
+    #from gnuplot_platforms import GnuplotProcessCygwin as gpp
+
+#else:
+    #from gnuplot_platforms import GnuplotProcessUnix as gpp
