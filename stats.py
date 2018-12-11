@@ -23,19 +23,20 @@ def pca(data, fraction=0.8, n_comp=None):
     E, V = la.eigh(C)
 
     if n_comp is not None:
-        key = np.argsort(E)[::-1][:pc_count]
+        key = np.argsort(E)[::-1][:n_comp]
 
         E, V = E[key], V[:, key]
     else:
         sumvariance = np.cumsum(E)
         sumvariance /= sumvariance[-1]
         key = data.shape[1] - np.searchsorted(sumvariance, fraction) + 1
-        
-        E, V = E[:key], V[:, :key]
+        print(key)
 
-        U = np.dot(data, V)
+        E, V = E[-key:], V[:, -key:]
 
-        return U, E, V
+    U = np.dot(data, V)
+
+    return U, E, V
     
     
 
@@ -191,21 +192,33 @@ class Histo(Distro):
 def main():
     """ test data """
     data = np.array([randn(8) for k in range(150)])
-    data[:50, 2:4] += 5
-    data[50:, 2:5] += 5
+    data[:50, 2:4] += 10
+    data[50:, 2:5] += 10
     
     """ visualize """
-    trans = pca(data, fraction=0.8)[0]
-    print(data.shape, trans.shape)
     
-    gp.output("pca.png", term="pngcairo")
-    gp.multiplot(2)
+    gp.output("pca.png", term="pngcairo", size=(1000,800))
+    gp.multiplot(4, nrows=2)
     
     gp.title("Original")
     gp.plot_data(data[:50, 0], data[:50, 1], ptype="points", pt="o")
     gp.plot_data(data[50:, 0], data[50:, 1], ptype="points", pt="x")
     gp.plot()
-    gp.title("PCA")
+
+    gp.title("PCA Fraction 0.2")
+    trans = pca(data, fraction=0.2)[0]
+    gp.plot_data(trans[:50, 0], trans[:50, 1], ptype="points", pt="o")
+    gp.plot_data(trans[50:, 0], trans[50:, 1], ptype="points", pt="x")
+    gp.plot()
+
+    gp.title("PCA Fraction 0.8")
+    trans = pca(data, fraction=0.8)[0]
+    gp.plot_data(trans[:50, 0], trans[:50, 1], ptype="points", pt="o")
+    gp.plot_data(trans[50:, 0], trans[50:, 1], ptype="points", pt="x")
+    gp.plot()
+
+    gp.title("PCA first 2 components")
+    trans = pca(data, n_comp=2)[0]
     gp.plot_data(trans[:50, 0], trans[:50, 1], ptype="points", pt="o")
     gp.plot_data(trans[50:, 0], trans[50:, 1], ptype="points", pt="x")
     gp.plot()
