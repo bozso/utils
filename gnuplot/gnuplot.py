@@ -25,6 +25,12 @@ from os import fdopen
 from math import ceil, sqrt
 from sys import stderr, platform
 
+try:
+    from IPython.diplay import Image
+except ImportError:
+    Image = None
+
+
 import gnuplot.platforms as gp
 
 _session = gp.Session()
@@ -239,13 +245,19 @@ def plot_file(data, matrix=None, binary=None, array=None, endian="default", **kw
     return PlotDescription(None, text + gp.parse_plot_arguments(**kwargs))
 
 
-def plot():
-    if not _session.silent:
-        refresh("plot")
-
-def splot():
-    if not _session.silent:
-        refresh("splot")
+def draw(plot_type):
+    if plot_type != "plot" and plot_type != "splot":
+        raise ValueError('"plot_type" should be either "plot" or "splot" '
+                         'not "{}"'.format(plot_type))
+    
+    if Image is not None:
+        fd, filename, = mkstemp(suffix=".png")
+        
+        output(filename, term="pngcairo")
+        refresh(plot_type)
+        Image(filename=filename)
+    elif not _session.silent:
+        refresh(plot_type)
 
 
 # ***********
@@ -346,29 +358,6 @@ def nicer():
     set style line 12 lc rgb 'black' lt 0 lw 1
     set grid back ls 12
     """)
-    
-    colors = {
-        "red": "#8b1a0e",
-        "green": "#5e9c36",
-        "lightgreen": "#4d9178",
-        "blue": "#0074D9",
-        "darkblue": "#140a60",
-        "navy": "#001f3f",
-        "aqua": "#7FDBFF",
-        "teal": "#39CCCC",
-        "olive": "#3D9970",
-        "yellow" :"#FFDC00",
-        "lime" :"#01FF70",
-        "orange": "#FF851B",
-        "maroon": "#85144b",
-        "fuchsia": "#F012BE",
-        "purple": "#B10DC9",
-        "black": "#111111",
-        "gray": "#AAAAAA",
-        "silver": "#DDDDDD"
-    }
-    
-    return colors
 
 
 def reset():
