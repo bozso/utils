@@ -384,6 +384,9 @@ def style(stylenum, ltype, **kwargs):
     _session("set style line {} {}".format(stylenum, linedef(ltype, **kwargs)))
 
 
+def out(outfile):
+    _session("set output '{}'".format(outfile))
+
 def output(outfile, **kwargs):
     term(**kwargs)
     _session("set output '{}'".format(outfile))
