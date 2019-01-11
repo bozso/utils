@@ -8,15 +8,50 @@ def parse_options(kwargs):
                     for key, value in kwargs.items())
 
 
+@contextmanager
+def begin(doc, mode, **kwargs):
+    if kwargs:
+        doc("\\begin{%s}[%s]" % (mode, parse_options(kwargs)))
+    else:
+        doc("\\begin{%s}" % mode)
+    doc.ntabs += 1
 
+    yield ref(doc)()
+
+    doc.ntabs -= 1
+    doc("\end{%s}" % mode)
+    
+
+def make_begin(mode):
+    def f(doc, **kwargs):
+        if kwargs:
+            doc("\\begin{%s}[%s]" % (mode, parse_options(kwargs)))
+        else:
+            doc("\\begin{%s}" % mode)
+        doc.ntabs += 1
+    
+        yield ref(doc)()
+    
+        doc.ntabs -= 1
+        doc("\end{%s}" % mode)
+    
+    return contextmanager(f)
 
 
 class Doc(object):
+    
+    frame = make_begin("frame")
+    center = make_begin("center")
+    minipage = make_begin("minipage")
+    
+    @classmethod
+    def make_doc(cls, pyfile, texfile, **kwargs):
+        if pth.getmtime(pyfile) <= pth.getmtime(texfile):
+            return None
+        else:
+            return cls(pyfile, texfile, **kwargs)
+    
     def __init__(self, pyfile, texfile, klass="plain", **kwargs):
-        if pyfile > texfile:
-            self = None
-            return
-
         self.texfile = texfile
         self.pyfile = pyfile
         self.ntabs = 0
@@ -28,8 +63,17 @@ class Doc(object):
                                 % (parse_options(kwargs), klass))
         else:
             self._texfile.write("\documentclass{%s}\n" %  klass)
+    
+    def start(self):
+        self("\n\n\\begin{document}\n\n")
 
 
+    def __del__(self):
+        if self is not None:
+            self("\n\end{docuemnt}\n")
+            self._texfile.close()
+
+    
     def __call__(self, txt):
         self._texfile.write("%s%s\n" % (self.ntabs * "\t", txt))
 
@@ -43,7 +87,6 @@ class Doc(object):
     def biblio_style(self, style):
         self("\bibliographystyle{%s}" % style)
     
-    
     @contextmanager
     def mode(self, mode):
         self("\mode<%s>\n{" % mode)
@@ -53,9 +96,7 @@ class Doc(object):
     
         self.ntabs -= 1
         self("}")
-    
-    
-    
+
     
     @contextmanager
     def begin(self, mode, **kwargs):
@@ -70,13 +111,6 @@ class Doc(object):
         self.ntabs -= 1
         self("\end{%s}" % mode)
     
-    @contextmanager
-    def frame(self, **kwargs):
-        self.begin("frame", **kwargs)
-    
     def date(self, date):
         self("\date{%s}" % date)
-    
-    def __del__(self):
-        self._texfile.close()
 
