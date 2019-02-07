@@ -106,7 +106,7 @@ def parse_linedef(key, value):
     elif key == "lt" or key == "linetype":
         return "{} {}".format(key, line_type_dict[value])
     elif key == "rgb":
-        return "lc {} '{}'".format(key, colors[value])
+        return "lc {} '{}'".format(key, value)
     
     
     if isinstance(value, bool) and value:
@@ -135,28 +135,6 @@ fmt_dict = {
     dtype("uint16"): "%uint16",
     dtype("uint32"): "%uint32",
     dtype("uint64"): "%uint64"
-}
-
-
-colors = {
-    "red": "#8b1a0e",
-    "green": "#5e9c36",
-    "lightgreen": "#4d9178",
-    "blue": "#0074D9",
-    "darkblue": "#140a60",
-    "navy": "#001f3f",
-    "aqua": "#7FDBFF",
-    "teal": "#39CCCC",
-    "olive": "#3D9970",
-    "yellow" :"#FFDC00",
-    "lime" :"#01FF70",
-    "orange": "#FF851B",
-    "maroon": "#85144b",
-    "fuchsia": "#F012BE",
-    "purple": "#B10DC9",
-    "black": "#111111",
-    "gray": "#AAAAAA",
-    "silver": "#DDDDDD"
 }
 
 
