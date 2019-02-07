@@ -29,6 +29,8 @@ import gnuplot.platforms as gp
 
 _session = gp.Session()
 
+def call(*args):
+    _session(" ".join(args))
 
 def refresh(plot_cmd):
     plot_objects = _session.plot_items

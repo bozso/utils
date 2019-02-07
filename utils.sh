@@ -28,6 +28,15 @@ function extract_music {
     done
 }
 
+
+function buildpdf {
+    pdflatex --file-line-error-style -shell-escape "$1"
+    bibtex "$(basename $1).aux"
+    pdflatex --file-line-error-style -shell-escape "$1"
+    pdflatex --file-line-error-style -shell-escape "$1"
+}
+
+
 function tar_com {
     tar -czvf $1.tar.gz $1
 }
