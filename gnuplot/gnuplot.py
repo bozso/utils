@@ -22,7 +22,6 @@ from builtins import str
 from numbers import Number
 from tempfile import mkstemp
 from os import fdopen
-from math import ceil, sqrt
 from sys import stderr, platform
 
 import gnuplot.platforms as gp
@@ -30,7 +29,8 @@ import gnuplot.platforms as gp
 _session = gp.Session()
 
 def call(*args):
-    _session(" ".join(args))
+    for arg in args:
+        _session(arg)
 
 def refresh(plot_cmd):
     plot_objects = _session.plot_items
@@ -265,6 +265,8 @@ def silent():
 def set(name, value):
     if value is True:
         _session("set {}".format(name))
+    elif value is False:
+        _session("unset {}".format(name))
     else:
         _session("set {} {}".format(name, value))
 
@@ -299,28 +301,8 @@ def margins(screen=False, **kwargs):
             _session(fmt.format(key, value))
 
 
-def multiplot(nplot, title=None, nrows=None, order="rowsfirst",
-              portrait=False):
-
-    if nrows is None:
-        nrows = max([1, ceil(sqrt(nplot) - 1)])
-    
-    ncols = ceil(nplot / nrows)
-    
-    if portrait and ncols > nrows:
-        nrows, ncols = ncols, nrows
-    elif nrows > ncols:
-        nrows, ncols = ncols, nrows
-    
-    _session.multi = True
-    
-    if title is not None:
-        txt = "set multiplot layout {},{} {} title '{}'"\
-              .format(nrows, ncols, order, title)
-    else:
-        txt = "set multiplot layout {},{} {}".format(nrows, ncols, order)
-
-    _session(txt)
+def multiplot(nplot, **kwargs):
+    return gp.MultiPlot(nplot, _session, **kwargs)
 
 
 def colorbar(cbrange=None, cbtics=None, cbformat=None):
@@ -336,7 +318,7 @@ def colorbar(cbrange=None, cbtics=None, cbformat=None):
 
 def unset_multi(self):
     _session("unset multiplot")
-    _session.multi = False
+    _session.multi = None
 
 
 def nicer():
@@ -403,8 +385,10 @@ def output(outfile, **kwargs):
 
 
 def title(title):
-    _session("set title '{}'".format(title))
+    _session('set title "{}"'.format(title))
 
+
+#def key()
 
 def term(term, **kwargs):
     size     = kwargs.get("size")
@@ -418,6 +402,7 @@ def term(term, **kwargs):
         txt += " enhanced"
     
     if size is not None:
+        _session.size = size
         txt += " size {},{}".format(size[0], size[1])
     
     _session("{} font '{},{}'".format(txt, font, fontsize))

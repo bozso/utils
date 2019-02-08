@@ -16,7 +16,10 @@
 from sys import platform, stderr
 from os import linesep, popen, remove
 from numpy import dtype
+from math import ceil, sqrt
+from weakref import ref
 import subprocess as sub
+
 
 from gnuplot.config import gnuplot_config as gpconf
 
@@ -36,7 +39,7 @@ class Session(object):
         self.persist, self.debug, self.silent = gpconf["persist"], \
                                                 gpconf["debug"], \
                                                 gpconf["silent"]
-        self.multi, self.closed = False, False
+        self.multi, self.closed, self.size = None, False, gpconf["size"]
         self.plot_items, self.temps = [], []
         
 
@@ -48,7 +51,7 @@ class Session(object):
 
 
     def __del__(self):
-        if self.multi:
+        if self.multi is not None:
             self("unset multiplot")
         
         self.close()
@@ -64,6 +67,93 @@ class Session(object):
         
         self.write(bytes(b"%s\n" % bytes(command, encoding='utf8')))
         self.flush()
+
+
+class MultiPlot(object):
+    def __init__(self, nplot, session, **kwargs):
+        self.session = ref(session)()
+        
+        common_keys = bool(kwargs.get("ckeys", False))
+        
+        if common_keys:
+            nplot += 1
+        
+        self.nplot = nplot
+        self.left = float(kwargs.get("left", 20)) / 100.0
+        self.between = float(kwargs.get("between", 20.0)) / 100.0
+        self.width = float(kwargs.get("width", 30.0)) / 100.0
+        self.key_height = float(kwargs.get("key_height", 50.0)) / 100.0
+        
+        self.width_total = self.width * nplot + self.between * (nplot - 1) \
+                           + self.left + self.key_height
+        
+        nrows = kwargs.get("nrows", None)
+        
+        if nrows is None:
+            nrows = max([1, ceil(sqrt(self.nplot) - 1)])
+        
+        ncols = ceil(self.nplot / nrows)
+        
+        portrait = kwargs.get("portrait", False)
+        
+        if portrait and ncols > nrows:
+            nrows, ncols = ncols, nrows
+        elif nrows > ncols:
+            nrows, ncols = ncols, nrows
+        
+        self.nrows, self.ncols = nrows, ncols
+
+        order = kwargs.get("order", "rowsfirst")
+        title = kwargs.get("title", None)
+        
+        if title is not None:
+            txt = "set multiplot layout {},{} {} title '{}'"\
+                  .format(nrows, ncols, order, title)
+        else:
+            txt = "set multiplot layout {},{} {}".format(nrows, ncols, order)
+        
+        if common_keys:
+            txt += "; unset key"
+        
+        self.session(txt)
+    
+    
+    def __call__(self, *args):
+        self.session(*args)
+    
+    def key(self, *titles):
+        self("unset title")
+    
+        plot = ", ".join("2 title '%s'" % title for title in titles)
+        
+        self(
+        """
+        set lmargin at screen %g
+        set rmargin at screen 1
+        set key center center
+        set border 0
+        unset tics
+        unset xlabel
+        unset ylabel
+        set yrange [0:1]
+        plot %s
+        """ % (self.margins(self.nplot)[0] - 0.35, plot))
+    
+    
+    def plot(self, ii, txt):
+        sess = self.session
+        
+        if ii > 0:
+            self("unset ylabel")
+        
+        self("set lmargin at screen %g\nset rmargin at screen %g" % self.margins(ii))
+        sess(txt)
+    
+    
+    def margins(self, ii):
+        l, b, w = self.left, self.between, self.width
+        left = ii * (w + b) + l
+        return left, left + w
 
 
 def parse_range(args):
