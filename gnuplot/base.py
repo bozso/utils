@@ -24,7 +24,17 @@ from tempfile import mkstemp
 from os import fdopen
 from sys import stderr, platform
 
-import gnuplot.platforms as gp
+import gnuplot.private as gp
+
+
+__all__ = ("arrow", "call", "colorbar", "debug", "histo", "label", "labels",
+           "line", "linedef", "margins", "multiplot", "nicer", "obj",
+           "output", "palette", "plot", "plot_data", "plot_file", "plot_grid",
+           "ranges", "referesh", "remove_temps", "replot", "reset", "save",
+           "set", "silent", "splot", "style", "term", "title", "unset_multi",
+           "xlabel", "xrange", "xtics", "ylabel", "yrange", "ytics",
+           "zlabel", "zrange", "ztics")
+
 
 _session = gp.Session()
 
