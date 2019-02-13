@@ -1,5 +1,8 @@
 from __future__ import print_function, division
 import os.path as pth
+import base64 as b64
+import json as js
+
 from contextlib import contextmanager
 from weakref import ref
 from sys import argv
@@ -7,7 +10,7 @@ from sys import argv
 from .latexrun import lmain
 
 __all__ = ("Doc", "sym", "frac", "parfrac", "twd", "tbf", "mbf", "hsp",
-           "vsp", "unit", "inmath")
+           "vsp", "unit", "inmath", "encode_image", "decode_image")
 
 
 def parse_options(kwargs):
@@ -226,6 +229,16 @@ def parfrac(a, b):
 
 def inmath(*txt):
     return "$ %s $" % " ".join(txt)
+
+
+def encode_image(path):
+    with open(path, "rb") as f:
+        return b64.encodebytes(f.read()).decode("ascii")
+
+
+def decode_image(obj, path, outdir=".images"):
+    with open(pth.join(outdir, pth.basename(path)), "wb") as f:
+        f.write(b64.b64decode(obj[path].encode("ascii")))
 
 
 symbols = set(("alpha", "beta", "gamma", "partial"))

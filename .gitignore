@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Pylatex files
+.images
+latex.out
+
 # C extensions and object files
 *.so
 *.o
