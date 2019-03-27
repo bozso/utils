@@ -107,11 +107,11 @@ JULIA="$PROGS/julia-1.1.0/bin"
 SNAP="/home/istvan/snap/bin"
 SSARA="$PROGS/SSARA"
 
+export PROOT="/home/istvan/packages"
+
 PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$PROOT/usr/bin/:$UTILS_DIR/bin"
 
 export PYTHONPATH="$PYTHONPATH:$UTILS_DIR"
-
-export PROOT="/home/istvan/packages"
 
 export OMP_NUM_THREADS=8
 
