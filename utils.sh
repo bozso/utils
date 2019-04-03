@@ -106,20 +106,13 @@ source "$PROGS/insar_meteo/insar_meteo.sh"
 JULIA="$PROGS/julia-1.1.0/bin"
 SNAP="/home/istvan/snap/bin"
 SSARA="$PROGS/SSARA"
+JROOT="/home/istvan/.junest"
 
-export PROOT="/home/istvan/packages"
-
-PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$PROOT/usr/bin/:$UTILS_DIR/bin"
+PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$JROOT/bin:$UTILS_DIR/bin"
+PATH="/home/istvan/.local/share/junest/bin:$PATH"
 
 export PYTHONPATH="$PYTHONPATH:$UTILS_DIR"
 
 export OMP_NUM_THREADS=8
 
-export LD_LIBRARY_PATH="$PROOT/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
-
-export HOMEBREW_PREFIX="/home/istvan/.linuxbrew"
-export HOMEBREW_CELLAR="/home/istvan/.linuxbrew/Cellar"
-export HOMEBREW_REPOSITORY="/home/istvan/.linuxbrew/Homebrew"
-export PATH="/home/istvan/.linuxbrew/bin:/home/istvan/.linuxbrew/sbin:$PATH"
-export MANPATH="/home/istvan/.linuxbrew/share/man:$MANPATH"
-export INFOPATH="/home/istvan/.linuxbrew/share/info:$INFOPATH"
+export LD_LIBRARY_PATH="$JROOT/lib:$LD_LIBRARY_PATH"
