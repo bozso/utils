@@ -76,6 +76,8 @@ function gs_pull {
 }
 
 
+PROOT="/home/istvan/packages"
+
 function local_install {
     if [[ $# -ne 1 ]]; then
         echoerr "error: local_install: One argument (package name) is required!"
@@ -93,6 +95,16 @@ function local_install {
 }
 
 
+TXA="$UTILS_DIR/.textadept"
+
+
+function ta {
+    txa -u "$TXA" "$@" &
+}
+
+
+alias tgam="ta -s $TXA/gamma &"
+
 alias attach="tmux attach -t"
 alias nano="nano -u"
 alias nbrc="nano -u ~/.bashrc"
@@ -106,13 +118,11 @@ source "$PROGS/insar_meteo/insar_meteo.sh"
 JULIA="$PROGS/julia-1.1.0/bin"
 SNAP="/home/istvan/snap/bin"
 SSARA="$PROGS/SSARA"
-JROOT="/home/istvan/.junest"
 
-PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$JROOT/bin:$UTILS_DIR/bin"
-PATH="/home/istvan/.local/share/junest/bin:$PATH"
 
+PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$PROOT/usr/bin:$UTILS_DIR/bin"
+
+export LD_LIBRARY_PATH="LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
 export PYTHONPATH="$PYTHONPATH:$UTILS_DIR"
 
 export OMP_NUM_THREADS=8
-
-export LD_LIBRARY_PATH="$JROOT/lib:$LD_LIBRARY_PATH"
