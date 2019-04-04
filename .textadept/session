@@ -1,6 +1,18 @@
-buffer: 0 0 0 /home/istvan/progs/utils/utils.sh
+buffer: 5020 5020 81 /home/istvan/Dokumentumok/texfiles/posters/egu/2019/bozsoi_egu_poster.tex
 bookmarks: 
-size: false 671 400
+buffer: 94 94 0 /home/istvan/Dokumentumok/texfiles/aux/poster.tex
+bookmarks: 
+buffer: 348 348 2 /home/istvan/Dokumentumok/texfiles/aux/common.tex
+bookmarks: 
+buffer: 329478 329478 6426 [Message Buffer]
+bookmarks: 
+size: true 1366 715
 view1: 1
 current_view: 1
-recent: /home/istvan/progs/utils/utils.sh
+recent: /home/istvan/Dokumentumok/texfiles/aux/presentation.tex
+recent: /home/istvan/Dokumentumok/texfiles/aux/common.tex
+recent: /home/istvan/Dokumentumok/texfiles/aux/poster.tex
+recent: /home/istvan/progs/textadept_10.3.x86_64/modules/textadept/run.lua
+recent: /home/istvan/progs/utils/.textadept/init.lua
+recent: /home/istvan/Dokumentumok/texfiles/posters/egu/2019/bozsoi_egu_poster.tex
+recent: /home/istvan/progs/textadept_10.3.x86_64/core/keys.lua
