@@ -30,7 +30,7 @@ import gnuplot.private as gp
 __all__ = ("arrow", "call", "colorbar", "debug", "histo", "label", "labels",
            "line", "linedef", "margins", "multiplot", "nicer", "obj",
            "output", "palette", "plot", "plot_data", "plot_file", "plot_grid",
-           "ranges", "referesh", "remove_temps", "replot", "reset", "save",
+           "ranges", "refresh", "remove_temps", "replot", "reset", "save",
            "set", "silent", "splot", "style", "term", "title", "unset_multi",
            "xlabel", "xrange", "xtics", "ylabel", "yrange", "ytics",
            "zlabel", "zrange", "ztics")
@@ -272,13 +272,19 @@ def silent():
     _session.silent = True
 
 
-def set(name, value):
+    
+
+def parse_set(name, value):
     if value is True:
-        _session("set {}".format(name))
+        return "set {}".format(name)
     elif value is False:
-        _session("unset {}".format(name))
+        return "unset {}".format(name)
     else:
-        _session("set {} {}".format(name, value))
+        return "set {} {}".format(name, value)
+
+
+def set(**kwargs):
+    _session(";".join(parse_set(key, value) for key, value in kwargs.items()))
 
 
 def size(scale, square=False, ratio=None):

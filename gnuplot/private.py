@@ -121,6 +121,7 @@ class MultiPlot(object):
     def __call__(self, *args):
         self.session(*args)
     
+    
     def key(self, *titles):
         self("unset title")
     
@@ -155,7 +156,12 @@ class MultiPlot(object):
         left = ii * (w + b) + l
         return left, left + w
 
+    
+    def __del__(self):
+        self.session("unset multiplot")
+        self.session.multi = None
 
+        
 def parse_range(args):
     if len(args) == 1:
         return str(args[0])
