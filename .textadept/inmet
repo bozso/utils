@@ -1,12 +1,11 @@
-buffer: 98 98 0 /home/istvan/progs/insar_meteo/src/inmet.cpp
+buffer: 118 118 0 /home/istvan/progs/insar_meteo/src/inmet.cpp
 bookmarks: 
-buffer: 2470 2470 76 /home/istvan/progs/insar_meteo/inmet/cwrap.py
-bookmarks: 
-buffer: 136 136 0 /home/istvan/progs/utils/.textadept/init.lua
+buffer: 3930 3930 181 /home/istvan/progs/insar_meteo/src/aux/aux.hpp
 bookmarks: 
 size: true 1366 715
-view1: 3
+view1: 1
 current_view: 1
+recent: /home/istvan/progs/insar_meteo/src/aux/aux.hpp
 recent: /home/istvan/progs/utils/.textadept/init.lua
 recent: /home/istvan/progs/insar_meteo/inmet/cwrap.py
 recent: /home/istvan/progs/insar_meteo/src/inmet.cpp
