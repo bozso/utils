@@ -40,6 +40,7 @@ textadept.run.compile_commands["latex"] = "latexrun %p"
 textadept.run.build_commands["latex"] = "latexrun %p"
 
 textadept.run.compile_commands["cpp"] = "ninja"
+textadept.run.compile_commands["ansi_c"] = "ninja"
 -- textadept.run.build_commands["cpp"] = "ninja"
 
 
