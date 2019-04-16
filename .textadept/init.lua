@@ -1,6 +1,8 @@
 textadept.editing.auto_indent = true
 buffer.tab_width = 4
 buffer.use_tabs = false
+buffer.edge_column = 79
+buffer.edge_mode= buffer.EDGE_LINE
 
 
 -- local _L = require('locale')
