@@ -63,7 +63,7 @@ function gs_push {
 function gs_radd {
 
     if [[ $# -ne 1 ]]; then
-        echoerr "error: gradd: One argument (remote repository address) is required!"
+        echoerr "error: gs_radd: One argument (remote repository address) is required!"
         return 1
     fi
 
@@ -118,11 +118,12 @@ source "$PROGS/insar_meteo/insar_meteo.sh"
 JULIA="$PROGS/julia-1.1.0/bin"
 SNAP="/home/istvan/snap/bin"
 SSARA="$PROGS/SSARA"
+GAMMA="$PROGS/gamma"
 
 
 PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$PROOT/usr/bin:$UTILS_DIR/bin"
 
 export LD_LIBRARY_PATH="LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
-export PYTHONPATH="$PYTHONPATH:$UTILS_DIR"
+export PYTHONPATH="$PYTHONPATH:$UTILS_DIR:$GAMMA"
 
 export OMP_NUM_THREADS=8
