@@ -76,13 +76,12 @@ function gs_pull {
 }
 
 
-<<<<<<< HEAD
 # dmenu_options="-fn -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1"
 # -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1
 
-
 alias dmenu_programs="dmenu_run -fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
-=======
+
+
 PROOT="/home/istvan/packages"
 
 function local_install {
@@ -134,4 +133,3 @@ export LD_LIBRARY_PATH="LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
 export PYTHONPATH="$PYTHONPATH:$UTILS_DIR:$GAMMA"
 
 export OMP_NUM_THREADS=8
->>>>>>> fd56dd3f0f88d5e7c98a79ce94eaa56a2b6b7e35
