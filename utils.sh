@@ -149,7 +149,7 @@ function dmenu_git_repo_manage {
             cd $path/$select
             
             echo "# Set commit message:" > "$gtmp"
-            ta "$gtmp" &
+            nano "$gtmp"
             
             git commit -a -F "$gtmp"
             git push origin master
