@@ -3,6 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# textadept files
+session
+session_term
+
+
+# Pylatex files
+.images
+latex.out
+
 # C extensions and object files
 *.so
 *.o

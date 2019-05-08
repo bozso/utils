@@ -1,14 +1,12 @@
 #! /usr/bin/env sh
 
-MAIN_DIR="/home/istvan/progs/utils"
-
-export PATH="$PATH:$MAIN_DIR/bin"
-export PYTHONPATH="$PYTHONPATH:$MAIN_DIR"
+UTILS_DIR="/home/istvan/progs/utils"
 
 export CDPATH=.:~:~/progs:/mnt/bozso_i
 
-alias sbrc='source ~/.bashrc'
+alias reload='source $UTILS_DIR/utils.sh'
 alias gs_stat='git status'
+
 
 function update_clean {
     sudo apt-get update
@@ -18,6 +16,7 @@ function update_clean {
     sudo apt-get clean
     sudo apt-get autoremove
 }
+
 
 function extract_music {
     IFS=$'\n'
@@ -64,7 +63,7 @@ function gs_push {
 function gs_radd {
 
     if [[ $# -ne 1 ]]; then
-        echoerr "error: gradd: One argument (remote repository address) is required!"
+        echoerr "error: gs_radd: One argument (remote repository address) is required!"
         return 1
     fi
 
@@ -77,8 +76,62 @@ function gs_pull {
 }
 
 
+<<<<<<< HEAD
 # dmenu_options="-fn -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1"
 # -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1
 
 
 alias dmenu_programs="dmenu_run -fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
+=======
+PROOT="/home/istvan/packages"
+
+function local_install {
+    if [[ $# -ne 1 ]]; then
+        echoerr "error: local_install: One argument (package name) is required!"
+        return 1
+    fi
+    
+    rm *.deb
+    
+    apt download $1
+    mkdir -p $PROOT
+
+    dpkg -x *.deb $PROOT
+    
+    rm *.deb
+}
+
+
+TXA="$UTILS_DIR/.textadept"
+
+
+function ta {
+    txa -u "$TXA" "$@" &
+}
+
+
+alias tgam="ta -s $TXA/gamma &"
+
+alias attach="tmux attach -t"
+alias nano="nano -u"
+alias nbrc="nano -u ~/.bashrc"
+
+
+PROGS="/home/istvan/progs"
+
+source "$PROGS/insar_meteo/insar_meteo.sh"
+
+
+JULIA="$PROGS/julia-1.1.0/bin"
+SNAP="/home/istvan/snap/bin"
+SSARA="$PROGS/SSARA"
+GAMMA="$PROGS/gamma"
+
+
+PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$PROOT/usr/bin:$UTILS_DIR/bin"
+
+export LD_LIBRARY_PATH="LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
+export PYTHONPATH="$PYTHONPATH:$UTILS_DIR:$GAMMA"
+
+export OMP_NUM_THREADS=8
+>>>>>>> fd56dd3f0f88d5e7c98a79ce94eaa56a2b6b7e35
