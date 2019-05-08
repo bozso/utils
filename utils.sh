@@ -79,6 +79,111 @@ function gs_pull {
 # dmenu_options="-fn -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1"
 # -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1
 
+dmenu_options="-fn -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1"
+
+alias mdmenu="dmenu -fn -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1"
+
+
+
+function if_nempty {
+    if [ -n "$1" ]; then
+        eval "$2"
+    fi
+}
+
+
+function last_field {
+    while read data; do
+        echo $(echo $data | awk -F '/' '{print $NF}')
+    done
+}
+
+
+function dmenu_playlists {
+    local path="/home/istvan/playlists"
+    
+    local select=$(ls -1 $path/*.m3u | last_field | mdmenu)
+    
+    if_nempty $select "parole $path/$select &"
+}
+
+
+function dmenu_mc {
+    local path="/home/istvan/progs"
+    
+    local select=$(ls -1 -d $path/* | last_field | \
+                   mdmenu -p "Select pros directory")
+    if_nempty $select "xfce4-terminal -e 'mc $path/$select'"
+}
+
+
+function dmenu_ssh {
+    local options="robosztus\nzafir\n"
+    local select=$(echo -e "$options" | mdmenu -p "Select server")
+    
+    case $select in
+        "robosztus")
+            xfce4-terminal -e 'ssh -Y istvan@robosztus.ggki.hu'
+            ;;
+        "zafir")
+            xfce4-terminal -e 'ssh -Y istvan@zafir.ggki.hu'
+            ;;
+        *)
+            echo "Unknown option: $select."
+    esac
+}
+
+
+function dmenu_git_repo_manage {
+    local path="/home/istvan/progs"
+    local options="utils\ngamma\ninsar_meteo\n"
+    local gtmp="/tmp/git_commit_tpl"
+    local select=$(echo -e "$options"| mdmenu -p "Select from github repos")
+    
+    case $1 in
+        "pull")
+            cd $path/$select
+            git pull origin master
+            ;;
+        "push")
+            cd $path/$select
+            
+            echo "# Set commit message:" > "$gtmp"
+            ta "$gtmp" &
+            
+            git commit -a -F "$gtmp"
+            git push origin master
+            
+            rm "$gtmp"
+            ;;
+    esac
+}
+
+
+function select_dmenu_module {
+    local options="playlist\nmc\nssh\npush\npull"
+    local select=$(echo -e "$options"| mdmenu -p "Select from modules")
+    
+    case $select in
+        "playlist")
+            dmenu_playlists
+            ;;
+        "mc")
+            dmenu_mc
+            ;;
+        "ssh")
+            dmenu_ssh
+            ;;
+        "push")
+            dmenu_git_repo_manage push
+            ;;
+        "pull")
+            dmenu_git_repo_manage pull
+            ;;
+    esac
+}
+
+
 alias dmenu_programs="dmenu_run -fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
 
