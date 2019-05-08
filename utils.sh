@@ -75,3 +75,10 @@ function gs_radd {
 function gs_pull {
     git pull origin master
 }
+
+
+# dmenu_options="-fn -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1"
+# -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1
+
+
+alias dmenu_programs="dmenu_run -fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
