@@ -148,7 +148,7 @@ function dmenu_git_repo_manage {
         "push")
             cd $path/$select
             
-            echo "# Set commit message:" > "$gtmp"
+            echo "Set commit message"
             nano "$gtmp"
             
             git commit -a -F "$gtmp"
