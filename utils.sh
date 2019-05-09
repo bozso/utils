@@ -3,7 +3,6 @@ UTILS_DIR="$PROGS/utils"
 
 
 alias reload='source $UTILS_DIR/utils.sh'
-alias gs_stat='git status'
 
 
 update_clean() {
@@ -40,24 +39,51 @@ perr() {
 
 
 check_narg() {
-    if [ "$1" != "$2" ]; then
+    if [ "$1" -lt "$2" ]; then
         perr "error: Wrong number of arguments!"
-        exit 1
+        exit
     fi
 }
 
 
-#gs_push() {
-#    if [[ $# -ne 1 ]]; then
-#        echoerr "error: gpush: One argument (message) is required!"
-#        return 1
-#    fi
-#    
-#    git commit -am "$1"
-#    git push origin master
-#}
-#
-#
+push() {
+    check_narg $# 1
+    
+    git commit -am "$1"
+    git push origin master
+}
+
+
+pull() {
+    git pull origin master
+
+}
+
+stat() {
+    git status
+}
+
+
+gm() {
+    check_narg $# 1
+    
+    case $1 in
+        "push")
+            push $2
+            ;;
+        "pull")
+            pull
+            ;;
+        "stat")
+            stat
+            ;;
+        *)
+            printf "Unrecognized option %s!\n" $1 >&2
+            exit
+            ;;
+    esac
+}
+
 #function gs_radd {
 #
 #    if [[ $# -ne 1 ]]; then
@@ -67,15 +93,6 @@ check_narg() {
 #
 #    git remote add origin $1
 #}
-#
-#
-#function gs_pull {
-#    git pull origin master
-#}
-
-
-# dmenu_options="-fn -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1"
-# -adobe-helvetica-bold-r-normal-*-20-180-100-100-p-138-iso8859-1
 
 
 PROOT="/home/istvan/packages"
