@@ -81,14 +81,12 @@ git_repo_manage() {
     
     case $1 in
         "pull")
-            cd $path/$select
-            git pull origin master
+            $temu -e "echo asd; cd $path/$select; git pull origin master"
             ;;
         "push")
             # $temu -e sh -c "$_push"
             # ta "$gtmp"
-            # $temu -e "git commit -a $gdir;"
-            $temu -e "mc"
+            $temu -e "git commit -a $gdir > /home/istvan/debug"
 
             #cd $path/$select
             #
