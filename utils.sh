@@ -116,7 +116,7 @@ PROOT="/home/istvan/packages"
 
 TXA="$UTILS_DIR/.textadept"
 
-alias editor="$PROGS/textadept_10.4.x86_64/textadept"
+alias editor="$PROGS/textadept/textadept"
 
 ta() {
     editor -u "$TXA" "$@" &
