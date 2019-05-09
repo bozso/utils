@@ -45,5 +45,4 @@ textadept.run.compile_commands["cpp"] = "ninja"
 textadept.run.compile_commands["ansi_c"] = "ninja"
 -- textadept.run.build_commands["cpp"] = "ninja"
 
-
 buffer:set_theme('light', {font = 'Monospace', fontsize = 14})
