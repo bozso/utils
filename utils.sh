@@ -84,6 +84,23 @@ gm() {
     esac
 }
 
+proton() {
+    check_narg $# 1
+    
+    local p_sapps="/home/istvan/.steam/steam/steamapps"
+    local p_compat="$p_sapps/compatdata/aow"
+    local e_proton="$p_sapps/common/Proton 3.16/proton"
+    local p_freetype="/usr/lib/x86_64-linux-gnu/libfreetype.so.6"
+    
+    # STEAM_COMPAT_DATA_PATH="/home/istvan/.proton/" python "$e_proton" run $1 LD_PRELOAD=$p_freetype 
+    # PROTON_USE_WINED3D11=1 \
+    # PROTON_NO_ESYNC=1 \
+    STEAM_COMPAT_DATA_PATH=$p_compat \
+    DXVK_LOG_LEVEL=debug \
+    python "$e_proton" run $1
+    
+}
+
 #function gs_radd {
 #
 #    if [[ $# -ne 1 ]]; then
@@ -116,7 +133,7 @@ PROOT="/home/istvan/packages"
 
 TXA="$UTILS_DIR/.textadept"
 
-alias editor="$PROGS/textadept_10.4.x86_64/textadept"
+alias editor="$PROGS/textadept/textadept"
 
 ta() {
     editor -u "$TXA" "$@" &
