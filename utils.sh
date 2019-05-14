@@ -69,7 +69,7 @@ gm() {
     
     case $1 in
         "push")
-            push $2
+            push $*
             ;;
         "pull")
             pull
