@@ -49,7 +49,7 @@ check_narg() {
 push() {
     check_narg $# 1
     
-    git commit -am $1
+    git commit -am $*
     git push origin master
 }
 
