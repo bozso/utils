@@ -11,7 +11,7 @@ opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 home = "/home/istvan"
 progs = pjoin(home, "progs")
 temu = "lxterminal"
-
+gamma_doc = pjoin(home, "Dokumentumok", "gamma_doc")
 
 class dmenu(object):
     dmenu_cmd = split("dmenu %s" % opt)
@@ -56,7 +56,7 @@ class dmenu(object):
         if self.interm:
             cmd = "%s -e '%s %s'" % (temu, self.cmd, mode)
         else:
-            cmd = "%s %s &" % (self.cmd, mode)
+            cmd = "%s %s" % (self.cmd, mode)
         
         check_output(split(cmd))
         
@@ -79,9 +79,9 @@ def modules(**kwargs):
     
     
 repos = paths(path=progs,
+              gamma=None,
               insar_meteo=None,
               utils=None,
-              gamma=None,
               texfile=pjoin(home, "Dokumentumok", "texfiles")
               )
 
@@ -101,7 +101,6 @@ def pull_all():
         pull_repo(repo)
 
 
-
 def main():
     
     ap = ArgumentParser()
@@ -112,9 +111,13 @@ def main():
     args = ap.parse_args()
     
     if args.mode == "modules":
+        
         modules(mc=dmenu.file_list(home, "progs", "*", cmd="mc", interm=True),
                 playlist=dmenu.file_list(home, "playlists", "*", cmd="parole"),
+                gamma_doc=dmenu.file_list(home, gamma_doc, "*.html",
+                                          cmd="chromium-browser"),
                 pull_all=pull_all)
+    
     elif args.mode == "pull_all":
         pull_all()
     else:
