@@ -47,9 +47,6 @@ check_narg() {
 
 
 push() {
-    check_narg $# 1
-    
-    echo $*
     git commit -am $*
     git push origin master
 }
@@ -70,7 +67,7 @@ gm() {
     
     case $1 in
         "push")
-            push $*
+            push $1
             ;;
         "pull")
             pull

@@ -4,6 +4,7 @@ from subprocess import Popen, PIPE, check_output
 from shlex import split
 from os.path import join as pjoin, basename
 from glob import iglob
+from argparse import ArgumentParser
 
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
@@ -46,7 +47,7 @@ class dmenu(object):
         return self.options[out.decode().strip()]
     
     
-    def run(self):
+    def __call__(self):
         mode = self.select()
         
         if self.cmd is None:
@@ -57,10 +58,8 @@ class dmenu(object):
         else:
             cmd = "%s %s &" % (self.cmd, mode)
         
-        print(cmd)
-        
         check_output(split(cmd))
-    
+        
 
 def paths(**kwargs):
     path = kwargs.pop("path")
@@ -76,7 +75,7 @@ def modules(**kwargs):
     
     module = dmenu(*kwargs.keys()).select()
     
-    kwargs[module].run()
+    kwargs[module]()
     
     
 repos = paths(path=progs,
@@ -85,12 +84,38 @@ repos = paths(path=progs,
               texfile=pjoin(home, "Dokumentumok", "texfiles")
               )
 
-        
+
+def pull_repo(path):
+    cmd = "git --git-dir=%s --work-tree=%s pull origin master" \
+           % (pjoin(path, ".git"), path)
+    
+    check_output(split(cmd))
+
+
+
+def pull_all():
+    for repo in repos.values():
+        pull_repo(repo)
+
+
+
 def main():
     
-    modules(mc=dmenu.file_list(home, "progs", "*", cmd="mc", interm=True),
-            playlist=dmenu.file_list(home, "playlists", "*", cmd="parole"))
+    ap = ArgumentParser()
     
+    ap.add_argument("mode", help="Mode", type=str,
+                    choices=["modules", "programs"])
+    
+    args = ap.parse_args()
+    
+    if args.mode == "modules":
+        modules(mc=dmenu.file_list(home, "progs", "*", cmd="mc", interm=True),
+                playlist=dmenu.file_list(home, "playlists", "*", cmd="parole"),
+                pull_all=pull_all)
+    else:
+        check_output(split("dmenu_run %s" % opt))
+        
+        
     return 0
     
 
