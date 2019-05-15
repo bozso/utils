@@ -81,6 +81,7 @@ def modules(**kwargs):
 repos = paths(path=progs,
               insar_meteo=None,
               utils=None,
+              gamma=None,
               texfile=pjoin(home, "Dokumentumok", "texfiles")
               )
 
