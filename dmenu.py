@@ -89,8 +89,10 @@ def pull_repo(path):
     cmd = "git --git-dir=%s --work-tree=%s pull origin master" \
            % (pjoin(path, ".git"), path)
     
-    check_output(split(cmd))
-
+    try:
+        check_output(split(cmd))
+    except:
+        pass
 
 
 def pull_all():
