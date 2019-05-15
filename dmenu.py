@@ -101,6 +101,18 @@ def pull_all():
         pull_repo(repo)
 
 
+def eofs():
+    path = pjoin(home, "progs", "eofs", "game")
+    jar = pjoin(path, "Phoenix.jar")
+    cmd = pjoin(path, "jre", "bin", "java")
+    
+    cmd += " -jar -Xss32m %s --enableai -d" % jar
+    
+    print(cmd)
+    
+    # check_output(split(cmd))
+
+
 def main():
     
     ap = ArgumentParser()
@@ -116,7 +128,8 @@ def main():
                 playlist=dmenu.file_list(home, "playlists", "*", cmd="parole"),
                 gamma_doc=dmenu.file_list(home, gamma_doc, "*.html",
                                           cmd="chromium-browser"),
-                pull_all=pull_all)
+                pull_all=pull_all,
+                eofs=eofs)
     
     elif args.mode == "pull_all":
         pull_all()
