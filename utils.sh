@@ -139,6 +139,8 @@ ta() {
 
 alias nano="nano -u"
 alias nbrc="nano -u ~/.bashrc"
+alias menu="$UTILS_DIR/dmenu.py"
+
 
 . "$PROGS/insar_meteo/insar_meteo.sh"
 

@@ -104,7 +104,7 @@ def main():
     ap = ArgumentParser()
     
     ap.add_argument("mode", help="Mode", type=str,
-                    choices=["modules", "programs"])
+                    choices=["modules", "programs", "pull_all"])
     
     args = ap.parse_args()
     
@@ -112,6 +112,8 @@ def main():
         modules(mc=dmenu.file_list(home, "progs", "*", cmd="mc", interm=True),
                 playlist=dmenu.file_list(home, "playlists", "*", cmd="parole"),
                 pull_all=pull_all)
+    elif args.mode == "pull_all":
+        pull_all()
     else:
         check_output(split("dmenu_run %s" % opt))
         
