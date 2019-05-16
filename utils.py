@@ -7,7 +7,7 @@ from glob import iglob
 from argparse import ArgumentParser
 from webbrowser import get
 from tempfile import _get_default_tempdir
-from fypp import run_fypp2
+from utils.quik import Template
 
 
 browser = get("chromium-browser")
@@ -145,7 +145,13 @@ def main():
     elif args.mode == "pull_all":
         pull_all()
     elif args.mode == "markdown":
-        run_fypp2([args.infile, md_temp])
+        with open(args.infile, "r") as f:
+            tpl = Template(f.read())
+        
+        with open(md_temp, "w") as f:
+            f.write(tpl.render({}))
+        
+        #run_fypp2([args.infile, md_temp])
         
         # cmd = "gpp -C --nostdinc %s -o %s +c /* */" % (, )
         # check_output(split(cmd))

@@ -150,7 +150,7 @@ markdown_compile() {
 
 alias nano="nano -u"
 alias nbrc="nano -u ~/.bashrc"
-alias pull_all="$UTILS_DIR/dmenu.py pull_all"
+alias pull_all="$UTILS_DIR/utils.py pull_all"
 
 
 . "$PROGS/insar_meteo/insar_meteo.sh"
