@@ -91,7 +91,8 @@ def pull_repo(path):
            % (pjoin(path, ".git"), path)
     
     try:
-        check_output(split(cmd))
+        with open(pjoin(home, "dmenu.py.log"), "ab") as f:
+            f.write(check_output(split(cmd)))
     except:
         pass
 
