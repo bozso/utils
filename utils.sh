@@ -86,7 +86,7 @@ proton() {
     check_narg $# 1
     
     local p_sapps="/home/istvan/.steam/steam/steamapps"
-    local p_compat="$p_sapps/compatdata/aow"
+    local p_compat="$p_sapps/compatdata/eofs"
     local e_proton="$p_sapps/common/Proton 3.16/proton"
     local p_freetype="/usr/lib/x86_64-linux-gnu/libfreetype.so.6"
     
