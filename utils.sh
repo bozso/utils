@@ -4,6 +4,8 @@ UTILS_DIR="$PROGS/utils"
 
 alias reload='source $UTILS_DIR/utils.sh'
 
+export temu=lxterminal
+browser="chromium-browser"
 
 update_clean() {
     sudo apt-get update
@@ -137,9 +139,18 @@ ta() {
     editor -u "$TXA" "$@" &
 }
 
+
+markdown_compile() {
+    local tmp="/tmp/tmp.md"
+
+    cpp -nostdinc -x c $1 -P > $tmp
+    $browser $tmp
+}
+
+
 alias nano="nano -u"
 alias nbrc="nano -u ~/.bashrc"
-alias menu="$UTILS_DIR/dmenu.py"
+alias pull_all="$UTILS_DIR/dmenu.py pull_all"
 
 
 . "$PROGS/insar_meteo/insar_meteo.sh"
@@ -151,12 +162,11 @@ SSARA="$PROGS/SSARA"
 GAMMA="$PROGS/gamma"
 
 
-PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS:$PROOT/usr/bin:$UTILS_DIR/bin"
+PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS/bin:$PROOT/usr/bin:$UTILS_DIR/bin"
 
 export LD_LIBRARY_PATH="LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
 export PYTHONPATH="$PYTHONPATH:$UTILS_DIR:$GAMMA"
 export CDPATH=".:~:~/progs:/mnt/bozso_i"
 
-export temu=lxterminal
-
 export OMP_NUM_THREADS=8
+

@@ -11,6 +11,7 @@ buffer.edge_mode= buffer.EDGE_LINE
 -- local m_sel = m_edit[_L['_Select']]
 
 
+
 function xml()
   local left, right = "<", ">"
   buffer:begin_undo_action()
@@ -44,6 +45,12 @@ textadept.run.build_commands["latex"] = "latexrun %p"
 textadept.run.compile_commands["cpp"] = "ninja"
 textadept.run.compile_commands["ansi_c"] = "ninja"
 textadept.run.compile_commands["fortran"] = "ninja"
+
+local cmd = "/home/istvan/progs/utils/dmenu.py markdown --infile=%p"
+
+-- textadept.run.compile_commands["markdown"] = cmd
+textadept.run.run_commands["markdown"] = cmd
 -- textadept.run.build_commands["cpp"] = "ninja"
+
 
 buffer:set_theme('light', {font = 'Monospace', fontsize = 14})

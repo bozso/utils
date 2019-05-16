@@ -5,6 +5,12 @@ from shlex import split
 from os.path import join as pjoin, basename
 from glob import iglob
 from argparse import ArgumentParser
+from webbrowser import get
+from tempfile import _get_default_tempdir
+from fypp import run_fypp2
+
+
+browser = get("chromium-browser")
 
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
@@ -12,6 +18,7 @@ home = "/home/istvan"
 progs = pjoin(home, "progs")
 temu = "lxterminal"
 gamma_doc = pjoin(home, "Dokumentumok", "gamma_doc")
+
 
 class dmenu(object):
     dmenu_cmd = split("dmenu %s" % opt)
@@ -91,7 +98,8 @@ def pull_repo(path):
            % (pjoin(path, ".git"), path)
     
     try:
-        check_output(split(cmd))
+        with open(pjoin(home, "dmenu.py.log"), "ab") as f:
+            f.write(check_output(split(cmd)))
     except:
         pass
 
@@ -112,13 +120,16 @@ def eofs():
     
     # check_output(split(cmd))
 
+md_temp = pjoin(_get_default_tempdir(), "tmp.md")
 
 def main():
     
     ap = ArgumentParser()
     
     ap.add_argument("mode", help="Mode", type=str,
-                    choices=["modules", "programs", "pull_all"])
+                    choices=["modules", "programs", "pull_all", "markdown"])
+    
+    ap.add_argument("--infile", help="Infile", type=str, nargs="?")
     
     args = ap.parse_args()
     
@@ -133,9 +144,16 @@ def main():
     
     elif args.mode == "pull_all":
         pull_all()
+    elif args.mode == "markdown":
+        run_fypp2([args.infile, md_temp])
+        
+        # cmd = "gpp -C --nostdinc %s -o %s +c /* */" % (, )
+        # check_output(split(cmd))
+
     else:
         check_output(split("dmenu_run %s" % opt))
         
+            
         
     return 0
     
