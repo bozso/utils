@@ -28,6 +28,8 @@
 from argparse import ArgumentParser
 import sys, os
 import re
+from imp import load_source
+
 
 class Templite(object):
     
@@ -73,8 +75,12 @@ class Templite(object):
         tokens = ['# -*- coding: %s -*-' % self.encoding]
         start, end = self.delimiters
         escaped = (re.escape(start), re.escape(end))
+        
+        # TODO: modify regexp so $[a, b]  can be used
         regex = re.compile('%s(.*?)%s' % escaped, re.DOTALL)
+        
         for i, part in enumerate(regex.split(source)):
+            # print(part)
             part = part.replace('\\'.join(start), start)
             part = part.replace('\\'.join(end), end)
             if i % 2 == 0:
@@ -101,12 +107,17 @@ class Templite(object):
             tokens.append(part)
         if offset:
             raise SyntaxError('%i block statement(s) not terminated' % offset)
+        
+        # print("\n".join(tokens))
+        
         return compile('\n'.join(tokens), self.file or '<string>', 'exec')
 
+    
     def render(self, **namespace):
         """Renders the template according to the given namespace."""
         stack = []
         namespace['__file__'] = self.file
+        
         # add write method
         def write(*args):
             for value in args:
@@ -114,6 +125,7 @@ class Templite(object):
                 #    value = value.encode(self.encoding)
                 stack.append(str(value))
         namespace['write'] = write
+        
         # add include method
         def include(file):
             if not os.path.isabs(file):
@@ -125,8 +137,22 @@ class Templite(object):
             t = Templite(None, file, self.encoding,
                             self.delimiters, self.caching)
             stack.append(t.render(**namespace))
-            # stack.append("Included ")
+        
+        def use(file):
+            name = file
+            if not os.path.isabs(file):
+                if self.file:
+                    base = os.path.dirname(self.file)
+                else:
+                    base = os.path.dirname(sys.argv[0])
+                file = os.path.join(base, file)
+            
+            with open(file, "r") as f:
+                stack.append(f.read())
+            
         namespace['include'] = include
+        namespace['use'] = use
         # execute template code
+        
         exec(self._code, namespace)
         return ''.join(stack)

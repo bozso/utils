@@ -12,6 +12,7 @@ from io import open as iopen
 from templite import Templite
 
 
+
 browser = get("chromium-browser")
 
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
@@ -166,11 +167,11 @@ def main():
         pull_all()
     elif args.mode == "markdown":
         tpl = Templite(filename=args.infile)
-
-        empty = {}
+        
+        d = {}
         
         with open(md_temp, "w") as f:
-            f.write(tpl.render(**empty))
+            f.write(tpl.render(**d))
         
         #run_fypp2([args.infile, md_temp])
         
