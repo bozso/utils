@@ -7,6 +7,9 @@ from glob import iglob
 from argparse import ArgumentParser
 from webbrowser import get
 from tempfile import _get_default_tempdir
+from io import open as iopen
+
+from templite import Templite
 
 
 browser = get("chromium-browser")
@@ -121,6 +124,23 @@ def eofs():
 
 md_temp = pjoin(_get_default_tempdir(), "tmp.md")
 
+import re
+import codecs
+
+ESCAPE_SEQUENCE_RE = re.compile(r'''
+    ( \\U........      # 8-digit hex escapes
+    | \\u....          # 4-digit hex escapes
+    | \\x..            # 2-digit hex escapes
+    | \\[0-7]{1,3}     # Octal escapes
+    | \\N\{[^}]+\}     # Unicode characters by name
+    | \\[\\'"abfnrtv]  # Single-character escapes
+    )''', re.UNICODE | re.VERBOSE)
+
+def decode_escapes(s):
+    def decode_match(match):
+        return codecs.decode(match.group(0), 'unicode-escape')
+
+    return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
 
 def main():
     
@@ -145,16 +165,17 @@ def main():
     elif args.mode == "pull_all":
         pull_all()
     elif args.mode == "markdown":
-        #with open(args.infile, "r") as f:
-            #tpl = Template(f.read())
-        #
-        #with open(md_temp, "w") as f:
-            #f.write(tpl.render({}))
+        tpl = Templite(filename=args.infile)
+
+        empty = {}
+        
+        with open(md_temp, "w") as f:
+            f.write(tpl.render(**empty))
         
         #run_fypp2([args.infile, md_temp])
         
-         cmd = "gpp -C --nostdinc %s -o %s +c /* */" % (args.infile, md_temp)
-         check_output(split(cmd))
+         #cmd = "gpp -C --nostdinc %s -o %s +c /* */" % (args.infile, md_temp)
+         #check_output(split(cmd))
 
     else:
         check_output(split("dmenu_run %s" % opt))
