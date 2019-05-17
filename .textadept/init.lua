@@ -46,7 +46,7 @@ textadept.run.compile_commands["cpp"] = "ninja"
 textadept.run.compile_commands["ansi_c"] = "ninja"
 textadept.run.compile_commands["fortran"] = "ninja"
 
-local cmd = "/home/istvan/progs/utils/utils.py markdown --infile=%p"
+local cmd = "/home/istvan/progs/utils/menu.sh markdown %p"
 
 -- textadept.run.compile_commands["markdown"] = cmd
 textadept.run.run_commands["markdown"] = cmd

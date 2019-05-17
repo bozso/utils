@@ -125,6 +125,15 @@ select_module() {
 }
 
 
+md_tmp="/tmp/tmp.md"
+
+
+markdown() {
+    check_narg $# 1
+    gpp -T --nostdinc $1 -o $md_tmp +c "/*" "*/" +c "%" "\n"
+}
+
+
 main() {
     check_narg $# 1
     
@@ -134,6 +143,9 @@ main() {
             ;;
         "modules")
             select_module
+            ;;
+        "markdown")
+            markdown $2
             ;;
         *)
             printf "Unrecognized option %s!\n" $1 >&2
