@@ -7,7 +7,6 @@ from glob import iglob
 from argparse import ArgumentParser
 from webbrowser import get
 from tempfile import _get_default_tempdir
-from utils.quik import Template
 
 
 browser = get("chromium-browser")
@@ -122,6 +121,7 @@ def eofs():
 
 md_temp = pjoin(_get_default_tempdir(), "tmp.md")
 
+
 def main():
     
     ap = ArgumentParser()
@@ -135,7 +135,7 @@ def main():
     
     if args.mode == "modules":
         
-        modules(mc=dmenu.file_list(home, "progs", "*", cmd="mc", interm=True),
+        modules(mc=dmenu(home, **repos, cmd="mc", interm=True),
                 playlist=dmenu.file_list(home, "playlists", "*", cmd="parole"),
                 gamma_doc=dmenu.file_list(home, gamma_doc, "*.html",
                                           cmd="chromium-browser"),
@@ -145,16 +145,16 @@ def main():
     elif args.mode == "pull_all":
         pull_all()
     elif args.mode == "markdown":
-        with open(args.infile, "r") as f:
-            tpl = Template(f.read())
-        
-        with open(md_temp, "w") as f:
-            f.write(tpl.render({}))
+        #with open(args.infile, "r") as f:
+            #tpl = Template(f.read())
+        #
+        #with open(md_temp, "w") as f:
+            #f.write(tpl.render({}))
         
         #run_fypp2([args.infile, md_temp])
         
-        # cmd = "gpp -C --nostdinc %s -o %s +c /* */" % (, )
-        # check_output(split(cmd))
+         cmd = "gpp -C --nostdinc %s -o %s +c /* */" % (args.infile, md_temp)
+         check_output(split(cmd))
 
     else:
         check_output(split("dmenu_run %s" % opt))
