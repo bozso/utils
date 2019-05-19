@@ -7,9 +7,6 @@ from glob import iglob
 from argparse import ArgumentParser
 from webbrowser import get
 from tempfile import _get_default_tempdir
-from io import open as iopen
-
-from templite import Templite
 
 
 
@@ -24,11 +21,11 @@ gamma_doc = pjoin(home, "Dokumentumok", "gamma_doc")
 
 
 class dmenu(object):
-    dmenu_cmd = split("dmenu %s" % opt)
+    cmd = "dmenu %s" % opt
     
     def __init__(self, *args, **kwargs):
+        self.msg = kwargs.pop("msg", None)
         self.cmd, self.interm = kwargs.get("cmd"), kwargs.get("interm", False)
-        
         
         self.options = {arg : arg for arg in args}
         
@@ -48,7 +45,12 @@ class dmenu(object):
     
     
     def select(self):
-        p = Popen(dmenu.dmenu_cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        cmd = dmenu.cmd
+        
+        if self.msg is not None:
+            cmd += ' -p "%s"' % self.msg
+        
+        p = Popen(split(cmd), stdin=PIPE, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate(self.choices)
         
         if p.returncode != 0:
@@ -143,6 +145,19 @@ def decode_escapes(s):
 
     return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
 
+    
+_modules = {
+    "mc": dmenu(home, **repos, cmd="mc", interm=True, msg="Select directory!"),
+    
+    "playlists": dmenu.file_list(home, "playlists", "*", cmd="parole",
+                                       msg="Select playlist!"),
+    
+    "gamma_doc": dmenu.file_list(home, gamma_doc, "*.html", msg="Select doc!",
+                                          cmd="chromium-browser"),
+    "pull_all": pull_all,
+    "eofs": eofs,
+}
+
 def main():
     
     ap = ArgumentParser()
@@ -156,12 +171,7 @@ def main():
     
     if args.mode == "modules":
         
-        modules(mc=dmenu(home, **repos, cmd="mc", interm=True),
-                playlist=dmenu.file_list(home, "playlists", "*", cmd="parole"),
-                gamma_doc=dmenu.file_list(home, gamma_doc, "*.html",
-                                          cmd="chromium-browser"),
-                pull_all=pull_all,
-                eofs=eofs)
+        modules(**_modules)
     
     elif args.mode == "pull_all":
         pull_all()
