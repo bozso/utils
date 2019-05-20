@@ -157,7 +157,60 @@ def main():
         pull_all()
         
     elif args.mode == "markdown":
-        cmd = 'gpp -C --nostdinc %s -o %s +c "%" "\n"' % (args.infile, md_temp)
+        # User-defined mode. The nine following command-line arguments are
+        # taken to be respectively the macro start sequence, the macro end
+        # sequence for a call without arguments, the argument start sequence,
+        # the argument separator, the argument end sequence, the list of
+        # characters to stack for argument balancing, the list of characters
+        # to unstack, the string to be used for referring to an argument by
+        # number, and finally the quote character (if there is none an
+        # empty string should be provided).
+        
+        # macro start, macro end, arg start, arg sep, arg end,
+        # char list to stack, char list to unstack, arg ref by num, quote char
+        
+        # opts = '-U "\\\\" "" "{" "," "}" "{" "}" "#" "@"'
+        udef = {
+            "macro_start": "@",
+            "macro_end": r"",
+            "arg_start": "(",
+            "arg_end": ")",
+            "arg_sep": ",",
+            "stack": "(",
+            "unstack": ")",
+            "bynum": "#",
+            "quote": ""
+        }
+        
+        mdef = {
+            "macro_start": r"\n#\w",
+            "macro_end": r"\n",
+            "arg_start": " ",
+            "arg_end": r"\n",
+            "arg_sep": " ",
+            "stack": "",
+            "unstack": "",
+        }
+        
+        opts = (
+            '-U "{macro_start}" "{macro_end}" "{arg_start}" "{arg_sep}" '
+            '"{arg_end}" "{stack}" "{unstack}" "{bynum}" "{quote}" '
+        ).format(**udef)
+        
+        
+        if 1:
+            opts += (
+                '-M "{macro_start}" "{macro_end}" "{arg_start}" "{arg_sep}" '
+                '"{arg_end}" "{stack}" "{unstack}"'
+            ).format(**mdef)
+        
+        
+        cmd = 'gpp %s -n --nostdinc +c "/*" "*/" +c "%%" "\\n" %s -o %s' \
+              % (opts, args.infile, md_temp)
+        
+        
+        # print(cmd)
+        
         check_output(split(cmd))
         
     else:
