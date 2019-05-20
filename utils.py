@@ -5,12 +5,8 @@ from shlex import split
 from os.path import join as pjoin, basename
 from glob import iglob
 from argparse import ArgumentParser
-from webbrowser import get
 from tempfile import _get_default_tempdir
 
-
-
-browser = get("chromium-browser")
 
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
@@ -68,7 +64,7 @@ class dmenu(object):
         if self.interm:
             cmd = "%s -e '%s %s'" % (temu, self.cmd, mode)
         else:
-            cmd = "%s %s" % (self.cmd, mode)
+            cmd = '%s "%s"' % (self.cmd, mode)
         
         check_output(split(cmd))
         
@@ -125,38 +121,22 @@ def eofs():
     
     # check_output(split(cmd))
 
+
 md_temp = pjoin(_get_default_tempdir(), "tmp.md")
 
-import re
-import codecs
 
-ESCAPE_SEQUENCE_RE = re.compile(r'''
-    ( \\U........      # 8-digit hex escapes
-    | \\u....          # 4-digit hex escapes
-    | \\x..            # 2-digit hex escapes
-    | \\[0-7]{1,3}     # Octal escapes
-    | \\N\{[^}]+\}     # Unicode characters by name
-    | \\[\\'"abfnrtv]  # Single-character escapes
-    )''', re.UNICODE | re.VERBOSE)
-
-def decode_escapes(s):
-    def decode_match(match):
-        return codecs.decode(match.group(0), 'unicode-escape')
-
-    return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
-
-    
 _modules = {
     "mc": dmenu(home, **repos, cmd="mc", interm=True, msg="Select directory!"),
     
-    "playlists": dmenu.file_list(home, "playlists", "*", cmd="parole",
-                                       msg="Select playlist!"),
+    "playlists": dmenu.file_list(home, "Zenék", "playlists", "*", cmd="parole",
+                                 msg="Select playlist!"),
     
     "gamma_doc": dmenu.file_list(home, gamma_doc, "*.html", msg="Select doc!",
                                           cmd="chromium-browser"),
     "pull_all": pull_all,
     "eofs": eofs,
 }
+
 
 def main():
     
@@ -169,32 +149,22 @@ def main():
     
     args = ap.parse_args()
     
+    
     if args.mode == "modules":
-        
         modules(**_modules)
     
     elif args.mode == "pull_all":
         pull_all()
+        
     elif args.mode == "markdown":
-        tpl = Templite(filename=args.infile)
+        cmd = 'gpp -C --nostdinc %s -o %s +c "%" "\n"' % (args.infile, md_temp)
+        check_output(split(cmd))
         
-        d = {}
-        
-        with open(md_temp, "w") as f:
-            f.write(tpl.render(**d))
-        
-        #run_fypp2([args.infile, md_temp])
-        
-         #cmd = "gpp -C --nostdinc %s -o %s +c /* */" % (args.infile, md_temp)
-         #check_output(split(cmd))
-
     else:
         check_output(split("dmenu_run %s" % opt))
-        
-            
+    
         
     return 0
-    
 
 
 if __name__ == "__main__":
