@@ -264,12 +264,6 @@
         <menu>client-menu</menu>
       </action>
     </keybind>
-    <!-- Take a screenshot of the current window with gnome-screenshot when Alt+Print are pressed -->
-    <keybind key="A-Print">
-      <action name="Execute">
-        <command>gnome-screenshot -w</command>
-      </action>
-    </keybind>
     <!-- Keybindings for window switching -->
     <keybind key="A-Tab">
       <action name="NextWindow">
@@ -312,14 +306,6 @@
       </action>
     </keybind>
 
-<!--
-    <keybind key="W-r">
-      <action name="Execute">
-        <command>xtightvncviewer robosztus.ggki.hu:6</command>
-      </action>
-    </keybind>  
--->
-
     <keybind key="W-r">
       <action name="Execute">
         <command>openbox --reconfigure --config-file /home/istvan/progs/utils/openbox-rc.xml</command>
@@ -332,40 +318,21 @@
       </action>
     </keybind>
 
-
-    <keybind key="Print">
-      <action name="Execute">
-        <command>gnome-screenshot</command>
-      </action>
-    </keybind>
-
-    <keybind key="W-g">
-      <action name="Execute">
-        <command>geany</command>
-      </action>
-    </keybind>
-
     <keybind key="W-w">
       <action name="Execute">
         <command>chromium-browser</command>
       </action>
     </keybind>
 
-    <keybind key="C-A-t">
-      <action name="Execute">
-        <command>lxterminal</command>
-      </action>
-    </keybind>
-
     <keybind key="W-m">
       <action name="Execute">
-        <command>sh /home/istvan/progs/utils/dmenu.sh modules</command>
+        <command>sh /home/istvan/progs/utils/menu.sh modules</command>
       </action>
     </keybind>
 
     <keybind key="C-space">
       <action name="Execute">
-        <command>sh /home/istvan/progs/utils/dmenu.sh programs</command>
+        <command>sh /home/istvan/progs/utils/menu.sh programs</command>
       </action>
     </keybind>
 
@@ -387,18 +354,10 @@
 
     <keybind key="W-l">
       <action name="Execute">
-        <startupnotify>
-          <enabled>false</enabled>
-          <name>Lock Screen</name>
-        </startupnotify>
-        <command>i3lock -c 000000 -n</command>
+        <command>libreoffice</command>
       </action>
     </keybind>
-    <keybind key="A-F2">
-      <action name="Execute">
-        <command>gmrun</command>
-      </action>
-    </keybind>
+
     <!-- Snapping windows -->
     <keybind key="W-Return">
       <action name="ToggleMaximizeFull"/>
