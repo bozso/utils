@@ -46,10 +46,11 @@ textadept.run.compile_commands["cpp"] = "ninja"
 textadept.run.compile_commands["ansi_c"] = "ninja"
 textadept.run.compile_commands["fortran"] = "ninja"
 
-local cmd = "python /home/istvan/progs/utils/utils.py markdown --infile %p"
+local cmd = "python /home/istvan/progs/utils/utils.py markup --infile %p"
 
--- textadept.run.compile_commands["markdown"] = cmd
 textadept.run.run_commands["markdown"] = cmd
+textadept.run.run_commands["html"] = cmd
+
 -- textadept.run.build_commands["cpp"] = "ninja"
 
 

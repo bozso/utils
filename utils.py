@@ -2,7 +2,7 @@
 
 from subprocess import Popen, PIPE, check_output
 from shlex import split
-from os.path import join as pjoin, basename
+from os.path import join as pjoin, basename, splitext
 from glob import iglob
 from argparse import ArgumentParser
 from tempfile import _get_default_tempdir
@@ -122,7 +122,7 @@ def eofs():
     # check_output(split(cmd))
 
 
-md_temp = pjoin(_get_default_tempdir(), "tmp.md")
+temp = pjoin(_get_default_tempdir(), "tmp%s")
 
 
 _modules = {
@@ -143,7 +143,7 @@ def main():
     ap = ArgumentParser()
     
     ap.add_argument("mode", help="Mode", type=str,
-                    choices=["modules", "programs", "pull_all", "markdown"])
+                    choices=["modules", "programs", "pull_all", "markup"])
     
     ap.add_argument("--infile", help="Infile", type=str, nargs="?")
     
@@ -156,7 +156,7 @@ def main():
     elif args.mode == "pull_all":
         pull_all()
         
-    elif args.mode == "markdown":
+    elif args.mode == "markup":
         # User-defined mode. The nine following command-line arguments are
         # taken to be respectively the macro start sequence, the macro end
         # sequence for a call without arguments, the argument start sequence,
@@ -168,6 +168,10 @@ def main():
         
         # macro start, macro end, arg start, arg sep, arg end,
         # char list to stack, char list to unstack, arg ref by num, quote char
+        
+        infile = args.infile
+        
+        ext = splitext(infile)[1]
         
         # opts = '-U "\\\\" "" "{" "," "}" "{" "}" "#" "@"'
         udef = {
@@ -192,24 +196,27 @@ def main():
             "unstack": "",
         }
         
-        opts = (
-            '-U "{macro_start}" "{macro_end}" "{arg_start}" "{arg_sep}" '
-            '"{arg_end}" "{stack}" "{unstack}" "{bynum}" "{quote}" '
-        ).format(**udef)
+        
+        if 0:
+            opts = (
+                '-U "{macro_start}" "{macro_end}" "{arg_start}" "{arg_sep}" '
+                '"{arg_end}" "{stack}" "{unstack}" "{bynum}" "{quote}" '
+            ).format(**udef)
         
         
-        if 1:
+        if 0:
             opts += (
                 '-M "{macro_start}" "{macro_end}" "{arg_start}" "{arg_sep}" '
                 '"{arg_end}" "{stack}" "{unstack}"'
             ).format(**mdef)
         
         
-        cmd = 'gpp %s -n --nostdinc +c "/*" "*/" +c "%%" "\\n" %s -o %s' \
-              % (opts, args.infile, md_temp)
+        if ext == ".html":
+            opts = '-T +c "/*" "*/" +c "$" "\\n" --nostdinc'
+        else:
+            opts = '-T +c "/*" "*/" +c "%" "\\n" --nostdinc'
         
-        
-        # print(cmd)
+        cmd = "gpp %s %s -o %s" % (opts, infile, temp % ext)
         
         check_output(split(cmd))
         
