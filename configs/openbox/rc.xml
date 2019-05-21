@@ -299,15 +299,18 @@
 
     <keybind key="W-r">
       <action name="Execute">
-        <command>openbox --reconfigure --config-file /home/istvan/progs/utils/openbox-rc.xml</command>
+        <command>openbox --reconfigure</command>
+        <command>killall -SIGUSR1 tint2</command>
       </action>
     </keybind>
 
+    <!--
     <keybind key="W-i">
       <action name="Execute">
-        <command>import import.png</command>
+        <command>parole</command>
       </action>
     </keybind>
+    -->
 
     <keybind key="W-w">
       <action name="Execute">
