@@ -131,7 +131,7 @@ PROOT="/home/istvan/packages"
 #}
 
 
-TXA="$UTILS_DIR/.textadept"
+TXA="$UTILS_DIR/configs/textadept"
 
 alias editor="$PROGS/textadept/textadept"
 
