@@ -211,12 +211,9 @@ def main():
             ).format(**mdef)
         
         
-        if ext == ".html":
-            opts = '-T +c "/*" "*/" +c "$" "\\n" --nostdinc'
-        else:
-            opts = '-T +c "/*" "*/" +c "%" "\\n" --nostdinc'
+        opts = '-T +c "/*" "*/" --nostdinc'
         
-        cmd = "gpp %s %s -o %s" % (opts, infile, temp % ext)
+        cmd = "gpp %s %s -o %s" % (opts, infile, temp % ".md")
         
         check_output(split(cmd))
         

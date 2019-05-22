@@ -136,7 +136,7 @@ TXA="$UTILS_DIR/configs/textadept"
 alias editor="$PROGS/textadept/textadept"
 
 ta() {
-    editor -u "$TXA" -f "$@" &
+    editor -u "$TXA" "$@" &
 }
 
 
