@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-from subprocess import Popen, PIPE, check_output
+from subprocess import check_output, STDOUT, CalledProcessError
 from shlex import split
 from os.path import join as pjoin, basename, splitext
 from glob import iglob
@@ -8,7 +6,19 @@ from argparse import ArgumentParser
 from tempfile import _get_default_tempdir
 
 
-opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
+__all__ = [
+    "cmd",
+    "dmenu",
+    "Repo",
+    "Argp",
+    "pos",
+    "opt",
+    "flag"
+]
+
+    
+    
+dopt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
 home = "/home/istvan"
 progs = pjoin(home, "progs")
@@ -16,8 +26,124 @@ temu = "lxterminal"
 gamma_doc = pjoin(home, "Dokumentumok", "gamma_doc")
 
 
+def cmd(*args, **kwargs):
+    debug = kwargs.pop("debug", False)
+    
+    Cmd = " ".join(args)
+    
+    if debug:
+        print(Cmd)
+        return
+    
+    try:
+        proc = check_output(split(Cmd), stderr=STDOUT)
+    except CalledProcessError as e:
+        print("\nNon zero returncode from command: \n'{}'\n"
+              "\nOUTPUT OF THE COMMAND: \n\n{}\nRETURNCODE was: {}"
+              .format(Cmd, e.output.decode(), e.returncode))
+        raise e
+    
+
+    return proc
+
+def pos(name, help=None, type=str, choices=None, nargs=None):
+    return (name, help, None, "pos", None, type, choices, nargs)
+
+
+def opt(name, help=None, alt=None, type=str, choices=None,
+        default=None, nargs=None):
+    return (name, help, default, "opt", alt, type, choices, nargs)
+    
+
+def flag(name, help=None, alt=None):
+    return (name, help, None, "flag", alt, None, None, nargs)
+
+
+class Argp(ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        subcmd = bool(kwargs.pop("subcmd", False))
+        
+        ArgumentParser.__init__(self, **kwargs)
+        
+        if subcmd:
+            self.subparser = self.add_subparsers(**kwargs)
+        else:
+            self.subparser = None
+        
+        self.addargs(*args)
+
+    
+    def addargs(self, *args):
+        for arg in args:
+            Argp.ap_add_arg(self, arg)
+
+    
+    def subp(self, **kwargs):
+        if self.subparser is None:
+            self.subparser = self.add_subparsers(**kwargs)
+    
+    
+    def subcmd(self, fun, *args, **kwargs):
+        subtmp = self.subparser.add_parser(fun.__name__, **kwargs)
+        
+        for arg in args:
+            Argp.ap_add_arg(subtmp,  arg)
+        
+        subtmp.set_defaults(fun=fun)
+    
+    
+    @staticmethod
+    def ap_add_arg(obj, arg):
+        if arg[3] == "opt":
+            if arg[4] is not None:
+                obj.add_argument(
+                    "--{}".format(arg[0]), "-{}".format(arg[4]),
+                    help=arg[1],
+                    type=arg[5],
+                    default=arg[2],
+                    nargs=arg[7],
+                    choices=arg[6])
+            else:
+                obj.add_argument(
+                    "--{}".format(arg[0]),
+                    help=arg[1],
+                    type=arg[5],
+                    default=arg[2],
+                    nargs=arg[7],
+                    choices=arg[6])
+        elif arg[3] == "pos":
+            obj.add_argument(
+                arg[0],
+                help=arg[1],
+                type=arg[5],
+                choices=arg[6])
+        
+        elif arg[3] == "flag":
+            obj.add_argument(
+                "--{}".format(arg[0]),
+                help=arg[1],
+                action="store_true")
+
+
+class Repo(object):
+    git_exe = "git"
+    
+    def __init__(self, path=".", github=False, user=None):
+        self.path = pjoin(path, ".git")
+        self.options = '--git-dir="%s"' % (self.path)
+    
+    def __call__(self, *args, **kwargs):
+        cmd(Repo.git_exe, *args, **kwargs)
+    
+    def stat(self):
+        self("status")
+
+    def push(self):
+        self("push")
+    
+    
 class dmenu(object):
-    cmd = "dmenu %s" % opt
+    cmd = "dmenu %s" % dopt
     
     def __init__(self, *args, **kwargs):
         self.msg = kwargs.pop("msg", None)

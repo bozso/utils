@@ -63,7 +63,7 @@ border_color_pressed = #000000 100
 #-------------------------------------
 # Panel
 panel_items = LTSC
-panel_size = 100% 30
+panel_size = 100% 35
 panel_margin = 0 0
 panel_padding = 2 0 2
 panel_background_id = 1
@@ -148,11 +148,6 @@ launcher_icon_asb = 100 0 0
 launcher_icon_theme_override = 0
 startup_notifications = 1
 launcher_tooltip = 1
-launcher_item_app = tint2conf.desktop
-launcher_item_app = firefox.desktop
-launcher_item_app = iceweasel.desktop
-launcher_item_app = chromium-browser.desktop
-launcher_item_app = google-chrome.desktop
 
 #-------------------------------------
 # Clock
@@ -174,12 +169,12 @@ clock_dwheel_command =
 #-------------------------------------
 # Battery
 battery_tooltip = 1
-battery_low_status = 10
-battery_low_cmd = notify-send "battery low"
-battery_full_cmd = 
+battery_low_status = 20
+battery_low_cmd = notify-send "Battery low: 20% charge"
+battery_full_cmd = notify-send "Battery charged"
 battery_font_color = #ffffff 100
-bat1_format = 
-bat2_format = 
+bat1_format = %s %p
+bat2_format = %t
 battery_padding = 1 0
 battery_background_id = 0
 battery_hide = 101

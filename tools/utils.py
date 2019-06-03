@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from subprocess import check_output, CalledProcessError, STDOUT
+from subprocess import check_output, STDOUT
 from shlex import split
 from os import mkdir, path as pth
 from argparse import ArgumentParser
@@ -12,7 +12,7 @@ __all__ = ("cmd", "argp")
 
 home_path = pth.expanduser("~")
 screenap_dir = pth.join(home_path, "screencaps")
-
+    
 
 if not pth.isdir(screenap_dir):
     mkdir(screenap_dir)

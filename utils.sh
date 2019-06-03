@@ -48,41 +48,10 @@ check_narg() {
 }
 
 
-push() {
-    git commit -am $1
-    git push origin master
-}
-
-
-pull() {
-    git pull origin master
-
-}
-
-stat() {
-    git status
-}
-
-
 gm() {
-    check_narg $# 1
-    
-    case $1 in
-        "push")
-            push $1
-            ;;
-        "pull")
-            pull
-            ;;
-        "stat")
-            stat
-            ;;
-        *)
-            printf "Unrecognized option %s!\n" $1 >&2
-            exit
-            ;;
-    esac
+    python $UTILS_DIR/tools/git.py $*
 }
+
 
 proton() {
     check_narg $# 1
