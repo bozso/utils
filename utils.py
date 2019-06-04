@@ -213,7 +213,7 @@ def main():
         
         opts = '-T +c "/*" "*/" --nostdinc'
         
-        cmd = "gpp %s %s -o %s" % (opts, infile, temp % ".md")
+        cmd = "gpp %s %s -o %s" % (opts, infile, temp % ext)
         
         check_output(split(cmd))
         
