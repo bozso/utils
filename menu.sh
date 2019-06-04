@@ -160,8 +160,8 @@ git_remote_add() {
 
 git_push() {
     check_narg $# 1
-    echo "git commit -a -m \"$@\""
-    git commit -a -m "$@"
+    echo "git commit -am \"$1\""
+    git commit -am "$1"
     git push origin master
 }
 
