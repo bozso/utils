@@ -3,14 +3,14 @@ buffer.tab_width = 4
 buffer.use_tabs = false
 buffer.edge_column = 79
 buffer.edge_mode= buffer.EDGE_LINE
-
+-- textadept.editing.auto_pairs = nil
 
 -- local _L = require('locale')
 
 -- local m_edit = textadept.menu.menubar[_L['_Edit']]
 -- local m_sel = m_edit[_L['_Select']]
 
-
+textadept.file_types.extensions["gpp"] = "ansi_c"
 
 function xml()
   local left, right = "<", ">"
