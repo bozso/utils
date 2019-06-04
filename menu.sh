@@ -40,6 +40,28 @@ get_pair() {
 repo_names=$(echo $repos | get_name)
 
 
+notify() {
+    if [ -n "$3" ]; then
+        notify-send -i "$ICONS/$3" "$1" "$2" -t 500
+    else
+        notify-send "$1" "$2" -t 500
+    fi
+}
+
+
+pull_all() {
+    for line in $repos; do
+        local name=$(echo $line | get_name)
+        local path=$(echo $line | get_path)
+        # cd
+        # notify  "$path" "github.png"
+        
+        cd $path
+        notify "Pulling repo: $name" "$(git pull origin master)" "github.png"
+    done
+}
+
+
 extract_music() {
     IFS=$'\n'
     for zipfile in $(ls /tmp/*.zip); do
@@ -53,15 +75,6 @@ extract_music() {
 
 last_field() {
     awk -F '/' '{print $NF}'
-}
-
-
-notify() {
-    if [ -n "$3" ]; then
-        notify-send -i "$ICONS/$3" "$1" "$2"
-    else
-        notify-send "$1" "$2"
-    fi
 }
 
 
@@ -118,6 +131,7 @@ ssh
 pull_all
 "
 
+
 select_module() {
     local select=$(printf "%s\n" $modules | mymenu -p "Select from modules:")
     
@@ -143,6 +157,7 @@ md_tmp="/tmp/tmp.md"
 
 markdown() {
     check_narg $# 1
+    notify "Preprocessing markdown." "$1" "markdown.png"
     gpp -C --nostdinc $1 -o $md_tmp
 }
 
