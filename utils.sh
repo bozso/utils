@@ -7,6 +7,8 @@ alias reload='source $UTILS_DIR/utils.sh'
 export temu=lxterminal
 browser="chromium-browser"
 
+alias pull_all="sh $UTILS_DIR/menu.sh pull_all"
+
 update_clean() {
     sudo apt-get update
     sudo apt-get upgrade

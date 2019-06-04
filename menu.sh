@@ -42,14 +42,14 @@ repo_names=$(echo $repos | get_name)
 
 notify() {
     if [ -n "$3" ]; then
-        notify-send -i "$ICONS/$3" "$1" "$2" -t 500
+        notify-send -i "$ICONS/$3" "$1" "$2" -t 1500
     else
-        notify-send "$1" "$2" -t 500
+        notify-send "$1" "$2" -t 1500
     fi
 }
 
 
-pull_all() {
+_pull_all() {
     for line in $repos; do
         local name=$(echo $line | get_name)
         local path=$(echo $line | get_path)
@@ -146,7 +146,7 @@ select_module() {
             ssh
             ;;
         "pull_all")
-            pull_all
+            _pull_all
             ;;
     esac
 }
@@ -217,6 +217,9 @@ main() {
         "git")
             shift
             git_manage $@
+            ;;
+        "pull_all")
+            _pull_all
             ;;
         *)
             printf "Unrecognized option %s!\n" $1 >&2
