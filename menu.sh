@@ -7,6 +7,35 @@ opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 alias mymenu="dmenu $opt"
 
 
+repos="
+insar_meteo:$PROGS/insar_meteo\n
+utils:$PROGS/utils\n
+texfiles:/home/istvan/Dokumentumok/texfiles
+"
+
+get_name() {
+    awk -F ':' '{print $1}'
+}
+
+get_path() {
+    awk -F ':' '{print $NF}'
+}
+
+
+get_pair() {
+    for line in $repos; do
+        case $(echo $line | get_name) in
+            *$1*)
+                echo $(echo $line | get_path)
+                ;;
+        esac
+    done
+}
+
+
+repo_names=$(echo $repos | get_name)
+
+
 extract_music() {
     IFS=$'\n'
     for zipfile in $(ls /tmp/*.zip); do
@@ -25,27 +54,28 @@ if_nempty() {
 
 
 last_field() {
-    while read data; do
-        printf "%s\n" $(printf "%s\n" $data | awk -F '/' '{print $NF}')
-    done
+    awk -F '/' '{print $NF}'
 }
 
 
 playlists() {
-    local path="/home/istvan/playlists"
+    local path="/home/istvan/Zenék/playlists"
     
-    local select=$(ls -1 $path/*.m3u | last_field | mymenu)
+    local select=$(ls -1 $path/* | last_field | mymenu)
     
     if_nempty $select "parole $path/$select &"
 }
 
 
-mc() {
-    local path="/home/istvan/progs"
+commander() {
+    local select=$(printf "%s\n" $repo_names | \
+                   mymenu -p "Select progs directory:")
     
-    local select=$(ls -1 -d $path/* | last_field | \
-                   mymenu -p "Select progs directory")
-    if_nempty $select "$temu -e 'mc $path/$select'"
+    if [ -n "$select" ]; then
+        local path=$(get_pair $select)
+        notify-send "Started mc in directory:" "$path"
+        $temu -e "mc $path"
+    fi
 }
 
 
@@ -54,9 +84,11 @@ ssh() {
     
     case $select in
         "robosztus")
+            notify-send "Connecting to remote machine:" "istvan@robosztus.ggki.hu"
             $temu -e 'ssh -Y istvan@robosztus.ggki.hu'
             ;;
         "zafir")
+            notify-send "Connecting to remote machine:" "istvan@zafir.ggki.hu"
             $temu -e 'ssh -Y istvan@zafir.ggki.hu'
             ;;
         *)
@@ -102,24 +134,28 @@ git_repo_manage() {
 }
 
 
+modules="
+playlist
+mc
+ssh
+pull_all
+"
+
 select_module() {
-    local select=$(printf "playlist\nmc\nssh\npush\npull" | mymenu -p "Select from modules")
+    local select=$(printf "%s\n" $modules | mymenu -p "Select from modules:")
     
     case $select in
         "playlist")
             playlists
             ;;
         "mc")
-            mc
+            commander
             ;;
         "ssh")
             ssh
             ;;
-        "push")
-            git_repo_manage push
-            ;;
-        "pull")
-            git_repo_manage pull
+        "pull_all")
+            pull_all
             ;;
     esac
 }
@@ -130,12 +166,22 @@ md_tmp="/tmp/tmp.md"
 
 markdown() {
     check_narg $# 1
-    gpp -T --nostdinc $1 -o $md_tmp +c "/*" "*/" +c "%" "\n"
+    gpp -C --nostdinc $1 -o $md_tmp
 }
 
 
 main() {
     check_narg $# 1
+    #local select=$(printf "%s\n" $repo_names | \
+    #               mymenu -p "Select progs directory")
+    #
+    #echo $select
+    #
+    #return
+    
+    # get_pair "insar_meteo"
+    
+    #return
     
     case $1 in
         "programs")
