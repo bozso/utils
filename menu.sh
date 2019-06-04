@@ -2,6 +2,8 @@
 
 . "/home/istvan/progs/utils/utils.sh"
 
+ICONS="$UTILS_DIR/icons"
+
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
 alias mymenu="dmenu $opt"
@@ -67,13 +69,22 @@ playlists() {
 }
 
 
+notify() {
+    if [ -n "$3" ]; then
+        notify-send -i "$ICONS/$3" "$1" "$2"
+    else
+        notify-send "$1" "$2"
+    fi
+}
+
+
 commander() {
     local select=$(printf "%s\n" $repo_names | \
                    mymenu -p "Select progs directory:")
     
     if [ -n "$select" ]; then
         local path=$(get_pair $select)
-        notify-send "Started mc in directory:" "$path"
+        notify "Started Midnight Commander." "$path" "mc.png"
         $temu -e "mc $path"
     fi
 }
