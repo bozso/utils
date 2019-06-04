@@ -154,14 +154,14 @@ git_status() {
 git_remote_add() {
     check_narg $# 1
 
-    git remote add origin $1
+    git remote add origin "$1"
 }
 
 
 git_push() {
     check_narg $# 1
-    echo "git commit -am \"$1\""
-    git commit -am "$1"
+    echo "git commit -am \"$*\""
+    git commit -am "$*"
     git push origin master
 }
 
