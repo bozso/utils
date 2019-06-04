@@ -1,5 +1,7 @@
 #! /usr/bin/env sh
 
+set -e
+
 . "/home/istvan/progs/utils/utils.sh"
 
 ICONS="$UTILS_DIR/icons"
@@ -48,24 +50,9 @@ extract_music() {
 }
 
 
-if_nempty() {
-    if [ -n "$1" ]; then
-        eval "$2"
-    fi
-}
-
 
 last_field() {
     awk -F '/' '{print $NF}'
-}
-
-
-playlists() {
-    local path="/home/istvan/Zenék/playlists"
-    
-    local select=$(ls -1 $path/* | last_field | mymenu)
-    
-    if_nempty $select "parole $path/$select &"
 }
 
 
@@ -74,6 +61,20 @@ notify() {
         notify-send -i "$ICONS/$3" "$1" "$2"
     else
         notify-send "$1" "$2"
+    fi
+}
+
+
+playlists() {
+    local path="/home/istvan/Zenék/playlists"
+    
+    local select=$(ls -1 $path/* | last_field | mymenu)
+    
+    
+    if [ -n "$select" ]; then
+        local path="$path/$select"
+        notify "Playing music" "$path" "music_note.png"
+        parole $path &
     fi
 }
 
@@ -93,54 +94,19 @@ commander() {
 ssh() {
     local select=$(printf "robosztus\nzafir\n" | mymenu -p "Select server")
     
+    local header="Connecting to remote machine."
+    
     case $select in
         "robosztus")
-            notify-send "Connecting to remote machine:" "istvan@robosztus.ggki.hu"
+            notify "$header" "istvan@robosztus.ggki.hu" "ssh.png"
             $temu -e 'ssh -Y istvan@robosztus.ggki.hu'
             ;;
         "zafir")
-            notify-send "Connecting to remote machine:" "istvan@zafir.ggki.hu"
+            notify "$header" "istvan@zafir.ggki.hu" "ssh.png"
             $temu -e 'ssh -Y istvan@zafir.ggki.hu'
             ;;
         *)
             printf "Unknown option: %s!\n" $select
-    esac
-}
-
-
-git_repo_manage() {
-    local path="/home/istvan/progs"
-    local gtmp="/tmp/git_commit_tpl"
-    
-    
-    
-    
-    
-    local select=$(printf "utils\ngamma\ninsar_meteo\n"| mymenu -p "Select from github repos")
-    
-    local gdir=$(printf "--git-dir=%s/%s" $path $select)
-    local _push="nano \"$gtmp\";git commit -a -F \"$gtmp\" $gdir;\
-                 git push origin master $gdir;rm \"$gtmp\";"
-    
-    case $1 in
-        "pull")
-            $temu -e "echo asd; cd $path/$select; git pull origin master"
-            ;;
-        "push")
-            # $temu -e sh -c "$_push"
-            # ta "$gtmp"
-            $temu -e "git commit -a $gdir > /home/istvan/debug"
-
-            #cd $path/$select
-            #
-            #echo "Set commit message"
-            #nano "$gtmp"
-            #
-            #git commit -a -F "$gtmp"
-            #git push origin master
-            #
-            #rm "$gtmp"
-            ;;
     esac
 }
 
@@ -181,18 +147,44 @@ markdown() {
 }
 
 
+git_status() {
+    git status
+}
+
+git_remote_add() {
+    check_narg $# 1
+
+    git remote add origin $1
+}
+
+
+git_push() {
+    check_narg $# 1
+    git commit -am "$1"
+    git push remote 
+}
+
+git_manage() {
+    check_narg $# 1
+    
+    case $1 in
+        "stat")
+            git_status
+            ;;
+        "push")
+            shift
+            git_push $@
+            ;;
+        *)
+            printf "Unrecognized option %s!\n" $1 >&2
+            return 1
+            ;;
+    esac
+}
+
+
 main() {
     check_narg $# 1
-    #local select=$(printf "%s\n" $repo_names | \
-    #               mymenu -p "Select progs directory")
-    #
-    #echo $select
-    #
-    #return
-    
-    # get_pair "insar_meteo"
-    
-    #return
     
     case $1 in
         "programs")
@@ -204,10 +196,14 @@ main() {
         "markdown")
             markdown $2
             ;;
+        "git")
+            shift
+            git_manage $@
+            ;;
         *)
             printf "Unrecognized option %s!\n" $1 >&2
-            exit
-        ;;
+            return 1
+            ;;
     esac
 }
 

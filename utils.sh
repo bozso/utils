@@ -43,13 +43,13 @@ perr() {
 check_narg() {
     if [ "$1" -lt "$2" ]; then
         perr "error: Wrong number of arguments!"
-        exit
+        return 1
     fi
 }
 
 
 gm() {
-    python $UTILS_DIR/tools/git.py $*
+    sh $UTILS_DIR/menu.sh git $*
 }
 
 
@@ -69,16 +69,6 @@ proton() {
     python "$e_proton" run $1
     
 }
-
-#function gs_radd {
-#
-#    if [[ $# -ne 1 ]]; then
-#        echoerr "error: gs_radd: One argument (remote repository address) is required!"
-#        return 1
-#    fi
-#
-#    git remote add origin $1
-#}
 
 
 PROOT="/home/istvan/packages"
