@@ -353,5 +353,17 @@ def main():
     return 0
 
 
+def screencap(args):
+    pngs = tuple(int(pth.splitext(pth.basename(png))[0])
+                     for png in iglob(pth.join(screenap_dir, "*.png")))
+    
+    if pngs:
+        last = max(pngs)
+    else:
+        last = -1
+    
+    cmd("import", pth.join(screenap_dir, "%d.png" % (last + 1)))
+
+
 if __name__ == "__main__":
     main()
