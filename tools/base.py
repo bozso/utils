@@ -9,11 +9,11 @@ from tempfile import _get_default_tempdir
 __all__ = [
     "cmd",
     "dmenu",
-    "Repo",
-    "Argp",
     "pos",
     "opt",
-    "flag"
+    "flag",
+    "annot",
+    "CParse"
 ]
 
     
@@ -45,101 +45,104 @@ def cmd(*args, **kwargs):
     
 
     return proc
+# name, flags, action, nargs, const, default, type, choices,
+# required, help, metavar, dest
 
-def pos(name, help=None, type=str, choices=None, nargs=None):
-    return (name, help, None, "pos", None, type, choices, nargs)
+def pos(action="store", help=None, type=str, choices=None,
+        nargs=None, metavar=None, dest=None, const=None):
+    return {
+        "action": action,
+        "nargs": nargs,
+        "type": type,
+        "choices": choices,
+        "help": help,
+        "metavar": metavar,
+        # "dest": dest,
+        "kind": "pos"
+    }
 
 
-def opt(name, help=None, alt=None, type=str, choices=None,
-        default=None, nargs=None):
-    return (name, help, default, "opt", alt, type, choices, nargs)
+def opt(short=None, action="store", help=None, type=str, choices=None,
+        nargs=None, metavar=None, dest=None, default=None, const=None):
     
+    ret = {
+        "action": action,
+        "nargs": nargs,
+        "default": default,
+        "type": type,
+        "choices": choices,
+        "required": False,
+        "help": help,
+        "metavar": metavar,
+        "dest": dest,
+        "nargs": nargs,
+        "kind": "opt"
+    }
+    
+    
+    # if short is not None:
+    #     ret["flags"] = "-" + short
+    
+    return ret
 
-def flag(name, help=None, alt=None):
-    return (name, help, None, "flag", alt, None, None, nargs)
+
+def flag(short=None, action="store_true", help=None, dest=None):
+
+    ret = {
+        "action": action,
+        "help": help,
+        "dest": dest,
+        "kind": "flag"
+    }
+    
+    
+    # if short is not None:
+    #     ret["flags"] = "-" + short
+    
+    return ret
 
 
-class Argp(ArgumentParser):
-    def __init__(self, *args, **kwargs):
-        subcmd = bool(kwargs.pop("subcmd", False))
+def annot(**kwargs):
+    def annotate(f):
+        f.__annotations__ = kwargs
+        return f
         
-        ArgumentParser.__init__(self, **kwargs)
-        
-        if subcmd:
-            self.subparser = self.add_subparsers(**kwargs)
-        else:
-            self.subparser = None
-        
-        self.addargs(*args)
+    return annotate
 
-    
-    def addargs(self, *args):
-        for arg in args:
-            Argp.ap_add_arg(self, arg)
 
-    
-    def subp(self, **kwargs):
-        if self.subparser is None:
-            self.subparser = self.add_subparsers(**kwargs)
-    
-    
-    def subcmd(self, fun, *args, **kwargs):
-        subtmp = self.subparser.add_parser(fun.__name__, **kwargs)
+class CParse(object):
+    def __init__(self, **kwargs):
+        self.argp, self.args = ArgumentParser(**kwargs), None
         
-        for arg in args:
-            Argp.ap_add_arg(subtmp,  arg)
-        
-        subtmp.set_defaults(fun=fun)
-    
-    
-    @staticmethod
-    def ap_add_arg(obj, arg):
-        if arg[3] == "opt":
-            if arg[4] is not None:
-                obj.add_argument(
-                    "--{}".format(arg[0]), "-{}".format(arg[4]),
-                    help=arg[1],
-                    type=arg[5],
-                    default=arg[2],
-                    nargs=arg[7],
-                    choices=arg[6])
+        for key, value in self.__init__.__annotations__.items():
+            if value.pop("kind") == "pos":
+                self.argp.add_argument(key, **value)
             else:
-                obj.add_argument(
-                    "--{}".format(arg[0]),
-                    help=arg[1],
-                    type=arg[5],
-                    default=arg[2],
-                    nargs=arg[7],
-                    choices=arg[6])
-        elif arg[3] == "pos":
-            obj.add_argument(
-                arg[0],
-                help=arg[1],
-                type=arg[5],
-                choices=arg[6])
+                self.argp.add_argument("--" + key, **value)
+            
         
-        elif arg[3] == "flag":
-            obj.add_argument(
-                "--{}".format(arg[0]),
-                help=arg[1],
-                action="store_true")
-
-
-class Repo(object):
-    git_exe = "git"
+        self.subparser = self.argp.add_subparsers(**kwargs)
+        
+        for cmd in self.commands:
+            fun = getattr(self, cmd)
+            subp = self.subparser.add_parser(fun.__name__)
+            
+            for key, value in fun.__annotations__.items():
+                if value.pop("kind") == "pos":
+                    subp.add_argument(key, **value)
+                else:
+                    subp.add_argument("--" + key, **value)
+            
+            subp.set_defaults(fun=fun)
     
-    def __init__(self, path=".", github=False, user=None):
-        self.path = pjoin(path, ".git")
-        self.options = '--git-dir="%s"' % (self.path)
     
-    def __call__(self, *args, **kwargs):
-        cmd(Repo.git_exe, *args, **kwargs)
+    def __getitem__(self, item):
+        return getattr(self.args, item)
     
-    def stat(self):
-        self("status")
-
-    def push(self):
-        self("push")
+    
+    def parse(self):
+        self.args = self.argp.parse_args()
+        
     
     
 class dmenu(object):
