@@ -95,11 +95,15 @@ PROOT="/home/istvan/packages"
 TXA="$UTILS_DIR/configs/textadept"
 
 alias editor="$PROGS/textadept/textadept"
+alias editor_term="$PROGS/textadept/textadept-curses"
 
-ta() {
+taw() {
     editor -u "$TXA" "$@" &
 }
 
+ta() {
+    editor_term -u "$TXA" "$@"
+}
 
 markdown_compile() {
     local tmp="/tmp/tmp.md"

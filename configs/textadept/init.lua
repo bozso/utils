@@ -54,4 +54,5 @@ textadept.run.run_commands["html"] = cmd
 -- textadept.run.build_commands["cpp"] = "ninja"
 
 
-buffer:set_theme('light', {font = 'Monospace', fontsize = 14})
+-- buffer:set_theme('light', {font = 'Monospace', fontsize = 14})
+buffer:set_theme('term')
