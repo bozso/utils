@@ -50,27 +50,54 @@ notify() {
 
 
 _pull_all() {
+    local tpl="https://bozso@github.com/bozso"
     for line in $repos; do
         local name=$(echo $line | get_name)
         local path=$(echo $line | get_path)
         # cd
         # notify  "$path" "github.png"
         
+        pwd=$(dmenu -p "GitHub password:")
+        
         cd $path
-        notify "Pulling repo: $name" "$(git pull origin master)" "github.png"
+        
+        local curr="$tpl/$name"
+        out=$(git pull $curr)
+
+        notify "Pulling repo: $name" "$out" "github.png"
     done
 }
 
 
 extract_music() {
-    IFS=$'\n'
-    for zipfile in $(ls /tmp/*.zip); do
-        outpath="/home/istvan/Zenék/$(basename $zipfile .zip)"
-        mkdir $outpath
-        unzip $zipfile -d $outpath
+    # IFS=$'\n'
+    for zipfile in /tmp/*.zip; do
+        local outpath="/home/istvan/Zenék/$(basename "$zipfile" .zip)"
+        mkdir -p $outpath
+        notify "Extracting file" "$zipfile"
+        
+        unzip "$zipfile" -d "$outpath"
     done
 }
 
+
+update_clean() {
+    
+    
+    notify "Updating..."
+    
+    local o1=$(sudo apt-get update)
+    local o2=$(sudo apt-get upgrade)
+    local o3=$(sudo apt-get dist-update)
+    
+    # notify "Update complete." "$o1\n$o2\n$3"
+    
+    local o1="$(sudo apt-get clean)"
+    local o2="$(sudo apt-get autoremove)"
+    
+    notify "Cleaning..."
+    notify "Cleaning  complete." "$o1\n$o2"
+}
 
 
 last_field() {
@@ -124,11 +151,61 @@ ssh() {
 }
 
 
+md_tmp="/tmp/tmp.md"
+
+
+markdown() {
+    check_narg $# 1
+    notify "Preprocessing markdown." "$1" "markdown.png"
+    gpp -C --nostdinc $1 -o $md_tmp
+}
+
+
+git_remote_add() {
+    check_narg $# 1
+
+    git remote add origin "$1"
+}
+
+
+git_push() {
+    check_narg $# 1
+
+    git commit -am "$*"
+    git push origin master
+}
+
+
+git_manage() {
+    check_narg $# 1
+    
+    case $1 in
+        "stat")
+            git status
+            ;;
+        "push")
+            shift
+            git_push "$@"
+            ;;
+        "pull")
+            git pull origin master
+            ;;
+        *)
+            printf "Unrecognized option %s!\n" $1 >&2
+            return 1
+            ;;
+    esac
+}
+
+
 modules="
 playlist
 mc
 ssh
 pull_all
+shutdown
+extract_music
+update_clean
 "
 
 
@@ -148,54 +225,15 @@ select_module() {
         "pull_all")
             _pull_all
             ;;
-    esac
-}
-
-
-md_tmp="/tmp/tmp.md"
-
-
-markdown() {
-    check_narg $# 1
-    notify "Preprocessing markdown." "$1" "markdown.png"
-    gpp -C --nostdinc $1 -o $md_tmp
-}
-
-
-git_status() {
-    git status
-}
-
-git_remote_add() {
-    check_narg $# 1
-
-    git remote add origin "$1"
-}
-
-
-git_push() {
-    check_narg $# 1
-
-    git commit -am "$*"
-    git push origin master
-}
-
-
-
-git_manage() {
-    check_narg $# 1
-    
-    case $1 in
-        "stat")
-            git_status
+        "extract_music")
+            extract_music
             ;;
-        "push")
-            shift
-            git_push "$@"
+        "update_clean")
+            update_clean
             ;;
-        *)
-            printf "Unrecognized option %s!\n" $1 >&2
-            return 1
+        "shutdown")
+            [ "$(printf 'Yes\nNo' | dmenu -p 'Shutdown?')" = "Yes" ] && \
+            shutdown -h now
             ;;
     esac
 }
@@ -220,6 +258,9 @@ main() {
             ;;
         "pull_all")
             _pull_all
+            ;;
+        "extract_music")
+            extract_music
             ;;
         *)
             printf "Unrecognized option %s!\n" $1 >&2

@@ -9,16 +9,6 @@ browser="chromium-browser"
 
 alias pull_all="sh $UTILS_DIR/menu.sh pull_all"
 
-update_clean() {
-    sudo apt-get update
-    sudo apt-get upgrade
-    sudo apt-get dist-upgrade
-    
-    sudo apt-get clean
-    sudo apt-get autoremove
-}
-
-
 
 buildpdf() {
     pdflatex --file-line-error-style -shell-escape "$1"
