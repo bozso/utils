@@ -35,9 +35,12 @@ keys["ct"] = xml
 
 keys["ca"] = buffer.home
 keys["ce"] = buffer.line_end
-keys["am"] = textadept.run.compile
+keys["cb"] = textadept.run.compile
 keys["cm"] = textadept.editing.block_comment
 keys["ck"] = buffer.del_line_left
+
+-- build_commands emits BUILD_OUTPUT
+-- compile_commands emits COMPILE_OUTPUT
 
 textadept.run.compile_commands["latex"] = "latexrun %p"
 textadept.run.build_commands["latex"] = "latexrun %p"

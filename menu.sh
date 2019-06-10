@@ -7,9 +7,14 @@ set -e
 
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
-alias mymenu="dmenu $opt -l 5 -i"
+alias mymenu="dmenu $opt -i"
 alias dpass="dmenu $opt -nf \"black\" -nb \"black\" <&-"
 
+temu="lxterminal"
+
+debug() {
+    notify-send -i "$icons/debug.png" "Debug" "$1" -t 2500
+}
 
 perr() {
     printf "%s\n" "$*" >&2;
@@ -147,12 +152,39 @@ playlists() {
 }
 
 
+workspace() {
+    check_narg $# "2"
+    
+    local name="$1"
+    local path="$2"
+    
+    tmux start-server
+    
+    tmux new-session -d -t "$name"
+    tmux send-keys "cd $path" C-m
+    tmux split-window -h -c "$path"
+    tmux select-pane -t 2
+    tmux send-keys "mc" C-m
+    tmux split-window -v -c "$path"
+    tmux select-pane -t 1
+    $temu -e "tmux attach-session -d -t \"$name\""
+
+}
+
+work() {
+    local sel=$(printf "%s\n" $repo_names | mymenu -p "Select repo:")
+    local path=$(get_pair $sel)
+    
+    workspace "$sel" "$path"
+}
+
+
 mc() {
     local sel="$(ls -d -1 $HOME/*/ | \
                  awk -F '/' '{print $(NF - 1)}' | \
                  mymenu -p "Select directory:")"
     
-    if [ -n "$select" ]; then
+    if [ -n "$sel" ]; then
         local path="$HOME/$sel"
         notify "Started Midnight Commander." "$path" "mc.png"
         $temu -e "mc $path"
@@ -239,6 +271,7 @@ mc
 ssh
 pull_all
 extract_music
+work
 "
 
 
