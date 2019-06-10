@@ -139,8 +139,7 @@ playlists() {
     local sel=$(ls -1 $path/* | last_field | \
                 mymenu -p "Select music:")
     
-    
-    if [ -n "$select" ]; then
+    if [ -n "$sel" ]; then
         local path="$path/$sel"
         notify "Playing music" "$path" "music_note.png"
         parole $path &
