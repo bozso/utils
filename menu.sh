@@ -12,6 +12,7 @@ alias dpass="dmenu $opt -nf \"black\" -nb \"black\" <&-"
 
 temu="lxterminal"
 
+
 debug() {
     notify-send -i "$icons/debug.png" "Debug" "$1" -t 2500
 }
@@ -152,6 +153,19 @@ playlists() {
 }
 
 
+in_str() {
+    local reqsubstr="$1"
+    shift
+    local string="$@"
+    
+    if [ -z "${string##*$reqsubstr*}" ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+
 workspace() {
     check_narg $# "2"
     
@@ -160,13 +174,16 @@ workspace() {
     
     tmux start-server
     
-    tmux new-session -d -t "$name"
-    tmux send-keys "cd $path" C-m
-    tmux split-window -h -c "$path"
-    tmux select-pane -t 2
-    tmux send-keys "mc" C-m
-    tmux split-window -v -c "$path"
-    tmux select-pane -t 1
+    if [ "$(in_str "$name" "$(tmux ls)")" = "false" ]; then
+        tmux new-session -d -t "$name"
+        tmux send-keys "cd $path" C-m
+        tmux split-window -h -c "$path"
+        tmux select-pane -t 2
+        tmux send-keys "mc" C-m
+        tmux split-window -v -c "$path"
+        tmux select-pane -t 1
+    fi
+    
     $temu -e "tmux attach-session -d -t \"$name\""
 
 }
