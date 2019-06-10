@@ -1,21 +1,47 @@
 #! /usr/bin/env sh
 
+progs="$HOME/progs"
+icons="$progs/utils/icons"
+
 set -e
-
-. "/home/istvan/progs/utils/utils.sh"
-
-ICONS="$UTILS_DIR/icons"
 
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
 
-alias mymenu="dmenu $opt"
+alias mymenu="dmenu $opt -l 5 -i"
+alias dpass="dmenu $opt -nf \"black\" -nb \"black\" <&-"
+
+
+perr() {
+    printf "%s\n" "$*" >&2;
+}
+
+
+check_narg() {
+    if [ "$1" -lt "$2" ]; then
+        perr "error: Wrong number of arguments!"
+        return 1
+    fi
+}
+
+
+dprompt() {
+    [ "$(printf 'No\nYes' | mymenu -p "$1")" = "Yes" ] && $2
+}
 
 
 repos="
-insar_meteo:$PROGS/insar_meteo\n
-utils:$PROGS/utils\n
+insar_meteo:$progs/insar_meteo\n
+utils:$progs/utils\n
 texfiles:/home/istvan/Dokumentumok/texfiles
 "
+
+key() {
+    printf "%s\n" | awk -F ':' '{print $NF}' 
+}
+
+value() {
+    printf "%s\n" | awk -F ':' '{print $1}' 
+}
 
 get_name() {
     awk -F ':' '{print $1}'
@@ -42,38 +68,42 @@ repo_names=$(echo $repos | get_name)
 
 notify() {
     if [ -n "$3" ]; then
-        notify-send -i "$ICONS/$3" "$1" "$2" -t 1500
+        notify-send -i "$icons/$3" "$1" "$2" -t 1500
     else
         notify-send "$1" "$2" -t 1500
     fi
 }
 
 
-_pull_all() {
-    local tpl="https://bozso@github.com/bozso"
+pull_all() {
+    local tpl="https://bozso:%s@github.com/bozso"
+    pwd="$(dpass -p "GitHub password:")"
+    
+    local tpl=$(printf "$tpl" $pwd)
+    
     for line in $repos; do
         local name=$(echo $line | get_name)
         local path=$(echo $line | get_path)
         # cd
         # notify  "$path" "github.png"
         
-        pwd=$(dmenu -p "GitHub password:")
+        [ ! -d "$path"  ] && continue
         
         cd $path
-        
         local curr="$tpl/$name"
+        
         out=$(git pull $curr)
 
-        notify "Pulling repo: $name" "$out" "github.png"
+        notify "Pulling repo $name." "$out" "github.png"
     done
+
 }
 
 
 extract_music() {
-    # IFS=$'\n'
     for zipfile in /tmp/*.zip; do
         local outpath="/home/istvan/Zenék/$(basename "$zipfile" .zip)"
-        mkdir -p $outpath
+        mkdir -p "$outpath"
         notify "Extracting file" "$zipfile"
         
         unzip "$zipfile" -d "$outpath"
@@ -82,8 +112,6 @@ extract_music() {
 
 
 update_clean() {
-    
-    
     notify "Updating..."
     
     local o1=$(sudo apt-get update)
@@ -108,23 +136,25 @@ last_field() {
 playlists() {
     local path="/home/istvan/Zenék/playlists"
     
-    local select=$(ls -1 $path/* | last_field | mymenu)
+    local sel=$(ls -1 $path/* | last_field | \
+                mymenu -p "Select music:")
     
     
     if [ -n "$select" ]; then
-        local path="$path/$select"
+        local path="$path/$sel"
         notify "Playing music" "$path" "music_note.png"
         parole $path &
     fi
 }
 
 
-commander() {
-    local select=$(printf "%s\n" $repo_names | \
-                   mymenu -p "Select progs directory:")
+mc() {
+    local sel="$(ls -d -1 $HOME/*/ | \
+                 awk -F '/' '{print $(NF - 1)}' | \
+                 mymenu -p "Select directory:")"
     
     if [ -n "$select" ]; then
-        local path=$(get_pair $select)
+        local path="$HOME/$sel"
         notify "Started Midnight Commander." "$path" "mc.png"
         $temu -e "mc $path"
     fi
@@ -198,50 +228,39 @@ git_manage() {
 }
 
 
+shutdown_now() {
+    dprompt "Did you push all git repositories?" ""
+    dprompt "Shutdown?" "shutdown -h now"
+}            
+
+
 modules="
-playlist
+playlists
 mc
 ssh
 pull_all
-shutdown
 extract_music
-update_clean
 "
 
 
 select_module() {
-    local select=$(printf "%s\n" $modules | mymenu -p "Select from modules:")
+    local sel=$(printf "%s\n" $modules | mymenu -p "Select from modules:")
     
-    case $select in
-        "playlist")
-            playlists
-            ;;
-        "mc")
-            commander
-            ;;
-        "ssh")
-            ssh
-            ;;
-        "pull_all")
-            _pull_all
-            ;;
-        "extract_music")
-            extract_music
-            ;;
-        "update_clean")
-            update_clean
-            ;;
-        "shutdown")
-            [ "$(printf 'Yes\nNo' | dmenu -p 'Shutdown?')" = "Yes" ] && \
-            shutdown -h now
-            ;;
-    esac
+    for module in $(printf "%s\n" $modules); do
+        case $sel in
+            $module)
+                $module
+                ;;
+            *)
+                ;;
+        esac
+    done
 }
 
 
 main() {
     check_narg $# 1
-    
+        
     case $1 in
         "programs")
             dmenu_run $opt
@@ -256,8 +275,11 @@ main() {
             shift
             git_manage $@
             ;;
+        "shutdown")
+            shutdown_now
+            ;;
         "pull_all")
-            _pull_all
+            pull_all
             ;;
         "extract_music")
             extract_music

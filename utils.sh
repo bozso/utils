@@ -7,7 +7,7 @@ alias reload='source $UTILS_DIR/utils.sh'
 export temu=lxterminal
 browser="chromium-browser"
 
-alias pull_all="sh $UTILS_DIR/menu.sh pull_all"
+# alias pull_all="sh $UTILS_DIR/menu.sh pull_all"
 
 
 buildpdf() {
@@ -24,19 +24,6 @@ tar_com() {
 
 tar_ext() {
     tar -xzvf $1.tar.gz $1
-}
-
-
-perr() {
-    printf "%s\n" "$*" >&2;
-}
-
-
-check_narg() {
-    if [ "$1" -lt "$2" ]; then
-        perr "error: Wrong number of arguments!"
-        return 1
-    fi
 }
 
 
@@ -118,7 +105,7 @@ GAMMA="$PROGS/gamma"
 PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS/bin:$PROOT/usr/bin:$UTILS_DIR/bin"
 PATH="$PATH:$GAMMA/bin"
 
-export LD_LIBRARY_PATH="LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
 export PYTHONPATH="$PYTHONPATH:$UTILS_DIR:$GAMMA"
 export CDPATH=".:~:~/progs:/mnt/bozso_i"
 
