@@ -31,7 +31,6 @@ main() {
             ;;
         "push")
             shift
-            echo "$@"
             git_push "$@"
             ;;
         "pull")
