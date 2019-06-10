@@ -3,6 +3,8 @@
 progs="$HOME/progs"
 icons="$progs/utils/icons"
 
+. "$progs/utils/tools/map.sh"
+
 set -e
 
 opt="-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
@@ -35,41 +37,22 @@ dprompt() {
 }
 
 
-repos="
+repos="\
 insar_meteo:$progs/insar_meteo\n
 utils:$progs/utils\n
 texfiles:/home/istvan/Dokumentumok/texfiles
 "
 
-key() {
-    printf "%s\n" | awk -F ':' '{print $NF}' 
+dselect() {
+    check_narg "$#" "1"
+    local table="$1"
+    
+    if [ -n "$2" ]; then
+        echo "$(key "$table" | mymenu -p "$2")"
+    else
+        echo "$(key "$table" | mymenu -p)"
+    fi
 }
-
-value() {
-    printf "%s\n" | awk -F ':' '{print $1}' 
-}
-
-get_name() {
-    awk -F ':' '{print $1}'
-}
-
-get_path() {
-    awk -F ':' '{print $NF}'
-}
-
-
-get_pair() {
-    for line in $repos; do
-        case $(echo $line | get_name) in
-            *$1*)
-                echo $(echo $line | get_path)
-                ;;
-        esac
-    done
-}
-
-
-repo_names=$(echo $repos | get_name)
 
 
 notify() {
@@ -83,33 +66,27 @@ notify() {
 
 pull_all() {
     local tpl="https://bozso:%s@github.com/bozso"
-    pwd="$(dpass -p "GitHub password:")"
-    
+    local pwd="$(dpass -p "GitHub password:")"
     local tpl=$(printf "$tpl" $pwd)
     
     for line in $repos; do
-        local name=$(echo $line | get_name)
-        local path=$(echo $line | get_path)
-        # cd
-        # notify  "$path" "github.png"
+        local name=$(key "$line")
+        local path=$(value "$line")
         
-        [ ! -d "$path"  ] && continue
+        # skip non existent directories
+        [ ! -d "$path" ] && continue
         
         cd $path
-        local curr="$tpl/$name"
-        
-        out=$(git pull $curr)
-
+        local out=$(git pull $curr)
         notify "Pulling repo $name." "$out" "github.png"
     done
-
 }
 
 
 extract_music() {
     for zipfile in /tmp/*.zip; do
         local outpath="/home/istvan/Zenék/$(basename "$zipfile" .zip)"
-        mkdir -p "$outpath"
+        # mkdir -p "$outpath"
         notify "Extracting file" "$zipfile"
         
         unzip "$zipfile" -d "$outpath"
@@ -153,19 +130,6 @@ playlists() {
 }
 
 
-in_str() {
-    local reqsubstr="$1"
-    shift
-    local string="$@"
-    
-    if [ -z "${string##*$reqsubstr*}" ]; then
-        echo "true"
-    else
-        echo "false"
-    fi
-}
-
-
 workspace() {
     check_narg $# "2"
     
@@ -189,8 +153,8 @@ workspace() {
 }
 
 work() {
-    local sel=$(printf "%s\n" $repo_names | mymenu -p "Select repo:")
-    local path=$(get_pair $sel)
+    local sel="$(dselect "$repos" "Select repo:")"
+    local path="$(mget "$sel" "$repos")"
     
     workspace "$sel" "$path"
 }
@@ -239,43 +203,6 @@ markdown() {
 }
 
 
-git_remote_add() {
-    check_narg $# 1
-
-    git remote add origin "$1"
-}
-
-
-git_push() {
-    check_narg $# 1
-
-    git commit -am "$*"
-    git push origin master
-}
-
-
-git_manage() {
-    check_narg $# 1
-    
-    case $1 in
-        "stat")
-            git status
-            ;;
-        "push")
-            shift
-            git_push "$@"
-            ;;
-        "pull")
-            git pull origin master
-            ;;
-        *)
-            printf "Unrecognized option %s!\n" $1 >&2
-            return 1
-            ;;
-    esac
-}
-
-
 shutdown_now() {
     dprompt "Did you push all git repositories?" ""
     dprompt "Shutdown?" "shutdown -h now"
@@ -319,10 +246,6 @@ main() {
             ;;
         "markdown")
             markdown $2
-            ;;
-        "git")
-            shift
-            git_manage $@
             ;;
         "shutdown")
             shutdown_now

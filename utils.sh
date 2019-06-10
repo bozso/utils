@@ -28,7 +28,7 @@ tar_ext() {
 
 
 gm() {
-    sh $UTILS_DIR/menu.sh git $*
+    sh $UTILS_DIR/tools/git.sh $*
 }
 
 
