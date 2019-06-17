@@ -3,7 +3,6 @@
 progs="$HOME/progs"
 icons="$progs/utils/icons"
 
-. "$progs/utils/tools/map.sh"
 
 set -e
 
@@ -36,50 +35,12 @@ dprompt() {
     [ "$(printf 'No\nYes' | mymenu -p "$1")" = "Yes" ] && $2
 }
 
-
-repos="\
-insar_meteo:$progs/insar_meteo\n
-utils:$progs/utils\n
-texfiles:/home/istvan/Dokumentumok/texfiles
-"
-
-dselect() {
-    check_narg "$#" "1"
-    local table="$1"
-    
-    if [ -n "$2" ]; then
-        echo "$(key "$table" | mymenu -p "$2")"
-    else
-        echo "$(key "$table" | mymenu -p)"
-    fi
-}
-
-
 notify() {
     if [ -n "$3" ]; then
         notify-send -i "$icons/$3" "$1" "$2" -t 1500
     else
         notify-send "$1" "$2" -t 1500
     fi
-}
-
-
-pull_all() {
-    local tpl="https://bozso:%s@github.com/bozso"
-    local pwd="$(dpass -p "GitHub password:")"
-    local tpl=$(printf "$tpl" $pwd)
-    
-    for line in $repos; do
-        local name=$(key "$line")
-        local path=$(value "$line")
-        
-        # skip non existent directories
-        [ ! -d "$path" ] && continue
-        
-        cd $path
-        local out=$(git pull $curr)
-        notify "Pulling repo $name." "$out" "github.png"
-    done
 }
 
 
@@ -138,7 +99,12 @@ workspace() {
     
     tmux start-server
     
-    if [ "$(in_str "$name" "$(tmux ls)")" = "false" ]; then
+    echo "$name $(tmux ls)"
+    local bool="$(in_str "$name" "$(tmux ls)")"
+    echo "$bool"
+    
+    if [ "$bool" = "false" ]; then
+        notify "tmux" "Starting session $name"
         tmux new-session -d -t "$name"
         tmux send-keys "cd $path" C-m
         tmux split-window -h -c "$path"
@@ -199,21 +165,40 @@ md_tmp="/tmp/tmp.md"
 markdown() {
     check_narg $# 1
     notify "Preprocessing markdown." "$1" "markdown.png"
-    gpp -C --nostdinc $1 -o $md_tmp
+    
+    gpp $1 --nostdinc -o $md_tmp -I$HOME/Dokumentumok/texfiles/gpp \
+    -n -U "" "" "{" "|" "}" "{" "}" "#" "" \
+    -M "\n#\w" "\n" " " " " "\n" "" "" \
+    +c "/*" "*/" \
+    +s "\"" "\"" "\\" +s "'" "'" "\\"
+    # gpp $1 -C --nostdinc -o $md_tmp -I$HOME/Dokumentumok/texfiles/gpp
 }
 
 
 shutdown_now() {
-    dprompt "Did you push all git repositories?" ""
+    notify-send "Did you push all git repositories?" \
+    "Check git repositories!" -u "critical" -i "$icons/warning.png"
     dprompt "Shutdown?" "shutdown -h now"
-}            
+}
+
+
+git() {
+    python $progs/utils/tools/manage.py "git"
+}
+
+
+repos_all() {
+    python $progs/utils/tools/manage.py "git" "all"
+}
+
 
 
 modules="
 playlists
+git
 mc
 ssh
-pull_all
+repos_all
 extract_music
 work
 "

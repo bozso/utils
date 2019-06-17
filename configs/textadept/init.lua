@@ -10,7 +10,10 @@ buffer.edge_mode= buffer.EDGE_LINE
 -- local m_edit = textadept.menu.menubar[_L['_Edit']]
 -- local m_sel = m_edit[_L['_Select']]
 
+
 textadept.file_types.extensions["gpp"] = "ansi_c"
+textadept.file_types.extensions["cml"] = "ansi_c"
+
 
 function xml()
   local left, right = "<", ">"
@@ -45,7 +48,10 @@ keys["ck"] = buffer.del_line_left
 textadept.run.compile_commands["latex"] = "latexrun %p"
 textadept.run.build_commands["latex"] = "latexrun %p"
 
-textadept.run.compile_commands["cpp"] = "ninja"
+-- textadept.run.compile_commands["cpp"] = "ninja"
+-- textadept.run.build_commands["cpp"] = "ninja"
+textadept.run.compile_commands["cpp"] = "python make.py"
+textadept.run.build_commands["cpp"] = "python make.py"
 textadept.run.compile_commands["ansi_c"] = "ninja"
 textadept.run.compile_commands["fortran"] = "ninja"
 
@@ -53,6 +59,21 @@ local cmd = "sh /home/istvan/progs/utils/menu.sh markdown %p"
 
 textadept.run.run_commands["markdown"] = cmd
 textadept.run.run_commands["html"] = cmd
+textadept.run.run_commands["cml"] = cmd
+
+
+--
+-- keys.command_mode = {
+--    ["h"] = buffer.char_left,
+--    ["j"] = buffer.line_down,
+--    ["k"] = buffer.line_up,
+--    ["l"] = buffer.char_right,
+--    ["i"] = enter_edit
+--}
+
+-- keys["esc"] = enter_command
+
+-- keys.MODE = "command_mode"
 
 -- textadept.run.build_commands["cpp"] = "ninja"
 
