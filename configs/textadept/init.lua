@@ -48,10 +48,10 @@ keys["ck"] = buffer.del_line_left
 textadept.run.compile_commands["latex"] = "latexrun %p"
 textadept.run.build_commands["latex"] = "latexrun %p"
 
--- textadept.run.compile_commands["cpp"] = "ninja"
--- textadept.run.build_commands["cpp"] = "ninja"
-textadept.run.compile_commands["cpp"] = "python make.py"
-textadept.run.build_commands["cpp"] = "python make.py"
+textadept.run.compile_commands["cpp"] = "ninja"
+textadept.run.build_commands["cpp"] = "ninja"
+-- textadept.run.compile_commands["cpp"] = "python make.py build_ext --inplace"
+-- textadept.run.build_commands["cpp"] = "python make.py build_ext --inplace"
 textadept.run.compile_commands["ansi_c"] = "ninja"
 textadept.run.compile_commands["fortran"] = "ninja"
 
