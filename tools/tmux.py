@@ -1,4 +1,4 @@
-from common import *
+from common import cmd
 from os.path import join
 
 
@@ -22,19 +22,19 @@ def run(*args, **kwargs):
 
 
 def start_server():
-    tmux.run("start-server")
+    run("start-server")
 
 
 def new_session(name, **kwargs):
-    tmux.run("new-session", "-d", "-t %s" % name, **kwargs)
+    run("new-session", "-d", "-t %s" % name, **kwargs)
 
 
 def send_keys(*args, **kwargs):
-    tmux.run("send-keys", *args, "C-m", **kwargs)
+    run("send-keys", *args, "C-m", **kwargs)
 
 
 def cd(path, *args, **kwargs):
-    tmux.send_keys("cd %s" % join(*args))
+    send_keys("cd %s" % join(*args))
 
 
 def split_window(*args, **kwargs):
@@ -50,11 +50,11 @@ def split_window(*args, **kwargs):
     elif type in ("v", "vertical"):
         args.append["-v"]
     
-    tmux.run(*args, **kwargs)
+    run(*args, **kwargs)
 
 
 def select_pane(num, *args, **kwargs):
-    tmux.run("select-pane", "-t %d" % num, *args, **kwargs)
+    run("select-pane", "-t %d" % num, *args, **kwargs)
 
 
 def list_sessions(*args, **kargs):

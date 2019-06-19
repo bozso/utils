@@ -1,4 +1,4 @@
-from subprocess import Popen, PIPE, check_output, CalledProcessError, STDOUT
+from subprocess import check_output, CalledProcessError, STDOUT
 from shlex import split
 from os.path import join
 
