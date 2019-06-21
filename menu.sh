@@ -167,7 +167,7 @@ markdown() {
     notify "Preprocessing markdown." "$1" "markdown.png"
     
     gpp $1 --nostdinc -o $md_tmp -I$HOME/Dokumentumok/texfiles/gpp \
-    -n -U "" "" "{" "|" "}" "{" "}" "#" "" \
+    -n -U "" "" "{" "}{" "}" "{" "}" "#" "" \
     -M "\n#\w" "\n" " " " " "\n" "" "" \
     +c "/*" "*/" \
     +s "\"" "\"" "\\" +s "'" "'" "\\"
@@ -205,12 +205,13 @@ work
 
 
 select_module() {
+    local log="$HOME/menu.log"
     local sel=$(printf "%s\n" $modules | mymenu -p "Select from modules:")
     
     for module in $(printf "%s\n" $modules); do
         case $sel in
             $module)
-                $module
+                $module > $log
                 ;;
             *)
                 ;;
