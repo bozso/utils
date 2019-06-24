@@ -163,15 +163,14 @@ md_tmp="/tmp/tmp.md"
 
 
 markdown() {
+    local inc_path="$HOME/Dokumentumok/texfiles/gpp"
     check_narg $# 1
     notify "Preprocessing markdown." "$1" "markdown.png"
     
-    gpp $1 --nostdinc -o $md_tmp -I$HOME/Dokumentumok/texfiles/gpp \
-    -n -U "" "" "{" "}{" "}" "{" "}" "#" "" \
-    -M "\n#\w" "\n" " " " " "\n" "" "" \
-    +c "/*" "*/" \
-    +s "\"" "\"" "\\" +s "'" "'" "\\"
-    # gpp $1 -C --nostdinc -o $md_tmp -I$HOME/Dokumentumok/texfiles/gpp
+    gpp $1 --nostdinc -o $md_tmp -I${inc_path} \
+    -U "@" "" "{" "}{" "}" "{" "}" "@" "" \
+    -M "#" "\n" "{" "}{" "}" "{" "}" \
+    +c "/*" "*/" +c "//" "\n"
 }
 
 
@@ -186,6 +185,35 @@ git() {
     python $progs/utils/tools/manage.py "git"
 }
 
+
+git_all() {
+    local fetch_path_fmt="%s/.git/FETCH_HEAD"
+    local tpl="https://bozso:%s@github.com/bozso"
+    
+    for repo in $repos; do
+        cd $repo
+        
+        local pwd="$(dpass)"
+        
+        case $1 in
+            "stat")
+                git status
+                ;;
+            "push")
+                shift
+                git_push "$@"
+                ;;
+            "pull")
+                git pull origin master
+                ;;
+            *)
+                printf "Unrecognized option %s!\n" $1 >&2
+                return 1
+                ;;
+        esac
+    
+    done
+}
 
 repos_all() {
     python $progs/utils/tools/manage.py "git" "all"
@@ -236,8 +264,8 @@ main() {
         "shutdown")
             shutdown_now
             ;;
-        "pull_all")
-            pull_all
+        "git_all")
+            git_all
             ;;
         "extract_music")
             extract_music
