@@ -13,14 +13,14 @@ ${HOME}/Dokumentumok/texfiles
 
 check_narg() {
     if [ "$1" -lt "$2" ]; then
-        perr "error: Wrong number of arguments!"
+        printf "error: Wrong number of arguments!\n"
         return 1
     fi
 }
 
 
 last_field() {
-    echo "$(echo "$1" | awk -F '/' '{ print $NF }')"
+    echo "$(echo "$1" | awk -F '/' '{ print $NF; }')"
 }
 
 git_remote_add() {
@@ -44,7 +44,7 @@ main() {
     
     local config_path=".git/config"
     local tpl="https://bozso:%s@github.com/bozso"
-    
+    local nocom="nothing to commit, working tree clean"
     
     if [ "all" = "$1" ]; then
         case "$2" in
@@ -68,13 +68,14 @@ main() {
         
         fi
         
+        
         for repo in $repos; do
             cd "$repo"
             
             local address="$(printf "$tpl" "$pwd")"
             
             local url="$(git remote get-url --all origin | \
-                         awk -F '/' '{ print $NF }')"
+                         awk -F '/' '{ print $NF; }')"
             
             local url="${address}/${url}"
             
@@ -83,6 +84,10 @@ main() {
                     git status
                     ;;
                 "push")
+                    local msg="$(git status | awk  'FNR == 2 { print $0 }')"
+                    
+                    [ "${nocom}" = "${msg}" ] && continue
+                    
                     printf "Type in commit message for $(last_field $repo)!\n"
                     git commit -a -F -
                     git push "${url}"
