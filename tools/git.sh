@@ -1,10 +1,26 @@
 #! /usr/bin/env sh
 
+progs="${HOME}/progs"
+
+
+repos="
+${progs}/insar_meteo
+${progs}/utils
+${progs}/gamma
+${HOME}/Dokumentumok/texfiles
+"
+
+
 check_narg() {
     if [ "$1" -lt "$2" ]; then
         perr "error: Wrong number of arguments!"
         return 1
     fi
+}
+
+
+last_field() {
+    echo "$(echo "$1" | awk -F '/' '{ print $NF }')"
 }
 
 git_remote_add() {
@@ -24,6 +40,65 @@ git_push() {
 
 main() {
     check_narg "$#" "1"
+    local passwd="false"
+    
+    local config_path=".git/config"
+    local tpl="https://bozso:%s@github.com/bozso"
+    
+    
+    if [ "all" = "$1" ]; then
+        case "$2" in
+            "push")
+                passwd="true"
+                ;;
+            "pull")
+                passwd="true"
+                ;;
+            *)
+                ;;
+        esac
+        
+        
+        if [ "true" = "$passwd" ]; then
+            stty -echo
+            printf "Password: "
+            read pwd
+            stty echo
+            printf "\n"        
+        
+        fi
+        
+        for repo in $repos; do
+            cd "$repo"
+            
+            local address="$(printf "$tpl" "$pwd")"
+            
+            local url="$(git remote get-url --all origin | \
+                         awk -F '/' '{ print $NF }')"
+            
+            local url="${address}/${url}"
+            
+            case "$2" in
+                "stat")
+                    git status
+                    ;;
+                "push")
+                    printf "Type in commit message for $(last_field $repo)!\n"
+                    git commit -a -F -
+                    git push "${url}"
+                    ;;
+                "pull")
+                    git pull "${url}"
+                    ;;
+                *)
+                    printf "Unrecognized option %s!\n" $1 >&2
+                    return 1
+                    ;;
+            esac
+        done
+        return 0
+    fi
+    
     
     case $1 in
         "stat")

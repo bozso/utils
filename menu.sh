@@ -85,7 +85,7 @@ playlists() {
     
     if [ -n "$sel" ]; then
         local path="$path/$sel"
-        notify "Playing music" "$path" "music_note.png"
+        notify "Playing music" "$sel" "music_note.png"
         parole $path &
     fi
 }
@@ -181,46 +181,6 @@ shutdown_now() {
 }
 
 
-git() {
-    python $progs/utils/tools/manage.py "git"
-}
-
-
-git_all() {
-    local fetch_path_fmt="%s/.git/FETCH_HEAD"
-    local tpl="https://bozso:%s@github.com/bozso"
-    
-    for repo in $repos; do
-        cd $repo
-        
-        local pwd="$(dpass)"
-        
-        case $1 in
-            "stat")
-                git status
-                ;;
-            "push")
-                shift
-                git_push "$@"
-                ;;
-            "pull")
-                git pull origin master
-                ;;
-            *)
-                printf "Unrecognized option %s!\n" $1 >&2
-                return 1
-                ;;
-        esac
-    
-    done
-}
-
-repos_all() {
-    python $progs/utils/tools/manage.py "git" "all"
-}
-
-
-
 modules="
 playlists
 git
@@ -263,12 +223,6 @@ main() {
             ;;
         "shutdown")
             shutdown_now
-            ;;
-        "git_all")
-            git_all
-            ;;
-        "extract_music")
-            extract_music
             ;;
         *)
             printf "Unrecognized option %s!\n" $1 >&2
