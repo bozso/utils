@@ -58,6 +58,7 @@ textadept.run.run_commands["markdown"] = cmd
 textadept.run.run_commands["html"] = cmd
 textadept.run.run_commands["cml"] = cmd
 
+textadept.run.run_commands["py"] = "pycodestyle.py %f"
 
 --
 -- keys.command_mode = {

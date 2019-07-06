@@ -98,8 +98,8 @@
     <font place="InactiveOnScreenDisplay">
       <name>Sans</name>
       <size>8</size>
-      <weight></weight>
-      <slant></slant>
+      <weight/>
+      <slant/>
     </font>
   </theme>
   <desktops>
@@ -111,7 +111,7 @@
 
        use obconf if you want to change these without having to log out
        and back in -->
-    <number>4</number>
+    <number>3</number>
     <firstdesk>1</firstdesk>
     <names>
       <!-- set names up here if you want to, like this:
@@ -285,7 +285,6 @@
         </finalactions>
       </action>
     </keybind>
-
     <!-- Keybindings for running applications -->
     <keybind key="W-e">
       <action name="Execute">
@@ -296,14 +295,12 @@
         <command>pcmanfm</command>
       </action>
     </keybind>
-
     <keybind key="W-r">
       <action name="Execute">
         <command>openbox --reconfigure</command>
         <command>killall -SIGUSR1 tint2</command>
       </action>
     </keybind>
-
     <!--
     <keybind key="W-i">
       <action name="Execute">
@@ -311,43 +308,36 @@
       </action>
     </keybind>
     -->
-
     <keybind key="W-w">
       <action name="Execute">
         <command>chromium-browser</command>
       </action>
     </keybind>
-
     <keybind key="W-m">
       <action name="Execute">
         <command>sh /home/istvan/progs/utils/menu.sh modules</command>
       </action>
     </keybind>
-
     <keybind key="W-n">
       <action name="Execute">
         <command>parole -N</command>
       </action>
     </keybind>
-
     <keybind key="W-s">
       <action name="Execute">
         <command>sh /home/istvan/progs/utils/menu.sh shutdown</command>
       </action>
     </keybind>
-
     <keybind key="C-space">
       <action name="Execute">
         <command>sh /home/istvan/progs/utils/menu.sh programs</command>
       </action>
     </keybind>
-
     <keybind key="W-t">
       <action name="Execute">
         <command>lxterminal</command>
       </action>
     </keybind>
-    
     <keybind key="W-h">
       <action name="Execute">
         <startupnotify>
@@ -357,43 +347,28 @@
         <command>lxterminal --command="htop"</command>
       </action>
     </keybind>
-
     <keybind key="W-l">
       <action name="Execute">
         <command>libreoffice</command>
       </action>
     </keybind>
-
     <!-- Snapping windows -->
     <keybind key="W-KP_1">        # Lower Left 
         <action name="UnmaximizeFull"/>
-        <action name="MoveResizeTo">
-            <x>0</x><y>-0</y><height>50%</height><width>50%</width>
-        </action>
+        <action name="MoveResizeTo"><x>0</x><y>-0</y><height>50%</height><width>50%</width></action>
     </keybind>
-    
     <keybind key="W-KP_7">        # Upper Left
         <action name="UnmaximizeFull"/>
-        <action name="MoveResizeTo">
-            <x>0</x><y>0</y><height>50%</height><width>50%</width>
-        </action>
+        <action name="MoveResizeTo"><x>0</x><y>0</y><height>50%</height><width>50%</width></action>
     </keybind>
-  
-
     <keybind key="W-KP_3">        # Lower Right
         <action name="UnmaximizeFull"/>
-        <action name="MoveResizeTo">
-            <x>-0</x><y>-0</y><height>50%</height><width>50%</width>
-        </action>
+        <action name="MoveResizeTo"><x>-0</x><y>-0</y><height>50%</height><width>50%</width></action>
     </keybind>
-    
     <keybind key="W-KP_9">        # Upper Right
         <action name="UnmaximizeFull"/>
-        <action name="MoveResizeTo">
-            <x>-0</x><y>0</y><height>50%</height><width>50%</width>
-        </action>
+        <action name="MoveResizeTo"><x>-0</x><y>0</y><height>50%</height><width>50%</width></action>
     </keybind>
-
     <keybind key="W-Return">
       <action name="ToggleMaximizeFull"/>
     </keybind>
@@ -413,7 +388,6 @@
         <action name="UnmaximizeFull"/>
         <action name="MoveResizeTo"><x>0</x><y>-0</y><width>100%</width><height>50%</height></action>
     </keybind>
-    
     <!-- brightness control -->
     <keybind key="XF86MonBrightnessUp">
       <action name="Execute">
@@ -425,35 +399,28 @@
         <command>xbacklight -8</command>
       </action>
     </keybind>
-
-    
     <!-- Keybindings for window switching within one desktop -->
     <keybind key="W-Right">
-        <action name="DirectionalCycleWindows">
+      <action name="DirectionalCycleWindows">
         <direction>east</direction>
-        </action>
+      </action>
     </keybind>
-    
     <keybind key="W-Left">
-        <action name="DirectionalCycleWindows">
-            <direction>west</direction>
-        </action>
+      <action name="DirectionalCycleWindows">
+        <direction>west</direction>
+      </action>
     </keybind>
-  
     <keybind key="W-Down">
-        <action name="DirectionalCycleWindows">
+      <action name="DirectionalCycleWindows">
         <direction>south</direction>
-        </action>
+      </action>
     </keybind>
-    
     <keybind key="W-Up">
-        <action name="DirectionalCycleWindows">
+      <action name="DirectionalCycleWindows">
         <direction>north</direction>
-        </action>
+      </action>
     </keybind>
-  
   </keyboard>
-  
   <mouse>
     <dragThreshold>1</dragThreshold>
     <!-- number of pixels the mouse must move before a drag begins -->
@@ -510,7 +477,7 @@
           <to>next</to>
         </action>
       </mousebind>
-<!--
+      <!--
       <mousebind button="A-S-Up" action="Click">
         <action name="SendToDesktop">
           <to>previous</to>

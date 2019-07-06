@@ -3,12 +3,12 @@ from shlex import split
 from os.path import join
 
 
-__all__ = [
+__all__ = (
     "repos",
     "cmd",
     "notify",
     "debug"
-]
+)
 
 
 home = "/home/istvan"

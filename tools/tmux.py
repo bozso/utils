@@ -1,8 +1,8 @@
-from common import cmd
+from base import cmd
 from os.path import join
 
 
-__all__ = [
+__all__ = (
     "run",
     "start_server",
     "new_session",
@@ -11,7 +11,7 @@ __all__ = [
     "split_window",
     "select_pane",
     "list_sessions"
-]
+)
 
 
 bin = "tmux"

@@ -3,6 +3,19 @@
 progs="${HOME}/progs"
 
 
+start_tpl="
+=============
+*
+* Repository: %s
+*
+"
+
+end_tpl="
+*
+* End repository: %s
+*
+"
+
 repos="
 ${progs}/insar_meteo
 ${progs}/utils
@@ -46,6 +59,7 @@ main() {
     local tpl="https://bozso:%s@github.com/bozso"
     local nocom="nothing to commit, working tree clean"
     
+    
     if [ "all" = "$1" ]; then
         case "$2" in
             "push")
@@ -72,6 +86,8 @@ main() {
         for repo in $repos; do
             cd "$repo"
             
+            printf "$start_tpl" "$repo"
+            
             local address="$(printf "$tpl" "$pwd")"
             
             local url="$(git remote get-url --all origin | \
@@ -96,10 +112,13 @@ main() {
                     git pull "${url}"
                     ;;
                 *)
-                    printf "Unrecognized option %s!\n" $1 >&2
+                    printf "Unrecognized option %s!\n" $2 >&2
                     return 1
                     ;;
             esac
+            
+            printf "$end_tpl" "$repo"
+        
         done
         return 0
     fi

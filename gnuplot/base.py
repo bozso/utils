@@ -27,20 +27,24 @@ from sys import stderr, platform
 import gnuplot.private as gp
 
 
-__all__ = ("arrow", "call", "colorbar", "debug", "histo", "label", "labels",
-           "line", "linedef", "margins", "multiplot", "nicer", "obj",
-           "output", "palette", "plot", "plot_data", "plot_file", "plot_grid",
-           "ranges", "refresh", "remove_temps", "replot", "reset", "save",
-           "set", "silent", "splot", "style", "term", "title", "unset_multi",
-           "xlabel", "xrange", "xtics", "ylabel", "yrange", "ytics",
-           "zlabel", "zrange", "ztics")
+__all__ = (
+    "arrow", "call", "colorbar", "debug", "histo", "label", "labels",
+    "line", "linedef", "margins", "multiplot", "nicer", "obj",
+    "output", "palette", "plot", "plot_data", "plot_file", "plot_grid",
+    "ranges", "refresh", "remove_temps", "replot", "reset", "save",
+    "set", "silent", "splot", "style", "term", "title", "unset_multi",
+    "xlabel", "xrange", "xtics", "ylabel", "yrange", "ytics",
+    "zlabel", "zrange", "ztics", "colors"
+)
 
 
 _session = gp.Session()
 
+
 def call(*args):
     for arg in args:
         _session(arg)
+
 
 def refresh(plot_cmd):
     plot_objects = _session.plot_items
@@ -346,29 +350,6 @@ def nicer():
     set style line 12 lc rgb 'black' lt 0 lw 1
     set grid back ls 12
     """)
-    
-    colors = {
-        "red": "#8b1a0e",
-        "green": "#5e9c36",
-        "lightgreen": "#4d9178",
-        "blue": "#0074D9",
-        "darkblue": "#140a60",
-        "navy": "#001f3f",
-        "aqua": "#7FDBFF",
-        "teal": "#39CCCC",
-        "olive": "#3D9970",
-        "yellow" :"#FFDC00",
-        "lime" :"#01FF70",
-        "orange": "#FF851B",
-        "maroon": "#85144b",
-        "fuchsia": "#F012BE",
-        "purple": "#B10DC9",
-        "black": "#111111",
-        "gray": "#AAAAAA",
-        "silver": "#DDDDDD"
-    }
-    
-    return colors
 
 
 def reset():
@@ -550,6 +531,28 @@ def linedef(ltype, **kwargs):
     else:
         return "{} {}".format(ltype, " ".join(parsed_kwargs))
     
+
+colors = {
+    "red": "#8b1a0e",
+    "green": "#5e9c36",
+    "lightgreen": "#4d9178",
+    "blue": "#0074D9",
+    "darkblue": "#140a60",
+    "navy": "#001f3f",
+    "aqua": "#7FDBFF",
+    "teal": "#39CCCC",
+    "olive": "#3D9970",
+    "yellow" :"#FFDC00",
+    "lime" :"#01FF70",
+    "orange": "#FF851B",
+    "maroon": "#85144b",
+    "fuchsia": "#F012BE",
+    "purple": "#B10DC9",
+    "black": "#111111",
+    "gray": "#AAAAAA",
+    "silver": "#DDDDDD"
+}
+
 
 # **************
 # * Exceptions *

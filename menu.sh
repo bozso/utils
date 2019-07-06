@@ -31,6 +31,11 @@ check_narg() {
 }
 
 
+wttr() {
+    local cmd='wttr.in/?format=4'
+    notify-send "Weather Report" "$(curl --compressed $cmd)"
+}
+
 dprompt() {
     [ "$(printf 'No\nYes' | mymenu -p "$1")" = "Yes" ] && $2
 }
@@ -210,7 +215,7 @@ select_module() {
 
 main() {
     check_narg $# 1
-        
+    
     case $1 in
         "programs")
             dmenu_run $opt

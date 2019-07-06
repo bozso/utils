@@ -3,8 +3,9 @@ gnuplot_config = {
     "debug": False,
     "silent": False,
     "exe": "gnuplot",
-    "size": [800,600]
+    "size": (800, 600)
 }
+
 
 def update(**kwargs):
     gnuplot_config.update(kwargs)

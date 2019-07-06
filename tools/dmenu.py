@@ -1,13 +1,14 @@
-from subprocess import Popen, PIPE, check_output, CalledProcessError, STDOUT
+from subprocess import Popen, PIPE, STDOUT
 from shlex import split
 from common import *
 
-__all__ = [
+
+__all__ = (
     "run",
     "select",
     "inp",
     "password"
-]
+)
 
 
 opt = "-fn -adobe-helvetica-bold-r-normal-*-25-180-100-100-p-138-iso8859-1"
