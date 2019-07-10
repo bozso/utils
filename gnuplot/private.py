@@ -21,54 +21,6 @@ from weakref import ref
 import subprocess as sub
 
 
-from gnuplot.config import gnuplot_config as gpconf
-
-
-class Session(object):
-    def __init__(self, persist=False, debug=False, silent=False, **kwargs):
-        if gpconf["persist"]:
-            cmd = [gpconf["exe"], "--persist"]
-        else:
-            cmd = [gpconf["exe"]]
-        
-        self.process = sub.Popen(cmd, stderr=sub.STDOUT, stdin=sub.PIPE)
-        
-        self.write = self.process.stdin.write
-        self.flush = self.process.stdin.flush
-
-        self.persist, self.debug, self.silent = gpconf["persist"], \
-                                                gpconf["debug"], \
-                                                gpconf["silent"]
-        self.multi, self.closed, self.size = None, False, gpconf["size"]
-        self.plot_items, self.temps = [], []
-        
-
-    def close(self):
-        if self.process is not None:
-            self.process.stdin.close()
-            retcode = self.process.wait()
-            self.process = None
-
-
-    def __del__(self):
-        if self.multi is not None:
-            self("unset multiplot")
-        
-        self.close()
-        
-        for temp in self.temps:
-            remove(temp)
-
-
-    def __call__(self, command):
-
-        if self.debug:
-            stderr.write("gnuplot> %s\n" % command)
-        
-        self.write(bytes(b"%s\n" % bytes(command, encoding='utf8')))
-        self.flush()
-
-
 class MultiPlot(object):
     def __init__(self, nplot, session, **kwargs):
         self.session = ref(session)()
@@ -169,53 +121,11 @@ def parse_range(args):
         return "({})".format(", ".join(str(elem) for elem in args))
 
 
-additional_keys = frozenset(("index", "every", "using", "smooth", "axes"))
+additional_keys = frozenset({"index", "every", "using", "smooth", "axes"})
 
 
 def parse_kwargs(**kwargs):
     return (parse_linedef(key, value) for key, value in kwargs.items())
-
-
-def parse_plot_arguments(**kwargs):
-    _with = kwargs.get("vith")
-    ptype = kwargs.pop("ptype", "points")
-    title = kwargs.pop("title", None)
-    
-    if _with is not None:
-        text = " with {}".format(_with)
-    else:
-        add = (parse_linedef(key, value) for key, value in kwargs.items())
-        text = " with {} {}".format(ptype, " ".join(add))
-    
-    if title is None:
-        text += " notitle"
-    else:
-        text += " title '{}'".format(title)
-        
-    return text
-
-
-def parse_linedef(key, value):
-    
-    if key == "pt" or key == "pointtype":
-        return "{} {}".format(key, point_type_dict[value])
-    elif key == "lt" or key == "linetype":
-        return "{} {}".format(key, line_type_dict[value])
-    elif key == "rgb":
-        return "lc {} '{}'".format(key, value)
-    
-    
-    if isinstance(value, bool) and value:
-        return key
-    elif isinstance(value, str):
-        return "{} '{}'".format(key, value)
-    else:
-        return "{} {}".format(key, value)
-
-
-# ************************
-# * Private dictionaries *
-# ************************
 
 
 fmt_dict = {
@@ -234,33 +144,6 @@ fmt_dict = {
 }
 
 
-point_type_dict = {
-    "dot": 0,
-    "+": 1,
-    "x": 2,
-    "+x": 3,
-    "empty_square": 4,
-    "filed_square": 5,
-    "empty_circle": 6,
-    "o": 6,
-    "filled_circle": 7,
-    "empty_up_triangle": 8,
-    "filled_up_triangle": 9,
-    "empty_down_triangle": 10,
-    "filled_down_triangle": 11,
-    "empty_rombus": 12,
-    "filled_rombus": 13,
-}
-
-line_type_dict = {
-    "black": -1,
-    "dashed": 0,
-    "red": 1,
-    "green": 2,
-    "blue": 3,
-    "purple": 4,
-    "teal": 5,
-}
 
 
 # New matplotlib colormaps by Nathaniel J. Smith, Stefan van der Walt,

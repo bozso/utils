@@ -23,94 +23,110 @@ from numbers import Number
 from tempfile import mkstemp
 from os import fdopen
 from sys import stderr, platform
+from atexit import register
+import subprocess as sub
 
-import gnuplot.private as gp
-
+from .private import color_palettes
 
 __all__ = (
     "arrow", "call", "colorbar", "debug", "histo", "label", "labels",
-    "line", "linedef", "margins", "multiplot", "nicer", "obj",
-    "output", "palette", "plot", "plot_data", "plot_file", "plot_grid",
-    "ranges", "refresh", "remove_temps", "replot", "reset", "save",
+    "line", "linedef", "margins", "multiplot", "obj",
+    "output", "palette", "plot", "data", "file", "grid",
+    "ranges", "refresh", "replot", "reset", "save",
     "set", "silent", "splot", "style", "term", "title", "unset_multi",
     "xlabel", "xrange", "xtics", "ylabel", "yrange", "ytics",
-    "zlabel", "zrange", "ztics", "colors"
+    "zlabel", "zrange", "ztics", "colors", "dollar", 
+    "zero", "one", "two", "three", "x", "y", "Symbol"
 )
 
 
-_session = gp.Session()
+config = {
+    "persist": False,
+    "debug": False,
+    "silent": False,
+    "exe": "gnuplot",
+    "size": (800, 600),
+    "startup": 
+    """
+    set style line 11 lc rgb 'black' lt 1
+    set border 3 back ls 11
+    set tics nomirror
+    set style line 12 lc rgb 'black' lt 0 lw 1
+    set grid back ls 12
+    """
+}
 
 
-def call(*args):
-    for arg in args:
-        _session(arg)
+process, multi, debug, silent, plot_items = \
+None, None, config["debug"], config["silent"], []
+
+
+def startup():
+    global process
+    
+    if config["persist"]:
+        cmd = [config["exe"], "--persist"]
+    else:
+        cmd = [config["exe"]]
+        
+    process = sub.Popen(cmd, stderr=sub.STDOUT, stdin=sub.PIPE)
+
+
+startup()
+
+def close():
+    global process
+    if multi is not None:
+        call("unset multiplot")
+    
+    if process is not None:
+        process.stdin.close()
+        retcode = process.wait()
+        process = None
+
+
+register(close)
+    
+write = process.stdin.write
+flush = process.stdin.flush
+
+
+def call(*commands):
+    global debug
+    
+    for command in commands:
+        if debug:
+            stderr.write("gnuplot> %s\n" % command)
+        
+        write(bytes(b"%s\n" % bytes(command, encoding='utf8')))
+        flush()
+
+call(config["startup"])
 
 
 def refresh(plot_cmd):
-    plot_objects = _session.plot_items
+    global plot_items
+    plot_cmds = ", ".join(plot.command for plot in plot_items)
     
-    plot_cmds = ", ".join(plot.command for plot in plot_objects)
+    if debug:
+        stderr.write("gnuplot> %s %s\n" % (plot_cmd, plot_cmds))
     
-    if _session.debug:
-        stderr.write("gnuplot> {} {}\n".format(plot_cmd, plot_cmds))
+    call(plot_cmd + " " + plot_cmds + "\n")
     
-    _session.write(plot_cmd + " " + plot_cmds + "\n")
-    
-    data = tuple(plot.data for plot in plot_objects
+    data = tuple(plot.data for plot in plot_items
                  if plot.data is not None)
     
     if data:
-        _session.write("\ne\n".join(data) + "\ne\n")
-        if _session.debug:
+        write("\ne\n".join(data) + "\ne\n")
+        
+        if debug:
             stderr.write("\ne\n".join(data) + "\ne\n")
     
-    _session.flush()
-    _session.plot_items = []
+    flush()
+    plot_items = []
 
 
-def _convert_data(data, grid=False, **kwargs):
-    binary = bool(kwargs.get("binary", True))
-    inline = bool(kwargs.get("inline", False))
-
-    if inline and binary:
-        raise OptionError("Inline binary format is not supported!")
-    
-    if binary:
-        content = data.tobytes()
-        mode = "wb"
-        
-        if grid:
-            add = " binary matrix"
-        else:
-            add = arr_bin(data)
-    else:
-        content = np2str(data)
-        mode = "w"
-        
-        if grid:
-            add = " matrix"
-        else:
-            add = ""
-    
-    if inline:
-        text  = "'-'"
-        array = content
-    else:
-        fd, filename, = mkstemp(text=True)
-
-        f = fdopen(fd, mode)
-        f.write(content)
-        f.close()
-        
-        _session.temps.append(filename)
-        
-        text  = "'{}'".format(filename)
-        array = None
-    
-    return array, text + add
-
-    
-def plot_data(*arrays, ltype="points", **kwargs):
+def data(*arrays, ltype="points", **kwargs):
     try:
         data = np.vstack(arrays).T
     except TypeError:
@@ -122,10 +138,10 @@ def plot_data(*arrays, ltype="points", **kwargs):
     
     array, text = _convert_data(data, **kwargs)
     
-    _session.plot_items.append(PlotDescription(array, text + gp.parse_plot_arguments(**kwargs)))
+    plot_items.append(PlotDescription(array, text, **kwargs))
 
 
-def plot_grid(data, x=None, y=None, **kwargs):
+def grid(data, x=None, y=None, **kwargs):
 
     data = np.asarray(data, np.float32)
     
@@ -160,35 +176,34 @@ def plot_grid(data, x=None, y=None, **kwargs):
     
     array, text = _convert_data(grid, grid=True, **kwargs)
     
-    _session.plot_items.append(PlotDescription(array, text + gp.parse_plot_arguments(**kwargs)))
+    plot_items.append(PlotDescription(array, text, **kwargs))
 
 
 def line(pos, mode, start=0.0, stop=1.0, ref="graph", **kwargs):
     add = gp.parse_kwargs(**kwargs)
     
     if mode == "h" or mode == "horizontal":
-        _session("set arrow from {ref} {}, {p} to {ref} {}, {p} nohead {}"
-                 .format(start, stop, " ".join(add), p=pos, ref=ref))
+        call("set arrow from {ref} {}, {p} to {ref} {}, {p} nohead {}"
+             .format(start, stop, " ".join(add), p=pos, ref=ref))
     elif mode == "v" or mode == "vertical":
-        _session("set arrow from {p}, {ref} {} to {p}, {ref} {} nohead {}"
-                 .format(start, stop, " ".join(add), p=pos, ref=ref))
+        call("set arrow from {p}, {ref} {} to {p}, {ref} {} nohead {}"
+             .format(start, stop, " ".join(add), p=pos, ref=ref))
     else:
         raise ValueError('"mode" should be either "h", "horizontal", "v" '
                          'or "vertical"')
 
 
 def histo(edges, hist, **kwargs):
-    title = kwargs.pop("title", None)
-    
     edges = edges[:-1] + (edges[1] - edges[0]) / 2.0
     
     vith = "boxes fill solid {}".format(" ".join(gp.parse_kwargs(**kwargs)))
     
-    plot_data(edges, hist, title=title, vith=vith)
+    data(edges, hist, vith=vith, **kwargs)
 
 
 # TODO: rewrite docs
-def plot_file(data, matrix=None, binary=None, array=None, endian="default", **kwargs):
+def file(data, matrix=None, binary=None, array=None, endian="default",
+         **kwargs):
     """
     DOCUMENTATION NEEDS TO BE REWORKED!
     Sets the text to be used for the 'plot' command of Gnuplot for
@@ -237,7 +252,7 @@ def plot_file(data, matrix=None, binary=None, array=None, endian="default", **kw
     
     """
     
-    if not (isinstance(data, str) or pth.isfile(data)):
+    if not pth.isfile(data):
         raise ValueError("data should be a string path to a data file!")
     
     text = "'{}'".format(data)
@@ -252,43 +267,62 @@ def plot_file(data, matrix=None, binary=None, array=None, endian="default", **kw
     elif binary:
         text += " binary"
     
-    return PlotDescription(None, text + gp.parse_plot_arguments(**kwargs))
+    plot_items.append(PlotDescription(None, text, **kwargs))
 
 
 def plot():
-    if not _session.silent:
+    if not silent:
         refresh("plot")
 
 def splot():
-    if not _session.silent:
+    if not silent:
         refresh("splot")
 
 
-# ***********
-# * SETTERS *
-# ***********
+def _convert_data(data, grid=False, **kwargs):
+    binary = bool(kwargs.get("binary", True))
+    inline = bool(kwargs.get("inline", False))
 
-
-def debug():
-    _session.debug = True
-
-def silent():
-    _session.silent = True
-
-
+    if inline and binary:
+        raise OptionError("Inline binary format is not supported!")
     
-
-def parse_set(name, value):
-    if value is True:
-        return "set {}".format(name)
-    elif value is False:
-        return "unset {}".format(name)
+    if binary:
+        content = data.tobytes()
+        mode = "wb"
+        
+        if grid:
+            add = " binary matrix"
+        else:
+            add = arr_bin(data)
     else:
-        return "set {} {}".format(name, value)
+        content = np2str(data)
+        mode = "w"
+        
+        if grid:
+            add = " matrix"
+        else:
+            add = ""
+    
+    if inline:
+        text  = "'-'"
+        array = content
+    else:
+        fd, filename, = mkstemp(text=True)
+
+        f = fdopen(fd, mode)
+        f.write(content)
+        f.close()
+        
+        _session.temps.append(filename)
+        
+        text  = "'{}'".format(filename)
+        array = None
+    
+    return array, text + add
 
 
 def set(**kwargs):
-    _session(";".join(parse_set(key, value) for key, value in kwargs.items()))
+    call(";".join(parse_set(key, value) for key, value in kwargs.items()))
 
 
 def size(scale, square=False, ratio=None):
@@ -302,11 +336,11 @@ def size(scale, square=False, ratio=None):
     if ratio is not None:
         Cmd += " ratio {}".format(ratio)
     
-    _session("{} {},{}".format(Cmd, scale[0], scale[1]))
+    call("{} {},{}".format(Cmd, scale[0], scale[1]))
     
 
 def palette(pal):
-    _session(gp.color_palettes[pal])
+    call(color_palettes[pal])
 
 
 def margins(screen=False, **kwargs):
@@ -318,54 +352,44 @@ def margins(screen=False, **kwargs):
     
     for key, value in kwargs.items():
         if key in ("lmargin", "rmargin", "tmargin", "bmargin"):
-            _session(fmt.format(key, value))
+            call(fmt.format(key, value))
 
 
 def multiplot(nplot, **kwargs):
-    return gp.MultiPlot(nplot, _session, **kwargs)
+    raise NotImplemented("Multiplot functionality still in the works.")
+#     return gp.MultiPlot(nplot, _session, **kwargs)
 
 
 def colorbar(cbrange=None, cbtics=None, cbformat=None):
     if cbrange is not None:
-        _session("set cbrange [{}:{}]" .format(cbrange[0], cbrange[1]))
+        call("set cbrange [%f:%s]"  % (cbrange[0], cbrange[1]))
     
     if cbtics is not None:
-        _session("set cbtics {}".format(cbtics))
+        call("set cbtics %s" % (cbtics))
     
     if cbformat is not None:
-        _session("set format cb '{}'".format(cbformat))
+        call("set format cb '%s'" % (cbformat))
     
 
-def unset_multi(self):
-    _session("unset multiplot")
-    _session.multi = None
-
-
-def nicer():
-    _session(
-    """
-    set style line 11 lc rgb 'black' lt 1
-    set border 3 back ls 11
-    set tics nomirror
-    set style line 12 lc rgb 'black' lt 0 lw 1
-    set grid back ls 12
-    """)
+def unset_multi():
+    call("unset multiplot")
+    multi = None
 
 
 def reset():
-    _session("reset")
+    call("reset")
 
 
 def xtics(*args):
-    _session("set xtics {}".format(parse_range(args)))
+    call("set xtics %s" % (parse_range(args)))
 
 
 def ytics(*args):
-    _session("set ytics {}".format(parse_range(args)))
+    call("set ytics %s" % (parse_range(args)))
 
 
 def ztics(*args):
-    _session("set ztics {}".format(parse_range(args)))
+    call("set ztics %s" % (parse_range(args)))
 
 
 def style(stylenum, ltype, **kwargs):
@@ -373,19 +397,17 @@ def style(stylenum, ltype, **kwargs):
     Parameters
     ----------
     """
-    _session("set style line {} {}".format(stylenum, linedef(ltype, **kwargs)))
+    call("set style line %d %s" % (stylenum, linedef(ltype, **kwargs)))
 
 
 def output(outfile, **kwargs):
     term(**kwargs)
-    _session("set output '{}'".format(outfile))
+    call("set output '%s'" % (outfile))
 
 
 def title(title):
-    _session('set title "{}"'.format(title))
+    call('set title "%s"' % (title))
 
-
-#def key()
 
 def term(term, **kwargs):
     size     = kwargs.get("size")
@@ -393,82 +415,82 @@ def term(term, **kwargs):
     fontsize = float(kwargs.get("fontsize", 12))
     enhanced = bool(kwargs.get("enhanced", False))
 
-    txt = "set terminal {}".format(term)
+    txt = "set terminal %s" % (term)
     
     if enhanced:
         txt += " enhanced"
     
     if size is not None:
-        _session.size = size
-        txt += " size {},{}".format(size[0], size[1])
+        txt += " size %d,%d" % (size[0], size[1])
     
-    _session("{} font '{},{}'".format(txt, font, fontsize))
+    call("%s font '%s,%f'" % (txt, font, fontsize))
 
 
 def arrow(From, to, style=None, tag=""):
-    temp = "set arrow {} from {},{} to {},{}"\
+    temp = "set arrow %s from %f,%f to %f,%f"\
            .format(tag, From[0], From[1], to[0], to[1])
     
     if style is not None:
-        temp += " as {}".format(style)
+        temp += " as %s".format(style)
     
-    _session(temp)
+    call(temp)
 
 
 def obj(kind):
     pass
-
-# LABELS
 
 
 def label(definition, position, **kwargs):
     font = str(kwargs.get("font", "Verdena"))
     fontsize = int(kwargs.get("fontsize", 8))
     
-    _session("set label '{}' at {},{} font '{}, {}'"
-             .format(definition, position[0], position[1], font, fontsize))
+    call("set label '%s' at %f,%f font '%s, %d'"
+         % (definition, position[0], position[1], font, fontsize))
 
 
 def labels(x="x", y="y", z=None):
-    _session("set xlabel '{}'".format(x))
-    _session("set ylabel '{}'".format(y))
+    call("set xlabel '%s'" % (x))
+    call("set ylabel '%s'" % (y))
+    
     
     if z is not None:
-        _session("set zlabel '{}'".format(z))
+        call("set zlabel '%s'" % (z))
 
-def xlabel(xlabel="x"):
-    _session("set xlabel '{}'".format(xlabel))
 
-def ylabel(ylabel="y"):
-    _session("set ylabel '{}'".format(ylabel))
+def xlabel(label="x"):
+    call("set xlabel '%s'" % (label))
 
-def zlabel(zlabel="z"):
-    _session("set zlabel '{}'".format(zlabel))
+def ylabel(label="y"):
+    call("set ylabel '%s'" % (label))
 
-# RANGES
+def zlabel(label="z"):
+    call("set zlabel '%s'" % (label))
+
 
 def ranges(x=None, y=None, z=None):
     if x is not None and len(x) == 2:
-        _session("set xrange [{}:{}]".format(x[0], x[1]))
+        call("set xrange [%f:%f]" % (x[0], x[1]))
 
     if y is not None and len(y) == 2:
-        _session("set yrange [{}:{}]".format(y[0], y[1]))
+        call("set yrange [%f:%f]" % (y[0], y[1]))
 
     if z is not None and len(z) == 2:
-        _session("set zrange [{}:{}]".format(z[0], z[1]))
+        call("set zrange [%f:%f]" % (z[0], z[1]))
 
 
-def xrange(xmin, xmax):
-    _session("set xrange [{}:{}]".format(xmin, xmax))
+def xrange(min, max):
+    call("set xrange [%f:%f]" % (min, max))
 
-def yrange(ymin, ymax):
-    _session("set yrange [{}:{}]".format(ymin, ymax))
 
-def zrange(zmin, zmax):
-    _session("set zrange [{}:{}]".format(zmin, zmax))
+def yrange(min, max):
+    call("set yrange [%f:%f]" % (min, max))
+
+def zrange(min, max):
+    call("set zrange [%f:%f]" % (min, max))
+
 
 def replot():
-    _session("replot")
+    call("replot")
 
 
 def save(outfile, **kwargs):
@@ -476,24 +498,54 @@ def save(outfile, **kwargs):
     # terminal and output cannot be changed in multiplotting
     # if you want to save a multiplot use the output function
     # before defining multiplot
-    if _session.multi:
-        unset_multi()
+    unset_multi()
     
     output(outfile, **kwargs)
-    _session("replot")
+    call("replot")
 
 
-def remove_temps():
-    for temp in _session.temps:
-        remove(temp)
+def make_operator(symbol):
+    tpl = "(%s {} %s)".format(operators[symbol])
     
-    _session.temps = []
+    if symbol.startswith("r"):
+        def f(self, other):
+            return Symbol(tpl % (other, self))
+    else:
+        def f(self, other):
+            return Symbol(tpl % (self, other))
+        
+    return f
+
+    
+operators = {
+    "add": "+", "radd": "+",
+    "sub": "-", "rsub": "-",
+    "mul": "*", "rmul": "*",
+    "div": "/", "rdiv": "/",
+    "truediv": "/", "rtruediv": "/",
+    "pow": "^", "rpow": "^",
+    "lt" : "<", "le" : "<=",
+    "gt" : ">", "ge" : ">="
+}
+
+
+
+Symbol = type("Symbol", (str,), {"__%s__" % op: make_operator(op)
+                                 for op in operators.keys()})
+
+
+def dollar(num):
+    return Symbol("$%d" % num)
+
+
+zero, one, two, three, x, y = \
+dollar(0), dollar(1), dollar(2), dollar(3), Symbol("x"), Symbol("y")
 
 
 class PlotDescription(object):
-    def __init__(self, data, command):
+    def __init__(self, data, command, **kwargs):
         self.data = data
-        self.command = command
+        self.command = command + parse_plot_arguments(**kwargs)
     
     def __str__(self):
         return "\nData:\n{}\nCommand: {}\n".format(self.data, self.command)
@@ -510,10 +562,10 @@ class PlotDescription(object):
 def arr_bin(array, image=False):
     
     if array.ndim == 1:
-        return " binary format='{}'".format(len(array) * gp.fmt_dict[array.dtype])
+        return " binary format='%s'" % (len(array) * gp.fmt_dict[array.dtype])
     elif array.ndim == 2:
         fmt = array.shape[1] * gp.fmt_dict[array.dtype]
-        return " binary record={} format='{}'".format(array.shape[0], fmt)
+        return " binary record=%d format='%s'" % (array.shape[0], fmt)
 
 
 def np2str(array):
@@ -523,14 +575,107 @@ def np2str(array):
 
 
 def linedef(ltype, **kwargs):
-    parsed_kwargs = (gp.parse_linedef(key, value)
+    parsed_kwargs = (parse_linedef(key, value)
                      for key, value in kwargs.items())
     
     if ltype is None:
         return " ".join(parsed_kwargs)
     else:
-        return "{} {}".format(ltype, " ".join(parsed_kwargs))
+        return "%s %s" % (ltype, " ".join(parsed_kwargs))
+
+
+def parse_linedef(key, value):
     
+    if key == "pt" or key == "pointtype":
+        return "%s %s" % (key, point_type_dict[value])
+    elif key == "lt" or key == "linetype":
+        return "%s %s" % (key, line_type_dict[value])
+    elif key == "rgb":
+        return "lc %s '%s'".format(key, value)
+    
+    if isinstance(value, bool) and value:
+        return key
+    elif isinstance(value, str):
+        return "%s '%s'" % (key, value)
+    else:
+        return "%s %s" % (key, value)
+
+
+def parse_plot_arguments(**kwargs):
+    vith, using, ptype, title = \
+    kwargs.pop("vith", None), kwargs.pop("using", None), \
+    kwargs.pop("ptype", "points"), kwargs.pop("title", None)
+    
+    text = ""
+    
+    if using is not None:
+        if isinstance(using, tuple):
+            text = "%s using %s:%s" \
+                   % (text, proc_using(using[0]), proc_using(using[1]))
+        else:
+            text = "%s using (%s)" % (text, proc_using(using))
+    
+    
+    if title is None:
+        text += " notitle"
+    else:
+        text += " title '%s'" % (title)
+    
+    
+    if vith is not None:
+        text = "%s with %s" % (text, vith)
+    else:
+        add = (parse_linedef(key, value) for key, value in kwargs.items())
+        text = "%s with %s %s" % (text, ptype, " ".join(add))
+    
+    return text
+
+
+def proc_using(txt):
+    if "$" in txt:
+        return "(%s)" % txt
+    else:
+        return txt
+
+
+def parse_set(name, value):
+    if value is True:
+        return "set {}".format(name)
+    elif value is False:
+        return "unset {}".format(name)
+    else:
+        return "set {} {}".format(name, value)
+
+        
+point_type_dict = {
+    "dot": 0,
+    "+": 1,
+    "x": 2,
+    "+x": 3,
+    "empty_square": 4,
+    "filed_square": 5,
+    "empty_circle": 6,
+    "o": 6,
+    "filled_circle": 7,
+    "empty_up_triangle": 8,
+    "filled_up_triangle": 9,
+    "empty_down_triangle": 10,
+    "filled_down_triangle": 11,
+    "empty_rombus": 12,
+    "filled_rombus": 13,
+}
+
+
+line_type_dict = {
+    "black": -1,
+    "dashed": 0,
+    "red": 1,
+    "green": 2,
+    "blue": 3,
+    "purple": 4,
+    "teal": 5,
+}
+
 
 colors = {
     "red": "#8b1a0e",
