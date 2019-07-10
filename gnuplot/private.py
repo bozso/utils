@@ -21,6 +21,29 @@ from weakref import ref
 import subprocess as sub
 
 
+class Axis(object):
+    def __init__(self, call, name="x"):
+        self.call, self.name, self._range = call, name, []
+    
+    def __call__(self, label):
+        self.call("set %slabel '%s'" % (self.name, label))
+    
+    
+    def __getitem__(self, k):
+        if isinstance(k, slice):
+            self.call("set xtics %f,%f,%f" % (k.start, k.step, k.stop))
+    
+    
+    def set_range(self, _range):
+        self._range = _range
+        self.call("set %srange [%f:%f]" % (self.name, _range[0], _range[1]))
+    
+    def get_range(self):
+        return self._range
+    
+    range = property(get_range, set_range)
+    
+    
 class MultiPlot(object):
     def __init__(self, nplot, session, **kwargs):
         self.session = ref(session)()

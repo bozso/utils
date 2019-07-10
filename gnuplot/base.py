@@ -26,17 +26,16 @@ from sys import stderr, platform
 from atexit import register
 import subprocess as sub
 
-from .private import color_palettes
+from .private import color_palettes, Axis
+
 
 __all__ = (
-    "arrow", "call", "colorbar", "debug", "histo", "label", "labels",
-    "line", "linedef", "margins", "multiplot", "obj",
-    "output", "palette", "plot", "data", "file", "grid",
-    "ranges", "refresh", "replot", "reset", "save",
-    "set", "silent", "splot", "style", "term", "title", "unset_multi",
-    "xlabel", "xrange", "xtics", "ylabel", "yrange", "ytics",
-    "zlabel", "zrange", "ztics", "colors", "dollar", 
-    "zero", "one", "two", "three", "x", "y", "Symbol"
+    "arrow", "call", "colorbar", "debug", "histo", "label", "line", "linedef", 
+    "margins", "multiplot", "obj", "output", "palette", "plot", "data",
+    "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
+    "splot", "style", "term", "title", "unset_multi", "colors", 
+    "dollar", "zero", "one", "two", "three", "x", "y", "Symbol",
+    "xaxis", "yaxis", "zaxis"
 )
 
 
@@ -102,6 +101,10 @@ def call(*commands):
         flush()
 
 call(config["startup"])
+
+xaxis = Axis(call, "x")
+yaxis = Axis(call, "y")
+zaxis = Axis(call, "z")
 
 
 def refresh(plot_cmd):
@@ -447,24 +450,6 @@ def label(definition, position, **kwargs):
     call("set label '%s' at %f,%f font '%s, %d'"
          % (definition, position[0], position[1], font, fontsize))
 
-
-def labels(x="x", y="y", z=None):
-    call("set xlabel '%s'" % (x))
-    call("set ylabel '%s'" % (y))
-    
-    
-    if z is not None:
-        call("set zlabel '%s'" % (z))
-
-
-def xlabel(label="x"):
-    call("set xlabel '%s'" % (label))
-
-def ylabel(label="y"):
-    call("set ylabel '%s'" % (label))
-
-def zlabel(label="z"):
-    call("set zlabel '%s'" % (label))
 
 
 def ranges(x=None, y=None, z=None):
