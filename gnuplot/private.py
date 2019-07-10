@@ -23,11 +23,8 @@ import subprocess as sub
 
 class Axis(object):
     def __init__(self, call, name="x"):
-        self.call, self.name, self._range = call, name, []
-    
-    def __call__(self, label):
-        self.call("set %slabel '%s'" % (self.name, label))
-    
+        self.call, self.name, self._range, self._label = \
+        call, name, [], None
     
     def __getitem__(self, k):
         if isinstance(k, slice):
@@ -42,6 +39,16 @@ class Axis(object):
         return self._range
     
     range = property(get_range, set_range)
+    
+    
+    def set_label(self, label):
+        self._label = label
+        self.call("set %slabel '%s'" % (self.name, label))
+    
+    def get_label(self):
+        return self._label
+    
+    label = property(get_label, set_label)
     
     
 class MultiPlot(object):

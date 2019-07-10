@@ -33,9 +33,8 @@ __all__ = (
     "arrow", "call", "colorbar", "debug", "histo", "label", "line", "linedef", 
     "margins", "multiplot", "obj", "output", "palette", "plot", "data",
     "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
-    "splot", "style", "term", "title", "unset_multi", "colors", 
-    "dollar", "zero", "one", "two", "three", "x", "y", "Symbol",
-    "xaxis", "yaxis", "zaxis"
+    "splot", "style", "term", "title", "unset_multi", "colors",
+    "x", "y", "z", "sym", "dollar", "col"
 )
 
 
@@ -48,10 +47,10 @@ config = {
     "startup": 
     """
     set style line 11 lc rgb 'black' lt 1
-    set border 3 back ls 11
+    set border 3 back ls 11 lw 2.5
     set tics nomirror
     set style line 12 lc rgb 'black' lt 0 lw 1
-    set grid back ls 12
+    set grid back ls 12 lw 2.5
     """
 }
 
@@ -102,9 +101,9 @@ def call(*commands):
 
 call(config["startup"])
 
-xaxis = Axis(call, "x")
-yaxis = Axis(call, "y")
-zaxis = Axis(call, "z")
+x = Axis(call, "x")
+y = Axis(call, "y")
+z = Axis(call, "z")
 
 
 def refresh(plot_cmd):
@@ -518,13 +517,28 @@ operators = {
 Symbol = type("Symbol", (str,), {"__%s__" % op: make_operator(op)
                                  for op in operators.keys()})
 
-
 def dollar(num):
     return Symbol("$%d" % num)
 
 
-zero, one, two, three, x, y = \
-dollar(0), dollar(1), dollar(2), dollar(3), Symbol("x"), Symbol("y")
+class Dollar(object):
+    cache = {num: dollar(num) for num in range(11)}
+    
+    def __getitem__(self, num):
+        cache = Dollar.cache
+        if num in cache:
+            return cache[num]
+        else:
+            tmp = dollar(num)
+            cache[num] = tmp
+            return tmp
+
+col = Dollar()
+
+sym = type("Symbols", (object,), {
+    "x": Symbol("x"), 
+    "y": Symbol("y"), 
+})
 
 
 class PlotDescription(object):
