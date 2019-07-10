@@ -30,11 +30,11 @@ from .private import color_palettes, Axis
 
 
 __all__ = (
-    "arrow", "call", "colorbar", "debug", "histo", "label", "line", "linedef", 
+    "arrow", "call", "colorbar", "debug", "histo", "label", "line", "linedef",
     "margins", "multiplot", "obj", "output", "palette", "plot", "data",
     "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
     "splot", "style", "term", "title", "unset_multi", "colors",
-    "x", "y", "z", "sym", "dollar", "col"
+    "x", "y", "z", "sym", "col"
 )
 
 
@@ -537,7 +537,7 @@ col = Dollar()
 
 sym = type("Symbols", (object,), {
     "x": Symbol("x"), 
-    "y": Symbol("y"), 
+    "y": Symbol("y")
 })
 
 
