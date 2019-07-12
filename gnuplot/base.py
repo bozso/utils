@@ -21,21 +21,22 @@ import numpy as np
 from builtins import str
 from numbers import Number
 from tempfile import mkstemp
-from os import fdopen
+from os import fdopen, path as pth
 from sys import stderr, platform
 from atexit import register
 import subprocess as sub
+from tempfile import _get_default_tempdir, _get_candidate_names
+from time import sleep
 
-from .private import color_palettes, Axis
+try:
+    from IPython.display import Image, display
+except ImportError:
+    Image = None
 
 
-__all__ = (
-    "arrow", "call", "colorbar", "debug", "histo", "label", "line", "linedef",
-    "margins", "multiplot", "obj", "output", "palette", "plot", "data",
-    "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
-    "splot", "style", "term", "title", "unset_multi", "colors",
-    "x", "y", "z", "sym", "col"
-)
+# TODO:
+# set commands should come after set out and set term
+# 
 
 
 config = {
@@ -44,88 +45,128 @@ config = {
     "silent": False,
     "exe": "gnuplot",
     "size": (800, 600),
-    "startup": 
+    "2D":
     """
     set style line 11 lc rgb 'black' lt 1
     set border 3 back ls 11 lw 2.5
     set tics nomirror
     set style line 12 lc rgb 'black' lt 0 lw 1
-    set grid back ls 12 lw 2.5
+    set grid back ls 12 lw 2.0
+    """,
+    "3D":
+    """
+    set style line 11 lc rgb 'black' lt 1
+    set border 3 back ls 11 lw 2.5
+    set tics nomirror
+    set style line 12 lc rgb 'black' lt 0 lw 1
+    set grid back ls 12 lw 2.0
     """
 }
-
-
-process, multi, debug, silent, plot_items = \
-None, None, config["debug"], config["silent"], []
-
-
-def startup():
-    global process
     
-    if config["persist"]:
-        cmd = [config["exe"], "--persist"]
-    else:
-        cmd = [config["exe"]]
+
+tmp_path = _get_default_tempdir()
+
+
+def get_tmp(path=tmp_path):
+    return pth.join(path, next(_get_candidate_names()))
+
+
+
+
+from .private import color_palettes, Axis
+
+
+__all__ = (
+    "arrow", "call", "colorbar", "histo", "label", "line", "linedef",
+    "margins", "multiplot", "obj", "output", "palette", "plot", "data",
+    "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
+    "splot", "style", "term", "title", "unset_multi", "colors",
+    "x", "y", "z", "sym", "col", "update"
+)
+
+
+def update(**kwargs):
+    config.update(kwargs)
+
+    
+class Gnuplot(object):
+    def __init__(self):
+        self.multi = self.process = None
         
-    process = sub.Popen(cmd, stderr=sub.STDOUT, stdin=sub.PIPE)
-
-
-startup()
-
-def close():
-    global process
-    if multi is not None:
-        call("unset multiplot")
-    
-    if process is not None:
-        process.stdin.close()
-        retcode = process.wait()
-        process = None
-
-
-register(close)
-    
-write = process.stdin.write
-flush = process.stdin.flush
-
-
-def call(*commands):
-    global debug
-    
-    for command in commands:
-        if debug:
-            stderr.write("gnuplot> %s\n" % command)
+        if config["persist"]:
+            cmd = [config["exe"], "--persist"]
+        else:
+            cmd = [config["exe"]]
         
-        write(bytes(b"%s\n" % bytes(command, encoding='utf8')))
-        flush()
+        self.process = sub.Popen(cmd, stderr=sub.STDOUT, stdin=sub.PIPE)
+        
+        self.write, self.flush= \
+        self.process.stdin.write, self.process.stdin.flush
+        
+    
+    def __del__(self):
+        if self.multi is not None:
+            self("unset multiplot")
+        
+        process = self.process
+        
+        if process is not None:
+            process.stdin.close()
+            retcode = process.wait()
+            self.process = None
+    
+    
+    def __call__(self, *commands):
+        debug, write, flush = config["debug"], self.write, self.flush
+        
+        for command in commands:
+            if debug:
+                stderr.write("gnuplot> %s\n" % command)
+            
+            write(bytes(b"%s\n" % bytes(command, encoding='utf8')))
+            flush()
+    
+    
+    def refresh(self, plot_cmd, *items):
+        plot_cmds = ", ".join(plot.command for plot in items)
+        
+        if config["debug"]:
+            stderr.write("gnuplot> %s %s\n" % (plot_cmd, plot_cmds))
+        
+        self(plot_cmd + " " + plot_cmds + "\n")
+        
+        data = tuple(plot.data for plot in items
+                     if plot.data is not None)
+        
+        if data:
+            self.write("\ne\n".join(data) + "\ne\n")
+            
+            if debug:
+                stderr.write("\ne\n".join(data) + "\ne\n")
+        
+        self.flush()
+    
+    
+    def get_debug(self):
+        return self.debug
+        
+    def set_debug(self, debug):
+        print("Set debug.")
+        self.debug = debug
+        
+session = Gnuplot()
 
-call(config["startup"])
+call, flush, refresh = session.__call__, session.flush, session.refresh
+silent = config["silent"]
+
+
+# TODO: properly provide access to debug
+# debug = property(session.get_debug, session.set_debug)
+
 
 x = Axis(call, "x")
 y = Axis(call, "y")
 z = Axis(call, "z")
-
-
-def refresh(plot_cmd):
-    global plot_items
-    plot_cmds = ", ".join(plot.command for plot in plot_items)
-    
-    if debug:
-        stderr.write("gnuplot> %s %s\n" % (plot_cmd, plot_cmds))
-    
-    call(plot_cmd + " " + plot_cmds + "\n")
-    
-    data = tuple(plot.data for plot in plot_items
-                 if plot.data is not None)
-    
-    if data:
-        write("\ne\n".join(data) + "\ne\n")
-        
-        if debug:
-            stderr.write("\ne\n".join(data) + "\ne\n")
-    
-    flush()
-    plot_items = []
 
 
 def data(*arrays, ltype="points", **kwargs):
@@ -140,7 +181,7 @@ def data(*arrays, ltype="points", **kwargs):
     
     array, text = _convert_data(data, **kwargs)
     
-    plot_items.append(PlotDescription(array, text, **kwargs))
+    return PlotDescription(array, text, **kwargs)
 
 
 def grid(data, x=None, y=None, **kwargs):
@@ -178,7 +219,7 @@ def grid(data, x=None, y=None, **kwargs):
     
     array, text = _convert_data(grid, grid=True, **kwargs)
     
-    plot_items.append(PlotDescription(array, text, **kwargs))
+    return PlotDescription(array, text, **kwargs)
 
 
 def line(pos, mode, start=0.0, stop=1.0, ref="graph", **kwargs):
@@ -200,7 +241,7 @@ def histo(edges, hist, **kwargs):
     
     vith = "boxes fill solid {}".format(" ".join(gp.parse_kwargs(**kwargs)))
     
-    data(edges, hist, vith=vith, **kwargs)
+    return data(edges, hist, vith=vith, **kwargs)
 
 
 # TODO: rewrite docs
@@ -269,16 +310,33 @@ def file(data, matrix=None, binary=None, array=None, endian="default",
     elif binary:
         text += " binary"
     
-    plot_items.append(PlotDescription(None, text, **kwargs))
+    return PlotDescription(None, text, **kwargs)
 
 
-def plot():
-    if not silent:
-        refresh("plot")
+def plot_ipython(plot_cmd, *items, **kwargs):
+    if Image is not None:
+        tmp = get_tmp() + ".png"
+        
+        kwargs.setdefault("term", "pngcairo")
+        output(tmp, **kwargs)
+        
+        if not silent:
+            refresh(plot_cmd, *items)
+        
+        sleep(1.0)
+        
+        display(Image(filename=tmp))
+        
+        return tmp
+    elif not silent:
+        refresh(plot_cmd, *items)
+    
+    
+def plot(*items, **kwargs):
+    return plot_ipython("plot", *items, **kwargs)
 
-def splot():
-    if not silent:
-        refresh("splot")
+def splot(*items, **kwargs):
+    return plot_ipython("splot", *items, **kwargs)
 
 
 def _convert_data(data, grid=False, **kwargs):
@@ -382,18 +440,6 @@ def reset():
     call("reset")
 
 
-def xtics(*args):
-    call("set xtics %s" % (parse_range(args)))
-
-
-def ytics(*args):
-    call("set ytics %s" % (parse_range(args)))
-
-
-def ztics(*args):
-    call("set ztics %s" % (parse_range(args)))
-
-
 def style(stylenum, ltype, **kwargs):
     """
     Parameters
@@ -448,29 +494,6 @@ def label(definition, position, **kwargs):
     
     call("set label '%s' at %f,%f font '%s, %d'"
          % (definition, position[0], position[1], font, fontsize))
-
-
-
-def ranges(x=None, y=None, z=None):
-    if x is not None and len(x) == 2:
-        call("set xrange [%f:%f]" % (x[0], x[1]))
-
-    if y is not None and len(y) == 2:
-        call("set yrange [%f:%f]" % (y[0], y[1]))
-
-    if z is not None and len(z) == 2:
-        call("set zrange [%f:%f]" % (z[0], z[1]))
-
-
-def xrange(min, max):
-    call("set xrange [%f:%f]" % (min, max))
-
-
-def yrange(min, max):
-    call("set yrange [%f:%f]" % (min, max))
-
-def zrange(min, max):
-    call("set zrange [%f:%f]" % (min, max))
 
 
 def replot():
@@ -547,10 +570,10 @@ class PlotDescription(object):
         self.command = command + parse_plot_arguments(**kwargs)
     
     def __str__(self):
-        return "\nData:\n{}\nCommand: {}\n".format(self.data, self.command)
+        return self.command
 
     def __repr__(self):
-        return "<PlotDescription data: {} command: {}>".format(self.data, self.command)
+        return "<PlotDescription data: {}, command: {}>".format(self.data, self.command)
 
 
 # *************************
@@ -620,8 +643,9 @@ def parse_plot_arguments(**kwargs):
     else:
         text += " title '%s'" % (title)
     
-    
-    if vith is not None:
+    if vith is None:
+        pass
+    elif vith is not None:
         text = "%s with %s" % (text, vith)
     else:
         add = (parse_linedef(key, value) for key, value in kwargs.items())
@@ -676,7 +700,7 @@ line_type_dict = {
 }
 
 
-colors = {
+colors = type("Colors", (object,), {
     "red": "#8b1a0e",
     "green": "#5e9c36",
     "lightgreen": "#4d9178",
@@ -695,7 +719,7 @@ colors = {
     "black": "#111111",
     "gray": "#AAAAAA",
     "silver": "#DDDDDD"
-}
+})
 
 
 # **************

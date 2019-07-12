@@ -43,7 +43,6 @@ def plot_scatter(gp, data, ncols, out=None, title=None, idx=None, titles=None,
 def groupby_plot(gp, x, y, data, by, colors, **kwargs):
     fields = np.unique(data[by])
     
-    
     indices = (np.where(data[by] == field) for field in fields)
     ldefs = (linedef("points", rgb=cols[color], **kwargs) for color in colors)
     
