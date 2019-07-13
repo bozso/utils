@@ -20,6 +20,7 @@ repos="
 ${progs}/insar_meteo
 ${progs}/utils
 ${progs}/gamma
+${progs}/geodynamics
 ${HOME}/Dokumentumok/texfiles
 "
 
@@ -55,6 +56,7 @@ main() {
     check_narg "$#" "1"
     local passwd="false"
     
+    local out="/tmp/git_report.html"
     local config_path=".git/config"
     local tpl="https://bozso:%s@github.com/bozso"
     local nocom="nothing to commit, working tree clean"
@@ -82,6 +84,8 @@ main() {
         
         fi
         
+        printf "<!DOCTYPE html>\n<html>\n<body>\n" > $out
+        printf "<style>\np {white-space: pre-wrap}\n</style>\n" >> $out
         
         for repo in $repos; do
             cd "$repo"
@@ -95,9 +99,13 @@ main() {
             
             local url="${address}/${url}"
             
+            
             case "$2" in
                 "stat")
-                    git status
+                    printf "\n<h1> Repository: %s </h1> \n" $repo >> $out
+                    local stat="$(git status)"
+                    printf "<p>%s</p>\n" "$stat" >> $out
+                    printf "$stat"
                     ;;
                 "push")
                     local msg="$(git status | awk  'FNR == 2 { print $0 }')"
@@ -120,6 +128,8 @@ main() {
             printf "$end_tpl" "$repo"
         
         done
+        printf "\n</html>\n</body>" >> $out
+        
         return 0
     fi
     

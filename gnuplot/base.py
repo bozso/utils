@@ -34,6 +34,18 @@ except ImportError:
     Image = None
 
 
+from .private import color_palettes
+
+
+__all__ = (
+    "arrow", "call", "colorbar", "histo", "label", "line", "linedef",
+    "margins", "multiplot", "obj", "output", "palette", "plot", "data",
+    "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
+    "splot", "style", "term", "title", "unset_multi", "colors",
+    "x", "y", "z", "sym", "col", "update"
+)
+
+
 # TODO:
 # set commands should come after set out and set term
 # 
@@ -62,27 +74,12 @@ config = {
     set grid back ls 12 lw 2.0
     """
 }
-    
+
 
 tmp_path = _get_default_tempdir()
 
-
 def get_tmp(path=tmp_path):
     return pth.join(path, next(_get_candidate_names()))
-
-
-
-
-from .private import color_palettes, Axis
-
-
-__all__ = (
-    "arrow", "call", "colorbar", "histo", "label", "line", "linedef",
-    "margins", "multiplot", "obj", "output", "palette", "plot", "data",
-    "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
-    "splot", "style", "term", "title", "unset_multi", "colors",
-    "x", "y", "z", "sym", "col", "update"
-)
 
 
 def update(**kwargs):
@@ -100,8 +97,8 @@ class Gnuplot(object):
         
         self.process = sub.Popen(cmd, stderr=sub.STDOUT, stdin=sub.PIPE)
         
-        self.write, self.flush= \
-        self.process.stdin.write, self.process.stdin.flush
+        self.write, self.flush, self.set_commands = \
+        self.process.stdin.write, self.process.stdin.flush, []
         
     
     def __del__(self):
@@ -130,9 +127,8 @@ class Gnuplot(object):
     def refresh(self, plot_cmd, *items):
         plot_cmds = ", ".join(plot.command for plot in items)
         
-        if config["debug"]:
-            stderr.write("gnuplot> %s %s\n" % (plot_cmd, plot_cmds))
-        
+        self("; ".join(cmd for cmd in self.set_commands))
+        self.set_commands = []
         self(plot_cmd + " " + plot_cmds + "\n")
         
         data = tuple(plot.data for plot in items
@@ -145,15 +141,39 @@ class Gnuplot(object):
                 stderr.write("\ne\n".join(data) + "\ne\n")
         
         self.flush()
+
+
+class Axis(object):
+    def __init__(self, call, name="x"):
+        self.call, self.name, self._range, self._label = \
+        call, name, [], None
+    
+    def __getitem__(self, k):
+        if isinstance(k, slice):
+            set(**{"%stics" % self.name: "%f,%f,%f" 
+                                         % (k.start, k.step, k.stop)})
+    
+    def set_range(self, _range):
+        self._range = _range
+        set(**{"%srange" % self.name: "[%f:%f]" % (_range[0], _range[1])})
+    
+    def get_range(self):
+        return self._range
+    
+    range = property(get_range, set_range)
     
     
-    def get_debug(self):
-        return self.debug
-        
-    def set_debug(self, debug):
-        print("Set debug.")
-        self.debug = debug
-        
+    def set_label(self, label):
+        self._label = label
+        set(**{"%slabel" % self.name: "'%s'" % label})
+
+    
+    def get_label(self):
+        return self._label
+    
+    label = property(get_label, set_label)
+
+
 session = Gnuplot()
 
 call, flush, refresh = session.__call__, session.flush, session.refresh
@@ -323,6 +343,7 @@ def plot_ipython(plot_cmd, *items, **kwargs):
         if not silent:
             refresh(plot_cmd, *items)
         
+        # safety waiting time
         sleep(1.0)
         
         display(Image(filename=tmp))
@@ -382,7 +403,8 @@ def _convert_data(data, grid=False, **kwargs):
 
 
 def set(**kwargs):
-    call(";".join(parse_set(key, value) for key, value in kwargs.items()))
+    session.set_commands.extend((parse_set(key, value)
+                                 for key, value in kwargs.items()))
 
 
 def size(scale, square=False, ratio=None):
