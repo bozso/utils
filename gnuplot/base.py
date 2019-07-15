@@ -34,7 +34,7 @@ except ImportError:
     Image = None
 
 
-from .private import color_palettes
+from .config import *
 
 
 __all__ = (
@@ -49,31 +49,6 @@ __all__ = (
 # TODO:
 # set commands should come after set out and set term
 # 
-
-
-config = {
-    "persist": False,
-    "debug": False,
-    "silent": False,
-    "exe": "gnuplot",
-    "size": (800, 600),
-    "2D":
-    """
-    set style line 11 lc rgb 'black' lt 1
-    set border 3 back ls 11 lw 2.5
-    set tics nomirror
-    set style line 12 lc rgb 'black' lt 0 lw 1
-    set grid back ls 12 lw 2.0
-    """,
-    "3D":
-    """
-    set style line 11 lc rgb 'black' lt 1
-    set border 3 back ls 11 lw 2.5
-    set tics nomirror
-    set style line 12 lc rgb 'black' lt 0 lw 1
-    set grid back ls 12 lw 2.0
-    """
-}
 
 
 tmp_path = _get_default_tempdir()
@@ -172,7 +147,17 @@ class Axis(object):
         return self._label
     
     label = property(get_label, set_label)
-
+    
+    
+    def get_format(self):
+        return self._format
+    
+    def set_format(self, format):
+        self._format = format
+        set(**{"format %s" % self.name: "'%s'" % format})
+    
+    format = porperty(get_format, set_format)
+    
 
 session = Gnuplot()
 
@@ -246,20 +231,20 @@ def line(pos, mode, start=0.0, stop=1.0, ref="graph", **kwargs):
     add = gp.parse_kwargs(**kwargs)
     
     if mode == "h" or mode == "horizontal":
-        call("set arrow from {ref} {}, {p} to {ref} {}, {p} nohead {}"
-             .format(start, stop, " ".join(add), p=pos, ref=ref))
+        tpl = "from {ref} {}, {p} to {ref} {}, {p} nohead {}"
     elif mode == "v" or mode == "vertical":
-        call("set arrow from {p}, {ref} {} to {p}, {ref} {} nohead {}"
-             .format(start, stop, " ".join(add), p=pos, ref=ref))
+        tpl = "from {p}, {ref} {} to {p}, {ref} {} nohead {}"
     else:
         raise ValueError('"mode" should be either "h", "horizontal", "v" '
                          'or "vertical"')
 
+    set(arrow=tpl.format(start, stop, " ".join(add), p=pos, ref=ref))
 
+    
 def histo(edges, hist, **kwargs):
     edges = edges[:-1] + (edges[1] - edges[0]) / 2.0
     
-    vith = "boxes fill solid {}".format(" ".join(gp.parse_kwargs(**kwargs)))
+    vith = "boxes fill solid %s" % (" ".join(gp.parse_kwargs(**kwargs)))
     
     return data(edges, hist, vith=vith, **kwargs)
 
@@ -360,7 +345,7 @@ def splot(*items, **kwargs):
     return plot_ipython("splot", *items, **kwargs)
 
 
-def _convert_data(data, grid=False, **kwargs):
+def convert_data(data, grid=False, **kwargs):
     binary = bool(kwargs.get("binary", True))
     inline = bool(kwargs.get("inline", False))
 
@@ -497,13 +482,12 @@ def term(term, **kwargs):
 
 
 def arrow(From, to, style=None, tag=""):
-    temp = "set arrow %s from %f,%f to %f,%f"\
-           .format(tag, From[0], From[1], to[0], to[1])
+    temp = "%s from %f,%f to %f,%f" % (tag, From[0], From[1], to[0], to[1])
     
     if style is not None:
-        temp += " as %s".format(style)
+        temp += " as %s" % (style)
     
-    call(temp)
+    set(arrow=temp)
 
 
 def obj(kind):
@@ -514,8 +498,8 @@ def label(definition, position, **kwargs):
     font = str(kwargs.get("font", "Verdena"))
     fontsize = int(kwargs.get("fontsize", 8))
     
-    call("set label '%s' at %f,%f font '%s, %d'"
-         % (definition, position[0], position[1], font, fontsize))
+    set(label="'%s' at %f,%f font '%s, %d'"
+        % (definition, position[0], position[1], font, fontsize))
 
 
 def replot():
@@ -604,7 +588,6 @@ class PlotDescription(object):
 
 
 def arr_bin(array, image=False):
-    
     if array.ndim == 1:
         return " binary format='%s'" % (len(array) * gp.fmt_dict[array.dtype])
     elif array.ndim == 2:
@@ -676,6 +659,36 @@ def parse_plot_arguments(**kwargs):
     return text
 
 
+
+def parse_range(args):
+    if len(args) == 1:
+        return str(args[0])
+    else:
+        return "(%s)" % (", ".join(str(elem) for elem in args))
+
+
+additional_keys = frozenset({"index", "every", "using", "smooth", "axes"})
+
+
+quoted = frozenset({
+    "format",
+    "title",
+    "t",
+    "clabel",
+    "missing",
+    "separator",
+    "locale"
+})
+
+
+equaled = frozenset({
+    "format",
+    "filetype"
+})
+
+def parse_kwargs(**kwargs):
+    return (parse_linedef(key, value) for key, value in kwargs.items())
+
 def proc_using(txt):
     if "$" in txt:
         return "(%s)" % txt
@@ -691,71 +704,5 @@ def parse_set(name, value):
     else:
         return "set {} {}".format(name, value)
 
-        
-point_type_dict = {
-    "dot": 0,
-    "+": 1,
-    "x": 2,
-    "+x": 3,
-    "empty_square": 4,
-    "filed_square": 5,
-    "empty_circle": 6,
-    "o": 6,
-    "filled_circle": 7,
-    "empty_up_triangle": 8,
-    "filled_up_triangle": 9,
-    "empty_down_triangle": 10,
-    "filled_down_triangle": 11,
-    "empty_rombus": 12,
-    "filled_rombus": 13,
-}
 
-
-line_type_dict = {
-    "black": -1,
-    "dashed": 0,
-    "red": 1,
-    "green": 2,
-    "blue": 3,
-    "purple": 4,
-    "teal": 5,
-}
-
-
-colors = type("Colors", (object,), {
-    "red": "#8b1a0e",
-    "green": "#5e9c36",
-    "lightgreen": "#4d9178",
-    "blue": "#0074D9",
-    "darkblue": "#140a60",
-    "navy": "#001f3f",
-    "aqua": "#7FDBFF",
-    "teal": "#39CCCC",
-    "olive": "#3D9970",
-    "yellow" :"#FFDC00",
-    "lime" :"#01FF70",
-    "orange": "#FF851B",
-    "maroon": "#85144b",
-    "fuchsia": "#F012BE",
-    "purple": "#B10DC9",
-    "black": "#111111",
-    "gray": "#AAAAAA",
-    "silver": "#DDDDDD"
-})
-
-
-# **************
-# * Exceptions *
-# **************
-
-class GnuplotError(Exception):
-    pass
-
-class OptionError(GnuplotError):
-    """Raised for unrecognized or wrong option(s)"""
-    pass
-
-
-class DataError(GnuplotError):
-    """Raised for data in the wrong format"""
-    pass
+colors = type("Colors", (object,), _colors)
