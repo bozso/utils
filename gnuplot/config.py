@@ -1,17 +1,21 @@
+from numpy import dtype
+
+
 config = {
     "persist": False,
     "debug": False,
     "silent": False,
     "exe": "gnuplot",
     "size": (800, 600),
-    "2D":
-    """
-    set style line 11 lc rgb 'black' lt 1
-    set border 3 back ls 11 lw 2.5
-    set tics nomirror
-    set style line 12 lc rgb 'black' lt 0 lw 1
-    set grid back ls 12 lw 2.0
-    """,
+    
+    "2D": {
+        "set style line 11 lc rgb 'black' lt 1",
+        "set border 3 back ls 11 lw 2.5",
+        "set tics nomirror",
+        "set style line 12 lc rgb 'black' lt 0 lw 1",
+        "set grid back ls 12 lw 2.0"
+    },
+    
     "3D":
     """
     set style line 11 lc rgb 'black' lt 1
@@ -54,7 +58,7 @@ point_type_dict = {
     "empty_down_triangle": 10,
     "filled_down_triangle": 11,
     "empty_rombus": 12,
-    "filled_rombus": 13,
+    "filled_rombus": 13
 }
 
 
@@ -65,28 +69,7 @@ line_type_dict = {
     "green": 2,
     "blue": 3,
     "purple": 4,
-    "teal": 5,
-}
-
-_colors = {
-    "red": "#8b1a0e",
-    "green": "#5e9c36",
-    "lightgreen": "#4d9178",
-    "blue": "#0074D9",
-    "darkblue": "#140a60",
-    "navy": "#001f3f",
-    "aqua": "#7FDBFF",
-    "teal": "#39CCCC",
-    "olive": "#3D9970",
-    "yellow" :"#FFDC00",
-    "lime" :"#01FF70",
-    "orange": "#FF851B",
-    "maroon": "#85144b",
-    "fuchsia": "#F012BE",
-    "purple": "#B10DC9",
-    "black": "#111111",
-    "gray": "#AAAAAA",
-    "silver": "#DDDDDD"
+    "teal": 5
 }
 
 

@@ -36,15 +36,15 @@ except ImportError:
 
 from .config import *
 
+print()
 
 __all__ = (
     "arrow", "call", "colorbar", "histo", "label", "line", "linedef",
     "margins", "multiplot", "obj", "output", "palette", "plot", "data",
     "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
     "splot", "style", "term", "title", "unset_multi", "colors",
-    "x", "y", "z", "sym", "col", "update"
+    "x", "y", "z", "sym", "col", "update", "points", "lines"
 )
-
 
 # TODO:
 # set commands should come after set out and set term
@@ -102,7 +102,13 @@ class Gnuplot(object):
     def refresh(self, plot_cmd, *items):
         plot_cmds = ", ".join(plot.command for plot in items)
         
+        assert len({item.ptype for item in items}) == 1
+        
+        ptype = items[0].ptype
+        
         self("; ".join(cmd for cmd in self.set_commands))
+        self("; ".join(config[ptype]))
+        
         self.set_commands = []
         self(plot_cmd + " " + plot_cmds + "\n")
         
@@ -156,7 +162,7 @@ class Axis(object):
         self._format = format
         set(**{"format %s" % self.name: "'%s'" % format})
     
-    format = porperty(get_format, set_format)
+    format = property(get_format, set_format)
     
 
 session = Gnuplot()
@@ -164,6 +170,10 @@ session = Gnuplot()
 call, flush, refresh = session.__call__, session.flush, session.refresh
 silent = config["silent"]
 
+
+def set(**kwargs):
+    session.set_commands.extend(parse_set(key, value)
+                                for key, value in kwargs.items())
 
 # TODO: properly provide access to debug
 # debug = property(session.get_debug, session.set_debug)
@@ -184,9 +194,9 @@ def data(*arrays, ltype="points", **kwargs):
     if data.ndim > 2:
         raise DataError("Only 1 or 2 dimensional arrays can be plotted!")
     
-    array, text = _convert_data(data, **kwargs)
+    array, text = convert_data(data, **kwargs)
     
-    return PlotDescription(array, text, **kwargs)
+    return PlotDescription(array, text, "2D", **kwargs)
 
 
 def grid(data, x=None, y=None, **kwargs):
@@ -222,9 +232,9 @@ def grid(data, x=None, y=None, **kwargs):
     grid[1:,0]  = y
     grid[1:,1:] = data.astype(np.float32)
     
-    array, text = _convert_data(grid, grid=True, **kwargs)
+    array, text = convert_data(grid, grid=True, **kwargs)
     
-    return PlotDescription(array, text, **kwargs)
+    return PlotDescription(array, text, "3D", **kwargs)
 
 
 def line(pos, mode, start=0.0, stop=1.0, ref="graph", **kwargs):
@@ -379,21 +389,14 @@ def convert_data(data, grid=False, **kwargs):
         f.write(content)
         f.close()
         
-        _session.temps.append(filename)
-        
         text  = "'{}'".format(filename)
         array = None
     
     return array, text + add
 
 
-def set(**kwargs):
-    session.set_commands.extend((parse_set(key, value)
-                                 for key, value in kwargs.items()))
-
-
 def size(scale, square=False, ratio=None):
-    Cmd = "set size"
+    Cmd = ""
     
     if square:
         Cmd += " square"
@@ -401,9 +404,9 @@ def size(scale, square=False, ratio=None):
         Cmd += " no square"
     
     if ratio is not None:
-        Cmd += " ratio {}".format(ratio)
+        Cmd += " ratio %f" % (ratio)
     
-    call("{} {},{}".format(Cmd, scale[0], scale[1]))
+    set(size="%s %f %f" % (Cmd, scale[0], scale[1]))
     
 
 def palette(pal):
@@ -411,15 +414,11 @@ def palette(pal):
 
 
 def margins(screen=False, **kwargs):
+    fmt = "at screen %f" if screen else "%s"
     
-    if screen:
-        fmt = "set {} at screen {}"
-    else:
-        fmt = "set {} {}"
-    
-    for key, value in kwargs.items():
-        if key in ("lmargin", "rmargin", "tmargin", "bmargin"):
-            call(fmt.format(key, value))
+    set(**{key: fmt % value
+           for key, value in kwargs.items()
+           if key in {"lmargin", "rmargin", "tmargin", "bmargin"}})
 
 
 def multiplot(nplot, **kwargs):
@@ -429,13 +428,13 @@ def multiplot(nplot, **kwargs):
 
 def colorbar(cbrange=None, cbtics=None, cbformat=None):
     if cbrange is not None:
-        call("set cbrange [%f:%s]"  % (cbrange[0], cbrange[1]))
+        set(cbrange="[%f:%f]" % (cbrange[0], cbrange[1]))
     
     if cbtics is not None:
-        call("set cbtics %s" % (cbtics))
+        set(cbtics=cbtics)
     
     if cbformat is not None:
-        call("set format cb '%s'" % (cbformat))
+        set(**{"format cb": cbformat})
     
 
 def unset_multi():
@@ -461,7 +460,7 @@ def output(outfile, **kwargs):
 
 
 def title(title):
-    call('set title "%s"' % (title))
+    set(title=title)
 
 
 def term(term, **kwargs):
@@ -571,15 +570,17 @@ sym = type("Symbols", (object,), {
 
 
 class PlotDescription(object):
-    def __init__(self, data, command, **kwargs):
-        self.data = data
-        self.command = command + parse_plot_arguments(**kwargs)
+    def __init__(self, data, command, ptype, **kwargs):
+        self.data, self.ptype, self.command = \
+        data, ptype, command + parse_plot_arguments(**kwargs)
     
     def __str__(self):
         return self.command
 
+    
     def __repr__(self):
-        return "<PlotDescription data: {}, command: {}>".format(self.data, self.command)
+        return "<PlotDescription data: %s, command: %s>" \
+                % (self.data, self.command)
 
 
 # *************************
@@ -591,7 +592,7 @@ def arr_bin(array, image=False):
     if array.ndim == 1:
         return " binary format='%s'" % (len(array) * gp.fmt_dict[array.dtype])
     elif array.ndim == 2:
-        fmt = array.shape[1] * gp.fmt_dict[array.dtype]
+        fmt = array.shape[1] * fmt_dict[array.dtype]
         return " binary record=%d format='%s'" % (array.shape[0], fmt)
 
 
@@ -611,8 +612,15 @@ def linedef(ltype, **kwargs):
         return "%s %s" % (ltype, " ".join(parsed_kwargs))
 
 
+def points(**kwargs):
+    return linedef("points", **kwargs)
+        
+        
+def lines(**kwargs):
+    return linedef("lines", **kwargs)
+
+
 def parse_linedef(key, value):
-    
     if key == "pt" or key == "pointtype":
         return "%s %s" % (key, point_type_dict[value])
     elif key == "lt" or key == "linetype":
@@ -622,10 +630,12 @@ def parse_linedef(key, value):
     
     if isinstance(value, bool) and value:
         return key
-    elif isinstance(value, str):
-        return "%s '%s'" % (key, value)
+    elif isinstance(value, float):
+        return "%s %f" % (key, value)
+    elif isinstance(value, int):
+        return "%s %d" % (key, value)
     else:
-        return "%s %s" % (key, value)
+        return parse_option(key, value)
 
 
 def parse_plot_arguments(**kwargs):
@@ -649,12 +659,10 @@ def parse_plot_arguments(**kwargs):
         text += " title '%s'" % (title)
     
     if vith is None:
-        pass
-    elif vith is not None:
-        text = "%s with %s" % (text, vith)
-    else:
         add = (parse_linedef(key, value) for key, value in kwargs.items())
         text = "%s with %s %s" % (text, ptype, " ".join(add))
+    elif vith is not None:
+        text = "%s with %s" % (text, vith)
     
     return text
 
@@ -667,17 +675,14 @@ def parse_range(args):
         return "(%s)" % (", ".join(str(elem) for elem in args))
 
 
-additional_keys = frozenset({"index", "every", "using", "smooth", "axes"})
-
-
 quoted = frozenset({
     "format",
-    "title",
-    "t",
     "clabel",
     "missing",
     "separator",
-    "locale"
+    "locale",
+    "rgb",
+    "rgbcolor"
 })
 
 
@@ -686,8 +691,19 @@ equaled = frozenset({
     "filetype"
 })
 
-def parse_kwargs(**kwargs):
-    return (parse_linedef(key, value) for key, value in kwargs.items())
+
+def parse_option(key, value):
+    qtd, eqd = key in quoted, key in equaled
+    
+    if qtd and eqd:
+        return "%s='%s'" % (key, value)
+    elif qtd:
+        return "%s '%s'" % (key, value)
+    elif eqd:
+        return "%s=%s" % (key, value)
+    else:
+        return "%s %s" % (key, value)
+
 
 def proc_using(txt):
     if "$" in txt:
@@ -696,13 +712,35 @@ def proc_using(txt):
         return txt
 
 
-def parse_set(name, value):
+def parse_set(key, value):
     if value is True:
-        return "set {}".format(name)
+        return "set %s" % (key)
     elif value is False:
-        return "unset {}".format(name)
+        return "unset %s" % (key)
     else:
-        return "set {} {}".format(name, value)
+        return "set %s" % parse_option(key, value)
 
 
-colors = type("Colors", (object,), _colors)
+color_codes = {
+    "red": "#8b1a0e",
+    "green": "#5e9c36",
+    "lightgreen": "#4d9178",
+    "blue": "#0074D9",
+    "darkblue": "#140a60",
+    "navy": "#001f3f",
+    "aqua": "#7FDBFF",
+    "teal": "#39CCCC",
+    "olive": "#3D9970",
+    "yellow" :"#FFDC00",
+    "lime" :"#01FF70",
+    "orange": "#FF851B",
+    "maroon": "#85144b",
+    "fuchsia": "#F012BE",
+    "purple": "#B10DC9",
+    "black": "#111111",
+    "gray": "#AAAAAA",
+    "silver": "#DDDDDD"
+}
+
+
+colors = type("Colors", (object,), color_codes)
