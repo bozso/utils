@@ -4,10 +4,14 @@ from os import chdir
 from os.path import exists
 from sys import argv
 
-from common import *
+from base import *
 import tmux as tm
 import dmenu as dm
 
+
+__all__ = (
+    "manage",
+)
 
 
 git_bin = "git"
@@ -17,10 +21,10 @@ def git(*args, **kwargs):
     return cmd(git_bin, *args, **kwargs)
 
 
-def main():
+def manage(mode):
     tpl = "https://bozso:%s@github.com/bozso"
     
-    assert argv[1] in ("git", "tmux")
+    assert mode in ("git", "tmux")
     
     if argv[1] == "git":
         if len(argv) > 2 and argv[2] == "all":
@@ -62,9 +66,6 @@ def main():
                 notify(git("status"), header="Repository %s status." % name,
                        icon="github.png")
         
+    
     elif argv[1] == "tmux":
         pass
-
-
-if __name__ == "__main__":
-    main()

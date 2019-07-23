@@ -13,6 +13,7 @@ buffer.edge_mode= buffer.EDGE_LINE
 
 textadept.file_types.extensions["gpp"] = "ansi_c"
 textadept.file_types.extensions["cml"] = "ansi_c"
+textadept.file_types.extensions["pow"] = "bash"
 
 
 function xml()

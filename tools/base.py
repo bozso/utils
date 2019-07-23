@@ -7,11 +7,12 @@ __all__ = (
     "repos",
     "cmd",
     "notify",
-    "debug"
+    "debug",
+    "home"
 )
 
 
-home = "/home/istvan"
+home = join("/home", "istvan")
 progs = join(home, "progs")
 utils = join(progs, "utils")
 icons = join(utils, "icons")
@@ -19,6 +20,7 @@ icons = join(utils, "icons")
 
 repos = {
     "insar_meteo": join(progs, "insar_meteo"),
+    "geodynamics": join(progs, "geodynamics"),
     "utils": join(progs, "utils"),
     "texfiles": join(home, "Dokumentumok", "texfiles"),
     "pygamma": join(progs, "gamma")
