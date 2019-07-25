@@ -37,17 +37,14 @@ except ImportError:
     Image = None
 
 
-from .config import *
-
-
 __all__ = (
     "arrow", "call", "colorbar", "histo", "label", "line", "linedef",
     "margins", "multiplot", "obj", "output", "palette", "plot", "data",
     "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
     "splot", "style", "term", "title", "unset_multi", "colors",
-    "x", "y", "z", "sym", "col", "update", "points", "lines"
-)
-
+    "x", "y", "z", "sym", "col", "update", "points", "lines",
+    "session", "datafile"
+)        
 
 
 config = {
@@ -115,7 +112,7 @@ class Gnuplot(object):
         else:
             self.cmd = config["exe"]
         
-        self.set_commands, self.commands, self.ext = [], [], None
+        self.sets, self.commands, self.ext = {}, [], None
         
     
     def __del__(self):
@@ -141,7 +138,9 @@ class Gnuplot(object):
     def refresh(self, plot_cmd, *items, **kwargs):
         term(**kwargs)
         
-        txt = "%s\n%s %s\n" %  ("\n".join(self.set_commands), plot_cmd,
+        txt = "%s\n%s %s\n" %  ("\n".join(parse_set(key, val)
+                                          for key, val in self.sets.items()),
+                                plot_cmd,
                                 ", ".join(plot.command for plot in items))
         
         
@@ -163,24 +162,61 @@ class Gnuplot(object):
                 raise e
         
         
-        self.set_commands = self.commands = []
+        self.commands = []
         
         return path
         
-            
+
+def gen_property(name, set_fmt=None):
+    mangled = "_%s" % name
+    
+    if set_fmt is None:
+        set_fmt = name
+    
+    def setter(self, val):
+        set(**{set_fmt: val})
+        setattr(self, mangled, val)
+    
+    def getter(self):
+        return getattr(self, mangled)
+
+    return property(getter, setter)
+
+
+def properties(Cls, **kwargs):
+    props = {
+        key: gen_property(key, val)
+        for key, val in Cls.__properties__.items()
+    }
+    
+    return type(type(Cls).__name__, (Cls,), props)
+
+
+@properties
+class Datafile(object):
+    __properties__ = {
+        "separator": None
+    }
+
+    
+
+datafile = Datafile()
+
 
 class Axis(object):
     def __init__(self, call, name="x"):
         self.call, self.name, self._range, self._label = \
         call, name, [], None
-    
+        
     def __getitem__(self, k):
         if isinstance(k, slice):
-            set("set %stics %f,%f,%f" % (self.name, k.start, k.step, k.stop))
+            key = "%stics" % self.name
+            set(key="%f,%f,%f" % (k.start, k.step, k.stop))
     
     def set_range(self, _range):
         self._range = _range
-        set("set %srange [%f:%f]" % (self.name, _range[0], _range[1]))
+        key = "%srange" % self.name
+        set(key="[%f:%f]" % (_range[0], _range[1]))
     
     def get_range(self):
         return self._range
@@ -190,7 +226,8 @@ class Axis(object):
     
     def set_label(self, label):
         self._label = label
-        set("set %slabel '%s'" % (self.name, label))
+        key = "%slabel" % self.name
+        set(key="'%s'" % label)
 
     
     def get_label(self):
@@ -204,7 +241,8 @@ class Axis(object):
     
     def set_format(self, format):
         self._format = format
-        set("set format %s '%s'" % (self.name, format))
+        key = "format %s" % self.name
+        set(key="'%s'" % format)
     
     format = property(get_format, set_format)
     
@@ -215,10 +253,9 @@ call, refresh = session.__call__, session.refresh
 silent = config["silent"]
 
 
-def set(*args, **kwargs):
-    session.set_commands.extend(args)
-    session.set_commands.extend(parse_set(key, value)
-                                for key, value in kwargs.items())
+def set(**kwargs):
+    session.sets.update(kwargs)
+
 
 # TODO: properly provide access to debug
 # debug = property(session.get_debug, session.set_debug)
@@ -472,22 +509,28 @@ def title(title):
     set(title=title)
 
 
-def term(term, **kwargs):
+def term(term, size=None, **kwargs):
     size     = kwargs.get("size")
-    font     = str(kwargs.get("font", "Verdena"))
-    fontsize = float(kwargs.get("fontsize", 12))
     enhanced = bool(kwargs.get("enhanced", False))
-
-    txt = "set terminal %s" % (term)
+    
+    if "font" in kwargs or "fontsize" in kwargs:
+        font(**kwargs)
+    
     session.ext = term2ext[term]
     
     if enhanced:
-        txt += " enhanced"
+        term += " enhanced"
     
-    if size is not None:
-        txt += " size %d,%d" % (size[0], size[1])
+    if size is None:
+        size = config["size"]
     
-    session.set_commands.append("%s font '%s,%f'" % (txt, font, fontsize))
+    term += " size %d,%d" % (size[0], size[1])
+    
+    set(terminal=term)
+
+
+def font(font="Verdena", fontsize=12.0):
+    set(font="'%s, %f'" % (font, fontsize))
 
 
 def output(outfile, **kwargs):
