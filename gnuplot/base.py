@@ -30,6 +30,7 @@ from tempfile import _get_default_tempdir, _get_candidate_names
 from time import sleep
 from shlex import split
 from sys import maxsize
+from functools import partial
 
 try:
     from IPython.display import Image, display
@@ -39,7 +40,7 @@ except ImportError:
 
 __all__ = (
     "arrow", "call", "colorbar", "histo", "label", "line", "linedef",
-    "margins", "multiplot", "obj", "output", "palette", "plot", "data",
+    "margins", "multiplot", "output", "palette", "plot", "data",
     "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
     "splot", "style", "term", "title", "unset_multi", "colors",
     "x", "y", "z", "sym", "col", "update", "points", "lines",
@@ -112,7 +113,8 @@ class Gnuplot(object):
         else:
             self.cmd = config["exe"]
         
-        self.sets, self.commands, self.ext = {}, [], None
+        self.global_sets, self.sets, self.commands, self.ext, self.palette  = \
+        {}, {}, [], None, None
         
     
     def __del__(self):
@@ -128,8 +130,13 @@ class Gnuplot(object):
     
     
     def __hash__(self):
-        return phash((tuple(self.set_commands), tuple(self.commands)))
+        return phash((self.sets, tuple(self.commands)))
     
+    def __setitem__(self, item, val):
+        self.sets[item] = val
+    
+    def __getitem__(self, item):
+        return self.sets[item]
     
     def path(self, data):
         return pth.join(tmp_path, "%s" % (phash(data)))
@@ -138,8 +145,18 @@ class Gnuplot(object):
     def refresh(self, plot_cmd, *items, **kwargs):
         term(**kwargs)
         
-        txt = "%s\n%s %s\n" %  ("\n".join(parse_set(key, val)
-                                          for key, val in self.sets.items()),
+        txt = "%s\n%s\n%s\n" % (
+            "\n".join(parse_set(key, val)
+                      for key, val in self.global_sets.items()),
+            "\n".join(parse_set(key, val)
+                      for key, val in self.sets.items()),
+            "\n".join(self.commands)
+        )
+        
+        if self.palette is not None:
+            txt = "%s\n%s" % (txt, self.palette)
+        
+        txt = "%s\n%s %s\n" %  (txt,
                                 plot_cmd,
                                 ", ".join(plot.command for plot in items))
         
@@ -149,8 +166,8 @@ class Gnuplot(object):
         if not pth.isfile(path):
             txt = "set output '%s'\n%s" % (path, txt)
             
-            assert len({item.ptype for item in items}) == 1
-            ptype = items[0].ptype
+            # assert len({item.ptype for item in items}) == 1
+            # ptype = items[0].ptype
             
             with open(gp_path, "w") as f:
                 f.write(txt)
@@ -162,19 +179,25 @@ class Gnuplot(object):
                 raise e
         
         
-        self.commands = []
+        self.sets, self.commands = {}, []
         
         return path
         
 
-def gen_property(name, set_fmt=None):
+session = Gnuplot()
+
+
+def make_property(name, set_fmt=None, prefix=None):
     mangled = "_%s" % name
+    
+    if prefix is not None:
+        name = prefix + name
     
     if set_fmt is None:
         set_fmt = name
     
     def setter(self, val):
-        set(**{set_fmt: val})
+        session.sets[name]
         setattr(self, mangled, val)
     
     def getter(self):
@@ -183,40 +206,58 @@ def gen_property(name, set_fmt=None):
     return property(getter, setter)
 
 
-def properties(Cls, **kwargs):
-    props = {
-        key: gen_property(key, val)
-        for key, val in Cls.__properties__.items()
-    }
+def properties(Cls, prefix=None):
+    props = Cls.__properties__
     
-    return type(type(Cls).__name__, (Cls,), props)
+    Cls.prefix = prefix
+    # Cls.parse_set = staticmethod(partial(parse_set, prefix=prefix))
+    
+    def init(self, *args, **kwargs):
+        for key in props:
+            setattr(self, "_%s" % key, kwargs.get(key, None))
+    
+    
+    def parse(self):
+        return "\n".join(parse_set(key, getattr(self, key), Cls.prefix)
+                         for key in Cls.__properties__
+                         if getattr(self, key) is not None)
+    
+    
+    for key, val in props.items():
+        setattr(Cls, key, make_property(key, val))
+    
+    Cls.__init__ = init
+    Cls.parse = parse
+    
+    return Cls
 
 
-@properties
 class Datafile(object):
     __properties__ = {
-        "separator": None
+        "separator": None,
+        "binary": None,
+        "comment": "commentschars",
+        "missing": None,
+        "fortran": None
     }
 
-    
 
-datafile = Datafile()
+datafile = properties(Datafile, prefix="datafile ")()
 
 
 class Axis(object):
-    def __init__(self, call, name="x"):
-        self.call, self.name, self._range, self._label = \
-        call, name, [], None
+    def __init__(self, name="x"):
+        self.name, self._range, self._label = \
+        name, [], None
         
     def __getitem__(self, k):
         if isinstance(k, slice):
-            key = "%stics" % self.name
-            set(key="%f,%f,%f" % (k.start, k.step, k.stop))
+            session["%stics" % self.name] = \
+            "%f,%f,%f" % (k.start, k.step, k.stop)
     
     def set_range(self, _range):
         self._range = _range
-        key = "%srange" % self.name
-        set(key="[%f:%f]" % (_range[0], _range[1]))
+        session["%srange" % self.name] = "[%f:%f]" % (_range[0], _range[1])
     
     def get_range(self):
         return self._range
@@ -226,8 +267,7 @@ class Axis(object):
     
     def set_label(self, label):
         self._label = label
-        key = "%slabel" % self.name
-        set(key="'%s'" % label)
+        session["%slabel" % self.name] = "'%s'" % label
 
     
     def get_label(self):
@@ -241,13 +281,10 @@ class Axis(object):
     
     def set_format(self, format):
         self._format = format
-        key = "format %s" % self.name
-        set(key="'%s'" % format)
+        session["format %s" % self.name] = "'%s'" % format
     
     format = property(get_format, set_format)
     
-
-session = Gnuplot()
 
 call, refresh = session.__call__, session.refresh
 silent = config["silent"]
@@ -260,9 +297,9 @@ def set(**kwargs):
 # TODO: properly provide access to debug
 # debug = property(session.get_debug, session.set_debug)
 
-x = Axis(call, "x")
-y = Axis(call, "y")
-z = Axis(call, "z")
+x = Axis("x")
+y = Axis("y")
+z = Axis("z")
 
 
 def data(*arrays, ltype="points", **kwargs):
@@ -461,7 +498,7 @@ def size(scale, square=False, ratio=None):
     
 
 def palette(pal):
-    call(color_palettes[pal])
+    session.palette = color_palettes[pal]
 
 
 def margins(screen=False, **kwargs):
@@ -510,7 +547,6 @@ def title(title):
 
 
 def term(term, size=None, **kwargs):
-    size     = kwargs.get("size")
     enhanced = bool(kwargs.get("enhanced", False))
     
     if "font" in kwargs or "fontsize" in kwargs:
@@ -530,14 +566,14 @@ def term(term, size=None, **kwargs):
 
 
 def font(font="Verdena", fontsize=12.0):
-    set(font="'%s, %f'" % (font, fontsize))
+    set(font="'%s, %d'" % (font, fontsize))
 
 
 def output(outfile, **kwargs):
     if kwargs:
         term(**kwargs)
     
-    session.set_commands.append("set output '%s'" % (outfile))
+    set(output=outfile)
 
 
 def arrow(From, to, style=None, tag=""):
@@ -547,10 +583,6 @@ def arrow(From, to, style=None, tag=""):
         temp += " as %s" % (style)
     
     set(arrow=temp)
-
-
-def obj(kind):
-    pass
 
 
 def label(definition, position, **kwargs):
@@ -737,7 +769,9 @@ quoted = frozenset({
     "separator",
     "locale",
     "rgb",
-    "rgbcolor"
+    "rgbcolor",
+    "commentschars",
+    "output"
 })
 
 
@@ -767,13 +801,18 @@ def proc_using(txt):
         return txt
 
 
-def parse_set(key, value):
-    if value is True:
-        return "set %s" % (key)
-    elif value is False:
-        return "unset %s" % (key)
+def parse_set(key, value, prefix=None):
+    if prefix is None:
+        tpl = "set %s"
     else:
-        return "set %s" % parse_option(key, value)
+        tpl = "set %s %%s" % prefix
+    
+    if value is True:
+        return tpl % (key)
+    elif value is False:
+        return ("un" + tpl) % (key)
+    else:
+        return tpl % parse_option(key, value)
 
 
 color_codes = {
@@ -1545,11 +1584,11 @@ set style line 8 lt 1 lc rgb '#0C2C84' # dark yellow-green-blue
 # palette
 set palette defined ( 0 '#FFFFD9',\
                       1 '#EDF8B1',\
-              2 '#C7E9B4',\
-              3 '#7FCDBB',\
-              4 '#41B6C4',\
-              5 '#1D91C0',\
-              6 '#225EA8',\
-              7 '#0C2C84' )
+                      2 '#C7E9B4',\
+                      3 '#7FCDBB',\
+                      4 '#41B6C4',\
+                      5 '#1D91C0',\
+                      6 '#225EA8',\
+                      7 '#0C2C84' )
 """
 }
