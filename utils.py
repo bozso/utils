@@ -8,10 +8,11 @@ from tempfile import _get_default_tempdir, _get_candidate_names
 from shutil import copyfileobj
 from argparse import ArgumentParser
 from glob import iglob
+from sys import version_info
 
 
 __all__ = (
-    "exist",
+    "str_t",
     "Fun",
     "Reduce",
     "Generator",
@@ -27,7 +28,6 @@ __all__ = (
     "Files",
     "Multi",
     "Base",
-    "Date",
     "CParse",
     "annot",
     "pos",
@@ -42,10 +42,17 @@ __all__ = (
 )
 
 
+py3 = version_info[0] == 3
+
+
+if py3:
+    str_t = str,
+else:
+    str_t = basestring,
+
 
 def compose(*functions):
     return ft.reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
-
 
 
 class TMP(object):
