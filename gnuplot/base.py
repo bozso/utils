@@ -31,6 +31,9 @@ from time import sleep
 from shlex import split
 from sys import maxsize
 from functools import partial
+from hashlib import sha224
+from collections import namedtuple
+from shutil import move
 
 try:
     from IPython.display import Image, display
@@ -44,7 +47,7 @@ __all__ = (
     "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
     "splot", "style", "term", "title", "unset_multi", "colors",
     "x", "y", "z", "sym", "col", "update", "points", "lines",
-    "session", "datafile"
+    "session", "datafile", "config"
 )        
 
 
@@ -55,13 +58,14 @@ config = {
     "exe": "gnuplot",
     "size": (800, 600),
     
-    "2D": {
-        "set style line 11 lc rgb 'black' lt 1",
-        "set border 3 back ls 11 lw 2.5",
-        "set tics nomirror",
-        "set style line 12 lc rgb 'black' lt 0 lw 1",
-        "set grid back ls 12 lw 2.0"
-    },
+    "2D":
+    """
+    set style line 11 lc rgb 'black' lt 1
+    set border 3 back ls 11 lw 2.5
+    set tics nomirror
+    set style line 12 lc rgb 'black' lt 0 lw 1
+    set grid back ls 12 lw 2.0
+    """,
     
     "3D":
     """
@@ -86,14 +90,12 @@ if not pth.isdir(data_path):
     mkdir(data_path)
 
 
-div = (maxsize + 1) * 2
+def phash(data):
+    return sha224(data).hexdigest()
 
-
-def phash(*data):
-    return hash(*data) % div
     
 def phash_arr(*items):
-    return phash(item.dump()for item in items)
+    return phash(item.dump() for item in items)
     
     
 def get_tmp(path=tmp_path):
@@ -113,8 +115,9 @@ class Gnuplot(object):
         else:
             self.cmd = config["exe"]
         
-        self.global_sets, self.sets, self.commands, self.ext, self.palette  = \
-        {}, {}, [], None, None
+        self.global_sets, self.sets, self.commands, \
+        self.ext, self.palette, self.count  = \
+        {}, {}, [], None, None, 0
         
     
     def __del__(self):
@@ -138,11 +141,14 @@ class Gnuplot(object):
     def __getitem__(self, item):
         return self.sets[item]
     
+    
     def path(self, data):
-        return pth.join(tmp_path, "%s" % (phash(data)))
+        return pth.join(tmp_path, "%s" % (phash(data.encode("ascii"))))
     
     
     def refresh(self, plot_cmd, *items, **kwargs):
+        assert plot_cmd in {"plot", "splot"}
+        
         term(**kwargs)
         
         txt = "%s\n%s\n%s\n" % (
@@ -153,6 +159,7 @@ class Gnuplot(object):
             "\n".join(self.commands)
         )
         
+        
         if self.palette is not None:
             txt = "%s\n%s" % (txt, self.palette)
         
@@ -161,7 +168,11 @@ class Gnuplot(object):
                                 ", ".join(plot.command for plot in items))
         
         
+        # if plot_cmd == "plot":
+        #     txt = "%s\n%s" % (config["2D"], txt)
+            
         path = "%s.%s" % (self.path(txt), self.ext)
+        
         
         if not pth.isfile(path):
             txt = "set output '%s'\n%s" % (path, txt)
@@ -173,61 +184,66 @@ class Gnuplot(object):
                 f.write(txt)
             
             try:
-                sub.check_output(split("%s %s" % (self.cmd, gp_path)))
+                sub.check_output(split("%s %s" % (self.cmd, gp_path)),
+                                 stderr=sub.STDOUT)
             except sub.CalledProcessError as e:
                 print(e.output.decode())
                 raise e
         
         
-        self.sets, self.commands = {}, []
+        self.sets, self.commands, self.count = {}, [], 0
         
-        return path
+        return Plot(path)
         
+
+class Plot(namedtuple("Plot", "path")):
+    def save(self, path):
+        move(self.path, path)
+    
+    def __str__(self):
+        return self.path
 
 session = Gnuplot()
 
 
-def make_property(name, set_fmt=None, prefix=None):
+def make_property(name, set_fmt=None, prefix=None, local=True):
     mangled = "_%s" % name
-    
-    if prefix is not None:
-        name = prefix + name
     
     if set_fmt is None:
         set_fmt = name
     
-    def setter(self, val):
-        session.sets[name]
+    if prefix is not None:
+        name = prefix + name
+    else:
+        name = name
+    
+    if local:
+        sets = session.sets
+    else:
+        sets = session.global_sets
+    
+    def setter(self, val, prefix=None):
+        sets[name] = val
         setattr(self, mangled, val)
     
     def getter(self):
         return getattr(self, mangled)
 
-    return property(getter, setter)
+    return property(getter, partial(setter, prefix=prefix))
 
 
-def properties(Cls, prefix=None):
+def properties(Cls, **kwargs):
     props = Cls.__properties__
-    
-    Cls.prefix = prefix
-    # Cls.parse_set = staticmethod(partial(parse_set, prefix=prefix))
     
     def init(self, *args, **kwargs):
         for key in props:
             setattr(self, "_%s" % key, kwargs.get(key, None))
     
     
-    def parse(self):
-        return "\n".join(parse_set(key, getattr(self, key), Cls.prefix)
-                         for key in Cls.__properties__
-                         if getattr(self, key) is not None)
-    
-    
     for key, val in props.items():
-        setattr(Cls, key, make_property(key, val))
+        setattr(Cls, key, make_property(key, val, **kwargs))
     
     Cls.__init__ = init
-    Cls.parse = parse
     
     return Cls
 
@@ -242,7 +258,7 @@ class Datafile(object):
     }
 
 
-datafile = properties(Datafile, prefix="datafile ")()
+datafile = properties(Datafile, local=False, prefix="datafile ")()
 
 
 class Axis(object):
@@ -453,7 +469,7 @@ def plot_ipython(plot_cmd, *items, **kwargs):
         if not silent:
             path = refresh(plot_cmd, *items, **kwargs)
         
-        display(Image(filename=path))
+        display(Image(filename=str(path)))
         return path
     elif not silent:
         return refresh(plot_cmd, *items, **kwargs)
@@ -547,10 +563,8 @@ def title(title):
 
 
 def term(term, size=None, **kwargs):
-    enhanced = bool(kwargs.get("enhanced", False))
+    enhanced = bool(kwargs.pop("enhanced", False))
     
-    if "font" in kwargs or "fontsize" in kwargs:
-        font(**kwargs)
     
     session.ext = term2ext[term]
     
@@ -562,11 +576,15 @@ def term(term, size=None, **kwargs):
     
     term += " size %d,%d" % (size[0], size[1])
     
+    
+    if "font" in kwargs or "fontsize" in kwargs:
+        term += font(**kwargs)
+    
     set(terminal=term)
 
 
 def font(font="Verdena", fontsize=12.0):
-    set(font="'%s, %d'" % (font, fontsize))
+    return " font '%s, %d'" % (font, fontsize)
 
 
 def output(outfile, **kwargs):
@@ -713,7 +731,7 @@ def parse_linedef(key, value):
     elif key == "lt" or key == "linetype":
         return "%s %s" % (key, line_type_dict[value])
     elif key == "rgb":
-        return "lc %s '%s'".format(key, value)
+        return "lc %s '%s'" % (key, value)
     
     if isinstance(value, bool) and value:
         return key
@@ -782,7 +800,8 @@ equaled = frozenset({
 
 
 def parse_option(key, value):
-    qtd, eqd = key in quoted, key in equaled
+    f = lambda x: x in key
+    qtd, eqd = any(map(f, quoted)), any(map(f, equaled))
     
     if qtd and eqd:
         return "%s='%s'" % (key, value)
@@ -931,6 +950,7 @@ fmt_dict = {
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 
 # Colorpalettes taken from: https://github.com/BIDS/colormap/blob/master/colormaps.py
+
 
 color_palettes = {
 
