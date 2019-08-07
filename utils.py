@@ -1,9 +1,10 @@
 import functools as ft
 import os
 import operator as op
+from collections.abc import Iterable
 from os import path as pth
 from errno import EEXIST
-from itertools import tee
+from itertools import tee, takewhile, islice
 from tempfile import _get_default_tempdir, _get_candidate_names
 from shutil import copyfileobj
 from argparse import ArgumentParser
@@ -13,11 +14,8 @@ from sys import version_info
 
 __all__ = (
     "str_t",
-    "Fun",
-    "Reduce",
-    "Generator",
-    "List",
-    "All",
+    "Seq",
+    "isiter",
     "all_same",
     "make_object",
     "make_join",
@@ -444,50 +442,47 @@ class CParse(object):
         return self
 
 
-class Fun(object):
-    def __init__(self, f):
-        self.f = f
-    
-    def __call__(self, *args, **kwargs):
-        return self.f.__call__(*args, **kwargs)
-    
-    
-class Reduce(Fun):
-    def __ror__(self, gen):
-        return ft.reduce(self.f, gen)
-    
-
-class Apply(object):
-    def __or__(self, f):
-        return Generator(map(f, self))
-    
-    def __xor__(self, f):
-        return ft.reduce(f, self)
-    
-    def __pos__(self):
-        return sum(self)
-    
-    def __str__(self):
-        return "(%s)" % ", ".join(str(elem) for elem in self)
-    
-
-class Generator(Apply):
-    def __init__(self, gen):
-        self.gen = gen
-    
-    def __iter__(self):
-        return iter(self.gen)
-
-
-class List(Apply):
+class Seq(object):
     def __init__(self, *items):
-        self._list = tuple(items)
-    
-    def __add__(self, other):
-        return self._list + other._list
-    
+        assert len(items) > 0
+        
+        zero = items[0]
+        
+        if isinstance(zero, Seq):
+            self.seq = zero.seq
+        elif isinstance(zero, Iterable) \
+             and not isinstance(zero, str_t):
+            self.seq = zero
+        else:
+            self.seq = items
+                
     def __iter__(self):
-        return iter(self._list)
+        return iter(self.seq)
+    
+    def map(self, fun):
+        return Seq(map(fun, self))
+    
+    def reduce(self, fun):
+        return Seq(reduce(fun, self))
+    
+    def filter(self, fun):
+        return Seq(filter(fun, self))
 
+    def sum(self, init=0):
+        return Seq(sum(self, init))
 
-All = op.and_
+    def join(self, txt):
+        return txt.join(self)
+    
+    def takewhile(fun):
+        return Seq(takewhile(fun, self))
+    
+    def take(self, *args):
+        return tuple(islice(self, *args))
+    
+    # def __str__(self):
+    #     return " ".join("%s" % elem for elem in self)
+    
+
+def isiter(obj):
+    return isinstance(obj, Iterable)
