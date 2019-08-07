@@ -61,7 +61,7 @@ class TMP(object):
     def __init__(self):
         self.tmps = []
     
-    def tmp_file(path=tmpdir):
+    def tmp_file(self, path=tmpdir):
         path = pth.join(path, next(_get_candidate_names()))
         
         self.tmps.append(path)
@@ -70,7 +70,6 @@ class TMP(object):
     
     def __del__(self):
         for path in self.tmps:
-            log.debug('Removed file: "%s"' % path)
             rm(path)
 
 
@@ -460,13 +459,16 @@ class Reduce(Fun):
 
 class Apply(object):
     def __or__(self, f):
-        return Generator(f(elem) for elem in self)
+        return Generator(map(f, self))
     
     def __xor__(self, f):
         return ft.reduce(f, self)
     
+    def __pos__(self):
+        return sum(self)
+    
     def __str__(self):
-        return " ".join(str(elem) for elem in self)
+        return "(%s)" % ", ".join(str(elem) for elem in self)
     
 
 class Generator(Apply):
@@ -480,6 +482,9 @@ class Generator(Apply):
 class List(Apply):
     def __init__(self, *items):
         self._list = tuple(items)
+    
+    def __add__(self, other):
+        return self._list + other._list
     
     def __iter__(self):
         return iter(self._list)
