@@ -1,10 +1,10 @@
 import functools as ft
 import os
 import operator as op
+from itertools import tee, takewhile, islice, chain, filterfalse
 from collections.abc import Iterable
 from os import path as pth
 from errno import EEXIST
-from itertools import tee, takewhile, islice
 from tempfile import _get_default_tempdir, _get_candidate_names
 from shutil import copyfileobj
 from argparse import ArgumentParser
@@ -15,6 +15,7 @@ from sys import version_info
 __all__ = (
     "str_t",
     "Seq",
+    "ls",
     "isiter",
     "all_same",
     "make_object",
@@ -49,8 +50,11 @@ else:
     str_t = basestring,
 
 
+def compose2(f, g):
+    return lambda *a, **kw: f(g(*a, **kw))
+    
 def compose(*functions):
-    return ft.reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+    return ft.reduce(compose2, functions)
 
 
 class TMP(object):
@@ -76,6 +80,7 @@ tmp_file = tmp.tmp_file
 
 empty_iter = iter([])
 isfile = compose(pth.isfile, pth.join)
+ls = compose(iglob, pth.join)
 
 
 class Cache(object):
@@ -272,7 +277,6 @@ def mkdir(path):
         if e.errno != EEXIST:
             raise e
         else:
-            log.debug('Directory "%s" already exists.' % (path))
             return path
 
 mkdir = compose(mkdir, pth.join)
@@ -285,8 +289,6 @@ def ln(target, link_name):
         if e.errno == EEXIST:
             os.remove(link_name)
             os.symlink(target, link_name)
-            log.debug('Symlink from "%s" to "%s" created'
-                         % (target, link_name))
         else:
             raise e
 
@@ -298,11 +300,9 @@ def rm(*args):
                 return
             elif pth.isdir(path):
                 sh.rmtree(path)
-                log.debug('Directory "%s" deleted,' % path)
             elif pth.isfile(path):
                 try:
                     os.remove(path)
-                    log.debug('File "%s" deleted.' % path)
                 except OSError as e:
                     if e.errno != ENOENT:
                         raise e
@@ -462,15 +462,27 @@ class Seq(object):
     def map(self, fun):
         return Seq(map(fun, self))
     
+    def omap(self, fun, *args, **kwargs):
+        return self.map(lambda x: fun(x, *args, **kwargs))
+    
+    def chain(self):
+        return Seq(chain.from_iterable(self))
+    
     def reduce(self, fun):
         return Seq(reduce(fun, self))
     
     def filter(self, fun):
         return Seq(filter(fun, self))
 
+    def filter_false(self, fun):
+        return Seq(filterfalse(fun, self))
+    
     def sum(self, init=0):
         return Seq(sum(self, init))
-
+    
+    def sorted(self, key=None):
+        return sorted(self, key=key)
+    
     def join(self, txt):
         return txt.join(self)
     
@@ -479,6 +491,12 @@ class Seq(object):
     
     def take(self, *args):
         return tuple(islice(self, *args))
+    
+    def collect(self, collection=tuple):
+        return collection(self)
+    
+    def select(self, field):
+        return self.map(lambda x: getattr(x, field))
     
     # def __str__(self):
     #     return " ".join("%s" % elem for elem in self)
