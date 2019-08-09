@@ -12,7 +12,7 @@ from glob import iglob
 from sys import version_info
 from keyword import iskeyword
 from collections import OrderedDict
-
+from copy import copy
 
 __all__ = (
     "new_type",
@@ -461,11 +461,22 @@ class Seq(object):
     def __iter__(self):
         return iter(self.seq)
     
+    def tee(self, n=2):
+        return tee(self, n)
+    
+    def copy(self, *args, **kwargs):
+        print(self.seq)
+        ret, self.seq = tee(self.collect(), 2)
+        return Seq(ret)
+    
     def map(self, fun):
         return Seq(map(fun, self))
     
     def omap(self, fun, *args, **kwargs):
-        return self.map(lambda x: fun(x, *args, **kwargs))
+        return self.map(partial(op.methodcaller(fun), *args, **kwargs))
+    
+    def select(self, field):
+        return self.map(op.attrgetter(field))
     
     def chain(self):
         return Seq(chain.from_iterable(self))
@@ -497,8 +508,6 @@ class Seq(object):
     def collect(self, collection=tuple):
         return collection(self)
     
-    def select(self, field):
-        return self.map(lambda x: getattr(x, field))
     
     # def __str__(self):
     #     return " ".join("%s" % elem for elem in self)
