@@ -18,6 +18,7 @@ __all__ = (
     "new_type",
     "str_t",
     "Seq",
+    "fun",
     "ls",
     "isiter",
     "all_same",
@@ -444,6 +445,29 @@ class CParse(object):
         return self
 
 
+class Fun(object):
+    def __init__(self, fun):
+        self.fun = fun
+    
+    def __call__(self, *args, **kwargs):
+        return self.fun(*args, **kwargs)
+    
+    def __getitem__(self, *args, **kwargs):
+        return Fun(ft.partial(self.fun, *args, **kwargs))
+    
+    def __lt__(self, other):
+        return Fun(compose(self.fun, other.fun))
+    
+    def __rlt__(self, other):
+        return Fun(compose(other.fun, self.fun))
+    
+    def __str__(self):
+        return str(self.fun)
+
+
+fun = Fun
+
+    
 class Seq(object):
     def __init__(self, *items):
         assert len(items) > 0
@@ -462,18 +486,13 @@ class Seq(object):
         return iter(self.seq)
     
     def tee(self, n=2):
-        return tee(self, n)
+        return tuple(map(Seq, tee(self, n)))
     
-    def copy(self, *args, **kwargs):
-        print(self.seq)
-        ret, self.seq = tee(self.collect(), 2)
-        return Seq(ret)
-    
-    def map(self, fun):
-        return Seq(map(fun, self))
+    def map(self, fun, *args, **kwargs):
+        return Seq(map(ft.partial(fun, *args, **kwargs), self))
     
     def omap(self, fun, *args, **kwargs):
-        return self.map(partial(op.methodcaller(fun), *args, **kwargs))
+        return self.map(ft.partial(op.methodcaller(fun), *args, **kwargs))
     
     def select(self, field):
         return self.map(op.attrgetter(field))
@@ -484,17 +503,20 @@ class Seq(object):
     def reduce(self, fun):
         return Seq(reduce(fun, self))
     
-    def filter(self, fun):
-        return Seq(filter(fun, self))
+    def filter(self, fun, *args, **kwargs):
+        return Seq(filter(ft.partial(fun, *args, **kwargs), self))
 
-    def filter_false(self, fun):
-        return Seq(filterfalse(fun, self))
+    def filter_false(self, fun, *args, **kwargs):
+        return Seq(filterfalse(ft.partial(fun, *args, **kwargs), self))
     
     def sum(self, init=0):
         return Seq(sum(self, init))
     
     def sorted(self, key=None):
         return sorted(self, key=key)
+    
+    def str(self):
+        return self.map(str)
     
     def join(self, txt):
         return txt.join(self)
