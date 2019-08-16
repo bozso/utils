@@ -14,6 +14,7 @@ from keyword import iskeyword
 from collections import OrderedDict
 from copy import copy
 
+
 __all__ = (
     "new_type",
     "str_t",
@@ -246,7 +247,7 @@ def get_par(key, data, sep=":"):
             lines = f.readlines()
     elif isinstance(data, bytes):
         lines = data.decode().split("\n")
-    elif isinstance(data, string_t):
+    elif isinstance(data, str_t):
         lines = data.split("\n")
     else:
         lines = data
@@ -485,8 +486,14 @@ class Seq(object):
     def __iter__(self):
         return iter(self.seq)
     
+    
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return Seq(islice(self, item.start, item.stop, item.step))
+    
     def tee(self, n=2):
-        return tuple(map(Seq, tee(self, n)))
+        itered = tuple(self)
+        return (Seq(itered) for ii in range(n))
     
     def map(self, fun, *args, **kwargs):
         return Seq(map(ft.partial(fun, *args, **kwargs), self))
@@ -530,27 +537,34 @@ class Seq(object):
     def collect(self, collection=tuple):
         return collection(self)
     
-    
-    # def __str__(self):
-    #     return " ".join("%s" % elem for elem in self)
-    
+    def any(self):
+        return any(self)
 
+    def all(self):
+        return all(self)
+
+        
 def isiter(obj):
     return isinstance(obj, Iterable)
 
 
 
 def new_type(type_name, field_names):
-    if isinstance(field_names, str):
+    if isinstance(field_names, str_t):
         # names separated by whitespace and/or commas
         field_names = field_names.replace(',', ' ').split()
+    
     check_name(type_name)
     seen_fields = set()
+    
     for name in field_names:
         check_name(name)
+        
         if name in seen_fields:
             raise ValueError('Encountered duplicate field name: %r' % name)
+        
         seen_fields.add(name)
+    
     return type(
         type_name,
         (PlainBase,),
@@ -562,7 +576,6 @@ def new_type(type_name, field_names):
 
 
 class PlainBase(object):
-
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
@@ -591,8 +604,11 @@ def make_constructor(fields):
 
 def check_name(name):
     if not all(c.isalnum() or c == '_' for c in name):
-        raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
+        raise ValueError("Type names and field names can only contain "
+                         "alphanumeric characters and underscores: %r" % name)
     if iskeyword(name):
-        raise ValueError('Type names and field names cannot be a keyword: %r' % name)
+        raise ValueError("Type names and field names "
+                         "cannot be a keyword: %r" % name)
     if name[0].isdigit():
-        raise ValueError('Type names and field names cannot start with a number: %r' % name)
+        raise ValueError("Type names and field names cannot start with a "
+                         "number: %r" % name)
