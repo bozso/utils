@@ -42,7 +42,8 @@ __all__ = (
     "mv",
     "mkdir",
     "compose",
-    "isfile"
+    "isfile",
+    "fs"
 )
 
 
@@ -54,6 +55,9 @@ if py3:
 else:
     str_t = basestring,
 
+
+def fs(*elems):
+    return frozenset(elems)
 
 def compose2(f, g):
     return lambda *a, **kw: f(g(*a, **kw))
