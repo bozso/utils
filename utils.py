@@ -472,23 +472,32 @@ class Fun(object):
 
 fun = Fun
 
+def make_applyer(function):
+    def inner(self, fun, *args, **kwargs):
+        f = ft.partial(fun, *args, **kwargs)
+        return Seq(function(f, self))
     
+    return inner
+
+
 class Seq(object):
+    __slots__ = ("_seq",)
+    
     def __init__(self, *items):
         assert len(items) > 0
         
         zero = items[0]
         
         if isinstance(zero, Seq):
-            self.seq = zero.seq
+            self._seq = zero.seq
         elif isinstance(zero, Iterable) \
              and not isinstance(zero, str_t):
-            self.seq = zero
+            self._seq = zero
         else:
-            self.seq = items
+            self._seq = items
                 
     def __iter__(self):
-        return iter(self.seq)
+        return iter(self._seq)
     
     
     def __getitem__(self, item):
@@ -499,8 +508,16 @@ class Seq(object):
         itered = tuple(self)
         return (Seq(itered) for ii in range(n))
     
-    def map(self, fun, *args, **kwargs):
-        return Seq(map(ft.partial(fun, *args, **kwargs), self))
+    map = make_applyer(map)
+    #filter = make_applyer(filter)
+    #filter_false = make_applyer(filterfalse)
+    #reduce = make_applyer(reduce)
+    
+    #def map(self, fun, *args, **kwargs):
+    #    return Seq(map(ft.partial(fun, *args, **kwargs), self))
+    
+    def seq(self):
+        return Seq(self.collect())
     
     def omap(self, fun, *args, **kwargs):
         return self.map(ft.partial(op.methodcaller(fun), *args, **kwargs))
@@ -536,7 +553,7 @@ class Seq(object):
         return Seq(takewhile(fun, self))
     
     def take(self, *args):
-        return tuple(islice(self, *args))
+        return Seq(islice(self, *args))
     
     def collect(self, collection=tuple):
         return collection(self)
