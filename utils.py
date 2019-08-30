@@ -17,6 +17,7 @@ from inspect import getfullargspec
 
 
 __all__ = (
+    "Seq",
     "T",
     "flat",
     "new_type",
@@ -103,9 +104,8 @@ def all_same(iterable, fun=None):
     
     return n == 1
 
-
-def make_object(name, inherit=(object,), **kwargs):
-    return type(name, inherit, **kwargs)
+def make_object(name, kwargs, inherit=(object,)):
+    return type(name, inherit, kwargs)
 
 
 
@@ -398,13 +398,6 @@ def isiter(obj):
     return isinstance(obj, Iterable)
 
 
-def Struct(*names):
-    def inner(cls):
-        return new_type(cls.__name__, names)
-    
-    return inner
-    
-
 def new_type(type_name, field_names):
     if isinstance(field_names, str_t):
         # names separated by whitespace and/or commas
@@ -477,3 +470,78 @@ def check_name(name: str):
     if name[0].isdigit():
         raise ValueError("Type names and field names cannot start with a "
                          "number: %r" % name)
+
+
+def make_applyer(function):
+    def inner(self, fun, *args, **kwargs):
+        f = ft.partial(fun, *args, **kwargs)
+        return Seq(function(f, self))
+    
+    return inner
+
+
+class Seq(object):
+    __slots__ = ("_seq",)
+    
+    def __init__(self, *args, **kwargs):
+        self._seq = tuple(*args, **kwargs)
+                
+    def __iter__(self):
+        return iter(self._seq)
+    
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return Seq(islice(self, item.start, item.stop, item.step))
+    
+    def tee(self, n=2):
+        return (Seq(itered) for ii in range(n))
+    
+    map = make_applyer(map)
+    #filter = make_applyer(filter)
+    #filter_false = make_applyer(filterfalse)
+    #reduce = make_applyer(reduce)
+    
+    #def map(self, fun, *args, **kwargs):
+    #    return Seq(map(ft.partial(fun, *args, **kwargs), self))
+    
+    def omap(self, fun, *args, **kwargs):
+        return self.map(ft.partial(op.methodcaller(fun), *args, **kwargs))
+    
+    def select(self, field):
+        return self.map(op.attrgetter(field))
+    
+    def chain(self):
+        return Seq(chain.from_iterable(self))
+    
+    def reduce(self, fun):
+        return Seq(reduce(fun, self))
+    
+    def filter(self, fun, *args, **kwargs):
+        return Seq(filter(ft.partial(fun, *args, **kwargs), self))
+
+    def filter_false(self, fun, *args, **kwargs):
+        return Seq(filterfalse(ft.partial(fun, *args, **kwargs), self))
+    
+    def sum(self, init=0):
+        return Seq(sum(self, init))
+    
+    def sorted(self, key=None):
+        return sorted(self, key=key)
+    
+    def str(self):
+        return self.map(str)
+    
+    def join(self, txt):
+        return txt.join(self)
+    
+    def takewhile(fun):
+        return Seq(takewhile(fun, self))
+    
+    def take(self, *args):
+        return Seq(islice(self, *args))
+    
+    def any(self):
+        return any(self)
+
+    def all(self):
+        return all(self)
