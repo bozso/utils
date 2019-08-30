@@ -13,19 +13,18 @@ from sys import version_info
 from keyword import iskeyword
 from collections import OrderedDict
 from copy import copy
+from inspect import getfullargspec
 
 
 __all__ = (
+    "T",
+    "flat",
     "new_type",
     "str_t",
-    "Seq",
-    "fun",
     "ls",
     "isiter",
     "all_same",
     "make_object",
-    "make_join",
-    "Params",
     "tmp_file",
     "get_par",
     "cat",
@@ -49,13 +48,16 @@ __all__ = (
 
 py3 = version_info[0] == 3
 
+T = tuple
+
+def flat(arg): return tup(chain.from_iterable(map(tup, arg)))
 
 if py3:
     str_t = str,
 else:
     str_t = basestring,
 
-
+    
 def fs(*elems):
     return frozenset(elems)
 
@@ -92,32 +94,6 @@ isfile = compose(pth.isfile, pth.join)
 ls = compose(iglob, pth.join)
 
 
-class Cache(object):
-    
-    def __init__(self, root):
-        self.root = mkdir(root)
-        
-        mk = compose(mkdir, ft.partial(pth.join, root))
-        
-        self.unzip, self.slc, self.rslc, self.ifg = \
-        mk("unzip"), mk("slc"), mk("rslc"), mk("ifg")
-    
-    
-    def join(self, *args, **kwargs):
-        return pth.join(self.root, *args, **kwargs)
-    
-    
-    def dir(self, name):
-        return Cache(mkdir(self.join(name)))
-
-
-    def list(self, name):
-        if not pth.isdir(self.join(name)):
-            return empty_iter
-        else:
-            return iglob(self.join(name, "*"))
-    
-
     
 def all_same(iterable, fun=None):
     if fun is not None:
@@ -131,31 +107,6 @@ def all_same(iterable, fun=None):
 def make_object(name, inherit=(object,), **kwargs):
     return type(name, inherit, **kwargs)
 
-
-
-class Params(object):
-    def __init__(self, dictionary):
-        self.params = dictionary
-    
-    @classmethod
-    def from_file(cls, path, sep=":"):
-        with open(path, "r") as f:
-            return cls({
-                line.split(sep)[0].strip() : " ".join(line.split(sep)[1:]).strip()
-                for line in f if line
-            })
-    
-    def __str__(self):
-        return pformat(self.params)
-    
-    def __getitem__(self, key):
-        return self.params[key]
-
-    def float(self, key, idx=0):
-        return float(self[key].split()[idx])
-
-    def int(self, key, idx=0):
-        return int(self[key].split()[idx])
 
 
 def cat(out, *args):
@@ -277,7 +228,7 @@ class Base(Files):
             Files.rm(self, elem)
 
 
-def mkdir(path):
+def mkdir(path: str):
     try:
         os.makedirs(path)
         return path
@@ -328,13 +279,6 @@ def mv(*args, **kwargs):
             log.debug('"File "%s" moved to "%s".' % (src, dst))    
 
             
-def make_join(path):
-    def f(*args, **kwargs):
-        return pth.join(path, *args, **kwargs)
-    
-    return f
-
-
 def pos(action="store", help=None, type=str, choices=None,
         nargs=None, metavar=None, dest=None, const=None):
     return {
@@ -450,125 +394,16 @@ class CParse(object):
         return self
 
 
-class Fun(object):
-    def __init__(self, fun):
-        self.fun = fun
-    
-    def __call__(self, *args, **kwargs):
-        return self.fun(*args, **kwargs)
-    
-    def __getitem__(self, *args, **kwargs):
-        return Fun(ft.partial(self.fun, *args, **kwargs))
-    
-    def __lt__(self, other):
-        return Fun(compose(self.fun, other.fun))
-    
-    def __rlt__(self, other):
-        return Fun(compose(other.fun, self.fun))
-    
-    def __str__(self):
-        return str(self.fun)
-
-
-fun = Fun
-
-def make_applyer(function):
-    def inner(self, fun, *args, **kwargs):
-        f = ft.partial(fun, *args, **kwargs)
-        return Seq(function(f, self))
-    
-    return inner
-
-
-class Seq(object):
-    __slots__ = ("_seq",)
-    
-    def __init__(self, *items):
-        assert len(items) > 0
-        
-        zero = items[0]
-        
-        if isinstance(zero, Seq):
-            self._seq = zero.seq
-        elif isinstance(zero, Iterable) \
-             and not isinstance(zero, str_t):
-            self._seq = zero
-        else:
-            self._seq = items
-                
-    def __iter__(self):
-        return iter(self._seq)
-    
-    
-    def __getitem__(self, item):
-        if isinstance(item, slice):
-            return Seq(islice(self, item.start, item.stop, item.step))
-    
-    def tee(self, n=2):
-        itered = tuple(self)
-        return (Seq(itered) for ii in range(n))
-    
-    map = make_applyer(map)
-    #filter = make_applyer(filter)
-    #filter_false = make_applyer(filterfalse)
-    #reduce = make_applyer(reduce)
-    
-    #def map(self, fun, *args, **kwargs):
-    #    return Seq(map(ft.partial(fun, *args, **kwargs), self))
-    
-    def seq(self):
-        return Seq(self.collect())
-    
-    def omap(self, fun, *args, **kwargs):
-        return self.map(ft.partial(op.methodcaller(fun), *args, **kwargs))
-    
-    def select(self, field):
-        return self.map(op.attrgetter(field))
-    
-    def chain(self):
-        return Seq(chain.from_iterable(self))
-    
-    def reduce(self, fun):
-        return Seq(reduce(fun, self))
-    
-    def filter(self, fun, *args, **kwargs):
-        return Seq(filter(ft.partial(fun, *args, **kwargs), self))
-
-    def filter_false(self, fun, *args, **kwargs):
-        return Seq(filterfalse(ft.partial(fun, *args, **kwargs), self))
-    
-    def sum(self, init=0):
-        return Seq(sum(self, init))
-    
-    def sorted(self, key=None):
-        return sorted(self, key=key)
-    
-    def str(self):
-        return self.map(str)
-    
-    def join(self, txt):
-        return txt.join(self)
-    
-    def takewhile(fun):
-        return Seq(takewhile(fun, self))
-    
-    def take(self, *args):
-        return Seq(islice(self, *args))
-    
-    def collect(self, collection=tuple):
-        return collection(self)
-    
-    def any(self):
-        return any(self)
-
-    def all(self):
-        return all(self)
-
-        
 def isiter(obj):
     return isinstance(obj, Iterable)
 
 
+def Struct(*names):
+    def inner(cls):
+        return new_type(cls.__name__, names)
+    
+    return inner
+    
 
 def new_type(type_name, field_names):
     if isinstance(field_names, str_t):
@@ -586,12 +421,21 @@ def new_type(type_name, field_names):
         
         seen_fields.add(name)
     
+    def derive(*names):
+        def inner(cls):
+            return new_type(cls.__name__, field_names + names)
+        
+        return inner
+            
+            
+    
     return type(
         type_name,
         (PlainBase,),
         {
-            '__slots__': field_names,
-            '__init__': make_constructor(field_names)
+            "__slots__": field_names,
+            "__init__": make_constructor(field_names),
+            "derive": derive
         }
     )
 
@@ -623,7 +467,7 @@ def make_constructor(fields):
     return namespace['__init__']
 
 
-def check_name(name):
+def check_name(name: str):
     if not all(c.isalnum() or c == '_' for c in name):
         raise ValueError("Type names and field names can only contain "
                          "alphanumeric characters and underscores: %r" % name)
