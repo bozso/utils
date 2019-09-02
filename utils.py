@@ -480,12 +480,18 @@ def make_applyer(function):
     return inner
 
 
+eager = 0
+
 class Seq(object):
     __slots__ = ("_seq",)
     
-    def __init__(self, *args, **kwargs):
-        self._seq = tuple(*args, **kwargs)
-                
+    if eager:
+        def __init__(self, *args, **kwargs):
+            self._seq = tuple(*args, **kwargs)
+    else:
+        def __init__(self, arg):
+            self._seq = arg
+        
     def __iter__(self):
         return iter(self._seq)
     
@@ -493,19 +499,32 @@ class Seq(object):
         if isinstance(item, slice):
             return Seq(islice(self, item.start, item.stop, item.step))
     
+    
+    def __str__(self):
+        return str(self._seq)
+    
+    
+    def __repr__(self):
+        return repr(self._seq)
+    
+    
+    def tup(self):
+        return tuple(self)
+    
+    
     def tee(self, n=2):
         return (Seq(itered) for ii in range(n))
     
-    map = make_applyer(map)
+    # map = make_applyer(map)
     #filter = make_applyer(filter)
     #filter_false = make_applyer(filterfalse)
     #reduce = make_applyer(reduce)
     
-    #def map(self, fun, *args, **kwargs):
-    #    return Seq(map(ft.partial(fun, *args, **kwargs), self))
+    def map(self, fun, *args, **kwargs):
+        return Seq(map(ft.partial(fun, *args, **kwargs), self))
     
     def omap(self, fun, *args, **kwargs):
-        return self.map(ft.partial(op.methodcaller(fun), *args, **kwargs))
+        return self.map(op.methodcaller(fun, *args, **kwargs))
     
     def select(self, field):
         return self.map(op.attrgetter(field))
