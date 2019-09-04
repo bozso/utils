@@ -14,6 +14,7 @@ from keyword import iskeyword
 from collections import OrderedDict
 from copy import copy
 from inspect import getfullargspec
+from multiprocessing.pool import Pool
 
 
 __all__ = (
@@ -480,18 +481,26 @@ def make_applyer(function):
     return inner
 
 
-eager = 0
+lazy = 1
 
 class Seq(object):
     __slots__ = ("_seq",)
     
-    if eager:
-        def __init__(self, *args, **kwargs):
-            self._seq = tuple(*args, **kwargs)
-    else:
+    processes = -1
+    parallel = processes >= 0
+    
+    if parallel:
+        pool = Pool(processes)
+    
+    
+    if lazy:
         def __init__(self, arg):
             self._seq = arg
-        
+    else:
+        def __init__(self, *args, **kwargs):
+            self._seq = tuple(*args, **kwargs)
+    
+    
     def __iter__(self):
         return iter(self._seq)
     
@@ -522,6 +531,18 @@ class Seq(object):
     
     def map(self, fun, *args, **kwargs):
         return Seq(map(ft.partial(fun, *args, **kwargs), self))
+    
+    
+    if parallel:
+        if lazy:
+            def pmap(self, fun, *args, **kwargs):
+                return Seq(self.pool.imap(ft.partial(fun, *args, **kwargs), 
+                                          self))
+        else:
+            def pmap(self, fun, *args, **kwargs):
+                return Seq(self.pool.map(ft.partial(fun, *args, **kwargs), 
+                                         self))
+    
     
     def omap(self, fun, *args, **kwargs):
         return self.map(op.methodcaller(fun, *args, **kwargs))
@@ -564,3 +585,7 @@ class Seq(object):
 
     def all(self):
         return all(self)
+    
+    def enum(self, **kwargs):
+        return enumerate(self, **kwargs)
+    
