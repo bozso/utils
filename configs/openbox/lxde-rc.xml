@@ -350,9 +350,14 @@
         <command>lxterminal --command="htop"</command>
       </action>
     </keybind>
-    <keybind key="W-l">
+    <keybind key="W-o">
       <action name="Execute">
         <command>libreoffice</command>
+      </action>
+    </keybind>
+    <keybind key="W-l">
+      <action name="Execute">
+        <command>thunderbird</command>
       </action>
     </keybind>
     <!-- Snapping windows -->
