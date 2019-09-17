@@ -195,9 +195,46 @@ from shlex import split
 import subprocess as sub
 
 
+home = pth.join("home", "istvan")
+
+gpp_flags = (
+    '--nostdinc -I${inc_path} -U "@" "" "{" "}{" "}" "{" "}" "@" "" $'
+    '-M "#" "\n" "{" "}{" "}" "{" "}" +c "/*" "*/" +c "//" "\n"'
+)
+
+def rule(self, name, command, description=None, depfile=None,
+         generator=False, pool=None, restat=False, rspfile=None,
+         rspfile_content=None, deps=None):
+    self._line('rule %s' % name)
+    self.variable('command', command, indent=1)
+    if description:
+        self.variable('description', description, indent=1)
+    if depfile:
+        self.variable('depfile', depfile, indent=1)
+    if generator:
+        self.variable('generator', '1', indent=1)
+    if pool:
+        self.variable('pool', pool, indent=1)
+    if restat:
+        self.variable('restat', '1', indent=1)
+    if rspfile:
+        self.variable('rspfile', rspfile, indent=1)
+    if rspfile_content:
+        self.variable('rspfile_content', rspfile_content, indent=1)
+    if deps:
+        self.variable('deps', deps, indent=1)
+
+rule gpp
+  command = gpp $gpp_flags -o $out $in 
+
+
+
 class ninja(Writer):
     # def __init__(self, *args, **kwargs):
     #     Writer.__init__(self, *args, **kwargs)
     
     def __del__(self):
-        sub.check_output(["ninja"] + argv)
+        sub.check_output(["ninja"] + argv[1:])
+    
+    
+    
