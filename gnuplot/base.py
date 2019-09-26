@@ -34,21 +34,14 @@ from functools import partial
 from hashlib import sha224
 from collections import namedtuple
 from shutil import move
+from itertools import tee, takewhile, islice, chain, filterfalse
 
 try:
     from IPython.display import Image, display
 except ImportError:
     Image = None
 
-
-__all__ = (
-    "arrow", "call", "colorbar", "histo", "label", "line", "linedef",
-    "margins", "multiplot", "output", "palette", "plot", "data",
-    "file", "grid", "refresh", "replot", "reset", "save", "set", "silent",
-    "splot", "style", "term", "title", "unset_multi", "colors",
-    "x", "y", "z", "sym", "col", "update", "points", "lines",
-    "session", "datafile", "config"
-)        
+from utils import *
 
 
 config = {
@@ -77,6 +70,7 @@ config = {
     """
 }
 
+    
 
 tmp_path = pth.join(_get_default_tempdir(), "gnuplot")
 data_path = pth.join(tmp_path, "data")
@@ -98,27 +92,183 @@ def phash_arr(*items):
     return phash(item.dump() for item in items)
     
     
-def get_tmp(path=tmp_path):
-    return pth.join(path, next(_get_candidate_names()))
-
-
 def update(**kwargs):
     config.update(kwargs)
 
 
-class Gnuplot(object):
+def make_property(name):
+    mangled = "_%s" % name
+    
+    def setter(self, val):
+        setattr(self, mangled, val)
+    
+    def getter(self):
+        return getattr(self, mangled)
+
+    return property(getter, setter)
+
+
+def number(item):
+    if not isinstance(item, Number):
+        raise TypeError("Expected a number got %s" % (item))
+    
+    return str(item)
+    
+    
+def numbers(item, ntype, brackets=False):
+    if not isinstance(item iterable):
+        raise TypeError("Expected an iterable %s" % (item))
+    
+    numbers = (number(elem) for elem in item)
+    
+    if ntype == "range":
+        ret = ":".join(numbers)
+    elif ntype == "tuple":
+        ret = ",".join(numbers)
+    elif ntype == 
+    
+    
+    if brackets == "square":
+        ret = "[%s]" % ret
+    elif brackets == "curly":
+        ret = "{%s}" % ret
+    elif brackets == "round":
+        ret = "(%s)" % ret
+    
+    return ret
+    
+
+def string(item, quoted=True):
+    if quoted:
+        return '"%s"' % str(item)
+    else:
+        return str(item)
+
+label = partial(string, quoted=False)
+
+def labels(item):
+    if not isinstance(item iterable):
+        raise TypeError("Expected an iterable %s" % (item))
+    
+    labels = (label(elem) for elem in item)
+    
+    return ",".join(labels)
+    
+
+
+def make_property(name, validator):
+    mangled = "_%s" % name
+    
+    def getter(self):
+        return getattr(self, mangled)
+    
+    def setter(self, item):
+        setattr(self, mangled, validator(item))
+    
+    return property(getter, setter)
+
+
+def properties(cls):
+    options = cls.__options__
+    attribs = options.attribs
+    names = tuple(attribs.keys())
+    cname = cls.__name__
+    
+    prefix = options.prefix
+    
+    nt = new_type(cname, names)
+    
+    def init(self, *args, name=None, **kwargs):
+        if name is not None:
+            self.prefix = "%s%s" % (name, prefix)
+        else:
+            self.prefix = prefix
+        
+        for key, val in attribs.items():
+            setattr(self, "%s" % key, kwargs.get(key, val))
+    
+    
+    def iter(self):
+        for key in names:
+            yield key, getattr(self, key)
+    
+    def tostring(self):
+        return "%s(%s)" % (cname, 
+               "; ".join("%s: %s" % (key, val) for key, val in self))
+    
+    def parse(self):
+        prefix = self.prefix
+        
+        return "\n".join(parse_set(key, val, prefix)
+                         for key, val in self
+                         if val is not None)
+    
+    if hasattr(cls, "__slots__"):
+        mangled += getattr(cls, "__slots__")
+    
+    nt.update({
+        "__init__": init,
+        "__slots__": names + ("prefix",),
+        "__str__": tostring,
+        "__iter__": iter,
+        "parse": parse
+        # "prefix": prefix
+        # "__options__": cls.options,
+        # "__option_names__": tuple(cls.options.keys()),
+    })
+    
+    
+    for key, val in attribs.items():
+        callables[key] = make_property(key)
+    
+    return type(cname, (object,), callables)
+
+
+_options = new_type("Options", ("prefix", "attribs"))
+
+
+def options(prefix=None, **kwargs):
+    return _options(prefix, kwargs)
+
+
+@properties
+class Tics:
+    __options__ = options(prefix="tics",
+        format=None,
+        axis=None
+    )
+    
+
+fslots = ("multi", "cmd", "datafile", "global_sets", "sets", "commands",
+          "ext", "palette", "count")
+
+axes = {"x", "y", "x2", "y2", "cb"}
+
+fslots += tuple("%stics" % name for name in axes)
+
+
+class Figure(object):
+    __slots__ = fslots
+    
+    __options__ = options(
+        size=numbers()
+    )
+    
     def __init__(self):
-        self.multi = self.process = None
+        self.multi = None
         
         if config["persist"]:
             self.cmd = "%s --persist" % config["exe"]
         else:
             self.cmd = config["exe"]
         
+        self.xtics = Tics(name="x"), Tics(name="y"), Tics(name="z")
+        # self.x, self.y, self.z = Axis("x"), Axis("y"), Axis("z")
+        self.datafile = DataFile()
         self.global_sets, self.sets, self.commands, \
         self.ext, self.palette, self.count  = \
         {}, {}, [], None, None, 0
-        
+    
     
     def __del__(self):
         if self.multi is not None:
@@ -142,9 +292,46 @@ class Gnuplot(object):
         return self.sets[item]
     
     
+    def line(self, pos, mode, start=0.0, stop=1.0, ref="graph", **kwargs):
+        add = gp.parse_kwargs(**kwargs)
+        
+        if mode == "h" or mode == "horizontal":
+            tpl = "from {ref} {}, {p} to {ref} {}, {p} nohead {}"
+        elif mode == "v" or mode == "vertical":
+            tpl = "from {p}, {ref} {} to {p}, {ref} {} nohead {}"
+        else:
+            raise ValueError('"mode" should be either "h", "horizontal", "v" '
+                             'or "vertical"')
+
+        self[arrow] = tpl.format(start, stop, " ".join(add), p=pos, ref=ref)
+    
+    def size(self, scale, square=False, ratio=None):
+        Cmd = ""
+        
+        if square:
+            Cmd += " square"
+        else:
+            Cmd += " no square"
+        
+        if ratio is not None:
+            Cmd += " ratio %f" % (ratio)
+        
+        self[size] = "%s %f %f" % (Cmd, scale[0], scale[1])
+    
+    def margins(self, screen=False, **kwargs):
+        fmt = "at screen %f" if screen else "%s"
+        
+        self.sets.update({key: fmt % value for key, value in kwargs.items()
+                          if key in {"lmargin", "rmargin", 
+                                     "tmargin", "bmargin"}})
+        
     def path(self, data):
         return pth.join(tmp_path, "%s" % (phash(data.encode("ascii"))))
     
+    
+    def style(self, stylenum, ltype, **kwargs):
+        self["style line %d" % stylenum] = \
+        "%s" % (linedef(ltype, **kwargs))
     
     def refresh(self, plot_cmd, *items, **kwargs):
         assert plot_cmd in {"plot", "splot"}
@@ -167,10 +354,6 @@ class Gnuplot(object):
                                 plot_cmd,
                                 ", ".join(plot.command for plot in items))
         
-        
-        # if plot_cmd == "plot":
-        #     txt = "%s\n%s" % (config["2D"], txt)
-            
         path = "%s.%s" % (self.path(txt), self.ext)
         
         
@@ -195,85 +378,61 @@ class Gnuplot(object):
         
         return Plot(path)
         
+    def plot_ipython(self, plot_cmd, *items, **kwargs):
+        if Image is not None:
+            kwargs.setdefault("term", "pngcairo")
+            
+            if not silent:
+                path = self.refresh(plot_cmd, *items, **kwargs)
+            
+            display(Image(filename=str(path)))
+            return path
+        elif not silent:
+            return refresh(plot_cmd, *items, **kwargs)
+        
+        
+    def plot(self, *items, **kwargs):
+        return self.plot_ipython("plot", *items, **kwargs)
+
+    def splot(self, *items, **kwargs):
+        return self.plot_ipython("splot", *items, **kwargs)
+
 
 class Plot(namedtuple("Plot", "path")):
     def save(self, path):
         move(self.path, path)
-    
-    def __str__(self):
-        return self.path
-
-session = Gnuplot()
 
 
-def make_property(name, set_fmt=None, prefix=None, local=True):
-    mangled = "_%s" % name
+@properties
+class DataFile:
+    prefix = "datafile"
     
-    if set_fmt is None:
-        set_fmt = name
-    
-    if prefix is not None:
-        name = prefix + name
-    else:
-        name = name
-    
-    if local:
-        sets = session.sets
-    else:
-        sets = session.global_sets
-    
-    def setter(self, val, prefix=None):
-        sets[name] = val
-        setattr(self, mangled, val)
-    
-    def getter(self):
-        return getattr(self, mangled)
-
-    return property(getter, partial(setter, prefix=prefix))
+    separator, binary, commentschars, missing, fortran = \
+    None, None, None, None, None
 
 
-def properties(Cls, **kwargs):
-    props = Cls.__properties__
+@properties
+class ColorBar(object):
+    prefix = "colorbox"
     
-    def init(self, *args, **kwargs):
-        for key in props:
-            setattr(self, "_%s" % key, kwargs.get(key, None))
-    
-    
-    for key, val in props.items():
-        setattr(Cls, key, make_property(key, val, **kwargs))
-    
-    Cls.__init__ = init
-    
-    return Cls
-
-
-class Datafile(object):
-    __properties__ = {
-        "separator": None,
-        "binary": None,
-        "comment": "commentschars",
-        "missing": None,
-        "fortran": None
-    }
-
-
-datafile = properties(Datafile, local=False, prefix="datafile ")()
+    range, tics, format = None, None, None
 
 
 class Axis(object):
+    __slots__ = ("name", "_range", "_label", "options")
+    
     def __init__(self, name="x"):
-        self.name, self._range, self._label = \
-        name, [], None
+        self.name, self._range, self._label, self.options = \
+        name, [], None, {}
         
     def __getitem__(self, k):
         if isinstance(k, slice):
-            session["%stics" % self.name] = \
+            self.options["%stics" % self.name] = \
             "%f,%f,%f" % (k.start, k.step, k.stop)
     
     def set_range(self, _range):
         self._range = _range
-        session["%srange" % self.name] = "[%f:%f]" % (_range[0], _range[1])
+        self.options["%srange" % self.name] = "[%f:%f]" % (_range[0], _range[1])
     
     def get_range(self):
         return self._range
@@ -301,22 +460,6 @@ class Axis(object):
     
     format = property(get_format, set_format)
     
-
-call, refresh = session.__call__, session.refresh
-silent = config["silent"]
-
-
-def set(**kwargs):
-    session.sets.update(kwargs)
-
-
-# TODO: properly provide access to debug
-# debug = property(session.get_debug, session.set_debug)
-
-x = Axis("x")
-y = Axis("y")
-z = Axis("z")
-
 
 def data(*arrays, ltype="points", **kwargs):
     try:
@@ -369,20 +512,6 @@ def grid(data, x=None, y=None, **kwargs):
     text = convert_data(grid, grid=True, **kwargs)
     
     return PlotDescription("3D", text, **kwargs)
-
-
-def line(pos, mode, start=0.0, stop=1.0, ref="graph", **kwargs):
-    add = gp.parse_kwargs(**kwargs)
-    
-    if mode == "h" or mode == "horizontal":
-        tpl = "from {ref} {}, {p} to {ref} {}, {p} nohead {}"
-    elif mode == "v" or mode == "vertical":
-        tpl = "from {p}, {ref} {} to {p}, {ref} {} nohead {}"
-    else:
-        raise ValueError('"mode" should be either "h", "horizontal", "v" '
-                         'or "vertical"')
-
-    set(arrow=tpl.format(start, stop, " ".join(add), p=pos, ref=ref))
 
     
 def histo(edges, hist, **kwargs):
@@ -462,26 +591,6 @@ def file(data, matrix=None, binary=None, array=None, endian="default",
     return PlotDescription("2D", text, **kwargs)
 
 
-def plot_ipython(plot_cmd, *items, **kwargs):
-    if Image is not None:
-        kwargs.setdefault("term", "pngcairo")
-        
-        if not silent:
-            path = refresh(plot_cmd, *items, **kwargs)
-        
-        display(Image(filename=str(path)))
-        return path
-    elif not silent:
-        return refresh(plot_cmd, *items, **kwargs)
-    
-    
-def plot(*items, **kwargs):
-    return plot_ipython("plot", *items, **kwargs)
-
-def splot(*items, **kwargs):
-    return plot_ipython("splot", *items, **kwargs)
-
-
 def convert_data(data, grid=False, **kwargs):
     bytes = data.dumps()
     path = pth.join(data_path, "%s.dat" % phash(bytes))
@@ -497,32 +606,10 @@ def convert_data(data, grid=False, **kwargs):
         add = arr_bin(data)
     
     return "'%s' %s" % (path, add)
-
-
-def size(scale, square=False, ratio=None):
-    Cmd = ""
-    
-    if square:
-        Cmd += " square"
-    else:
-        Cmd += " no square"
-    
-    if ratio is not None:
-        Cmd += " ratio %f" % (ratio)
-    
-    set(size="%s %f %f" % (Cmd, scale[0], scale[1]))
     
 
 def palette(pal):
     session.palette = color_palettes[pal]
-
-
-def margins(screen=False, **kwargs):
-    fmt = "at screen %f" if screen else "%s"
-    
-    set(**{key: fmt % value
-           for key, value in kwargs.items()
-           if key in {"lmargin", "rmargin", "tmargin", "bmargin"}})
 
 
 def multiplot(nplot, **kwargs):
@@ -530,15 +617,6 @@ def multiplot(nplot, **kwargs):
 #     return gp.MultiPlot(nplot, _session, **kwargs)
 
 
-def colorbar(cbrange=None, cbtics=None, cbformat=None):
-    if cbrange is not None:
-        set(cbrange="[%f:%f]" % (cbrange[0], cbrange[1]))
-    
-    if cbtics is not None:
-        set(cbtics=cbtics)
-    
-    if cbformat is not None:
-        set(**{"format cb": cbformat})
     
 
 def unset_multi():
@@ -550,14 +628,9 @@ def reset():
     call("reset")
 
 
-def style(stylenum, ltype, **kwargs):
-    """
-    Parameters
-    ----------
-    """
-    call("set style line %d %s" % (stylenum, linedef(ltype, **kwargs)))
 
 
+# Convert this to property
 def title(title):
     set(title=title)
 

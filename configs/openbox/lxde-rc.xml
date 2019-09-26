@@ -326,6 +326,11 @@
         <command>parole -N</command>
       </action>
     </keybind>
+    <keybind key="W-p">
+      <action name="Execute">
+        <command>parole -p</command>
+      </action>
+    </keybind>
     <keybind key="W-s">
       <action name="Execute">
         <command>sh /home/istvan/progs/utils/menu.sh shutdown</command>
@@ -350,9 +355,14 @@
         <command>lxterminal --command="htop"</command>
       </action>
     </keybind>
-    <keybind key="W-l">
+    <keybind key="W-o">
       <action name="Execute">
         <command>libreoffice</command>
+      </action>
+    </keybind>
+    <keybind key="W-l">
+      <action name="Execute">
+        <command>thunderbird</command>
       </action>
     </keybind>
     <!-- Snapping windows -->

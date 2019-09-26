@@ -92,16 +92,16 @@ alias nbrc="nano -u ~/.bashrc"
 
 . "$PROGS/insar_meteo/insar_meteo.sh"
 
-
 PROOT="/home/istvan/packages"
 JULIA="$PROGS/julia-1.1.0/bin"
 SNAP="/home/istvan/snap/bin"
-SSARA="$PROGS/SSARA"
-GAMMA="$PROGS/gamma"
-GEOD="$PROGS/geodynamics"
+SSARA="${PROGS}/SSARA"
+GAMMA="${PROGS}/gamma"
+GEOD="${PROGS}/geodynamics"
+PKGS="${HOME}/packages"
 
 PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS/bin:$PROOT/usr/bin:$UTILS_DIR/bin"
-PATH="$PATH:$GAMMA/bin"
+PATH="$PATH:$GAMMA/bin:${PKGS}/bin"
 
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
 export PYTHONPATH="$PYTHONPATH:$UTILS_DIR:$GAMMA:$GEODYNAMICS"

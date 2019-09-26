@@ -1,27 +1,32 @@
 import functools as ft
 import os
 import operator as op
+from itertools import tee, takewhile, islice, chain, filterfalse
+from collections.abc import Iterable
 from os import path as pth
 from errno import EEXIST
-from itertools import tee
 from tempfile import _get_default_tempdir, _get_candidate_names
 from shutil import copyfileobj
 from argparse import ArgumentParser
 from glob import iglob
 from sys import version_info
+from keyword import iskeyword
+from collections import OrderedDict
+from copy import copy
+from inspect import getfullargspec
+from multiprocessing.pool import Pool
 
 
 __all__ = (
+    "Seq",
+    "T",
+    "flat",
+    "new_type",
     "str_t",
-    "Fun",
-    "Reduce",
-    "Generator",
-    "List",
-    "All",
+    "ls",
+    "isiter",
     "all_same",
     "make_object",
-    "make_join",
-    "Params",
     "tmp_file",
     "get_par",
     "cat",
@@ -38,21 +43,31 @@ __all__ = (
     "mv",
     "mkdir",
     "compose",
-    "isfile"
+    "isfile",
+    "fs"
 )
 
 
 py3 = version_info[0] == 3
 
+T = tuple
+
+def flat(arg): return tup(chain.from_iterable(map(tup, arg)))
 
 if py3:
     str_t = str,
 else:
     str_t = basestring,
 
+    
+def fs(*elems):
+    return frozenset(elems)
 
+def compose2(f, g):
+    return lambda *a, **kw: f(g(*a, **kw))
+    
 def compose(*functions):
-    return ft.reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+    return ft.reduce(compose2, functions)
 
 
 class TMP(object):
@@ -61,7 +76,7 @@ class TMP(object):
     def __init__(self):
         self.tmps = []
     
-    def tmp_file(path=tmpdir):
+    def tmp_file(self, path=tmpdir):
         path = pth.join(path, next(_get_candidate_names()))
         
         self.tmps.append(path)
@@ -70,7 +85,6 @@ class TMP(object):
     
     def __del__(self):
         for path in self.tmps:
-            log.debug('Removed file: "%s"' % path)
             rm(path)
 
 
@@ -79,33 +93,8 @@ tmp_file = tmp.tmp_file
 
 empty_iter = iter([])
 isfile = compose(pth.isfile, pth.join)
+ls = compose(iglob, pth.join)
 
-
-class Cache(object):
-    
-    def __init__(self, root):
-        self.root = mkdir(root)
-        
-        mk = compose(mkdir, ft.partial(pth.join, root))
-        
-        self.unzip, self.slc, self.rslc, self.ifg = \
-        mk("unzip"), mk("slc"), mk("rslc"), mk("ifg")
-    
-    
-    def join(self, *args, **kwargs):
-        return pth.join(self.root, *args, **kwargs)
-    
-    
-    def dir(self, name):
-        return Cache(mkdir(self.join(name)))
-
-
-    def list(self, name):
-        if not pth.isdir(self.join(name)):
-            return empty_iter
-        else:
-            return iglob(self.join(name, "*"))
-    
 
     
 def all_same(iterable, fun=None):
@@ -116,35 +105,9 @@ def all_same(iterable, fun=None):
     
     return n == 1
 
+def make_object(name, kwargs, inherit=(object,)):
+    return type(name, inherit, kwargs)
 
-def make_object(name, inherit=(object,), **kwargs):
-    return type(name, inherit, **kwargs)
-
-
-
-class Params(object):
-    def __init__(self, dictionary):
-        self.params = dictionary
-    
-    @classmethod
-    def from_file(cls, path, sep=":"):
-        with open(path, "r") as f:
-            return cls({
-                line.split(sep)[0].strip() : " ".join(line.split(sep)[1:]).strip()
-                for line in f if line
-            })
-    
-    def __str__(self):
-        return pformat(self.params)
-    
-    def __getitem__(self, key):
-        return self.params[key]
-
-    def float(self, key, idx=0):
-        return float(self[key].split()[idx])
-
-    def int(self, key, idx=0):
-        return int(self[key].split()[idx])
 
 
 def cat(out, *args):
@@ -240,7 +203,7 @@ def get_par(key, data, sep=":"):
             lines = f.readlines()
     elif isinstance(data, bytes):
         lines = data.decode().split("\n")
-    elif isinstance(data, string_t):
+    elif isinstance(data, str_t):
         lines = data.split("\n")
     else:
         lines = data
@@ -266,16 +229,14 @@ class Base(Files):
             Files.rm(self, elem)
 
 
-def mkdir(path):
+def mkdir(path: str):
     try:
         os.makedirs(path)
-        log.debug('Directory "%s" created.' % (path))
         return path
     except OSError as e:
         if e.errno != EEXIST:
             raise e
         else:
-            log.debug('Directory "%s" already exists.' % (path))
             return path
 
 mkdir = compose(mkdir, pth.join)
@@ -288,8 +249,6 @@ def ln(target, link_name):
         if e.errno == EEXIST:
             os.remove(link_name)
             os.symlink(target, link_name)
-            log.debug('Symlink from "%s" to "%s" created'
-                         % (target, link_name))
         else:
             raise e
 
@@ -301,11 +260,9 @@ def rm(*args):
                 return
             elif pth.isdir(path):
                 sh.rmtree(path)
-                log.debug('Directory "%s" deleted,' % path)
             elif pth.isfile(path):
                 try:
                     os.remove(path)
-                    log.debug('File "%s" deleted.' % path)
                 except OSError as e:
                     if e.errno != ENOENT:
                         raise e
@@ -323,13 +280,6 @@ def mv(*args, **kwargs):
             log.debug('"File "%s" moved to "%s".' % (src, dst))    
 
             
-def make_join(path):
-    def f(*args, **kwargs):
-        return pth.join(path, *args, **kwargs)
-    
-    return f
-
-
 def pos(action="store", help=None, type=str, choices=None,
         nargs=None, metavar=None, dest=None, const=None):
     return {
@@ -445,44 +395,197 @@ class CParse(object):
         return self
 
 
-class Fun(object):
-    def __init__(self, f):
-        self.f = f
-    
-    def __call__(self, *args, **kwargs):
-        return self.f.__call__(*args, **kwargs)
-    
-    
-class Reduce(Fun):
-    def __ror__(self, gen):
-        return ft.reduce(self.f, gen)
-    
+def isiter(obj):
+    return isinstance(obj, Iterable)
 
-class Apply(object):
-    def __or__(self, f):
-        return Generator(f(elem) for elem in self)
+
+def new_type(type_name, field_names):
+    if isinstance(field_names, str_t):
+        # names separated by whitespace and/or commas
+        field_names = field_names.replace(',', ' ').split()
     
-    def __xor__(self, f):
-        return ft.reduce(f, self)
+    check_name(type_name)
+    seen_fields = set()
+    
+    for name in field_names:
+        check_name(name)
+        
+        if name in seen_fields:
+            raise ValueError('Encountered duplicate field name: %r' % name)
+        
+        seen_fields.add(name)
+    
+    def derive(*names):
+        def inner(cls):
+            return new_type(cls.__name__, field_names + names)
+        
+        return inner
+            
+            
+    
+    return type(
+        type_name,
+        (PlainBase,),
+        {
+            "__slots__": field_names,
+            "__init__": make_constructor(field_names),
+            "derive": derive
+        }
+    )
+
+
+class PlainBase(object):
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return all(i == j for i, j in zip(self, other))
+
+    def __iter__(self):
+        for name in self.__slots__:
+            yield getattr(self, name)
+
+    def __repr__(self):
+        values = tuple(self)
+        return self.__class__.__name__ + repr(values)
+
+    def to_dict(self):
+        return OrderedDict(zip(self.__slots__, self))
+
+
+def make_constructor(fields):
+    assignments = '\n'.join(['    self.{0} = {0}'.format(f) for f in fields])
+    parameter_lists = ', '.join(fields)
+    source = 'def __init__(self, %s):\n%s' % (parameter_lists, assignments)
+    namespace = {}
+    exec(source, namespace)
+    return namespace['__init__']
+
+
+def check_name(name: str):
+    if not all(c.isalnum() or c == '_' for c in name):
+        raise ValueError("Type names and field names can only contain "
+                         "alphanumeric characters and underscores: %r" % name)
+    if iskeyword(name):
+        raise ValueError("Type names and field names "
+                         "cannot be a keyword: %r" % name)
+    if name[0].isdigit():
+        raise ValueError("Type names and field names cannot start with a "
+                         "number: %r" % name)
+
+
+def make_applyer(function):
+    def inner(self, fun, *args, **kwargs):
+        f = ft.partial(fun, *args, **kwargs)
+        return Seq(function(f, self))
+    
+    return inner
+
+
+lazy = 1
+
+class Seq(object):
+    __slots__ = ("_seq",)
+    
+    processes = -1
+    parallel = processes >= 0
+    
+    if parallel:
+        pool = Pool(processes)
+    
+    
+    if lazy:
+        def __init__(self, arg):
+            self._seq = arg
+    else:
+        def __init__(self, *args, **kwargs):
+            self._seq = tuple(*args, **kwargs)
+    
+    
+    def __iter__(self):
+        return iter(self._seq)
+    
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return Seq(islice(self, item.start, item.stop, item.step))
+    
     
     def __str__(self):
-        return " ".join(str(elem) for elem in self)
+        return str(self._seq)
     
-
-class Generator(Apply):
-    def __init__(self, gen):
-        self.gen = gen
     
-    def __iter__(self):
-        return iter(self.gen)
-
-
-class List(Apply):
-    def __init__(self, *items):
-        self._list = tuple(items)
+    def __repr__(self):
+        return repr(self._seq)
     
-    def __iter__(self):
-        return iter(self._list)
+    
+    def tup(self):
+        return tuple(self)
+    
+    
+    def tee(self, n=2):
+        return (Seq(itered) for ii in range(n))
+    
+    # map = make_applyer(map)
+    #filter = make_applyer(filter)
+    #filter_false = make_applyer(filterfalse)
+    #reduce = make_applyer(reduce)
+    
+    def map(self, fun, *args, **kwargs):
+        return Seq(map(ft.partial(fun, *args, **kwargs), self))
+    
+    
+    if parallel:
+        if lazy:
+            def pmap(self, fun, *args, **kwargs):
+                return Seq(self.pool.imap(ft.partial(fun, *args, **kwargs), 
+                                          self))
+        else:
+            def pmap(self, fun, *args, **kwargs):
+                return Seq(self.pool.map(ft.partial(fun, *args, **kwargs), 
+                                         self))
+    
+    
+    def omap(self, fun, *args, **kwargs):
+        return self.map(op.methodcaller(fun, *args, **kwargs))
+    
+    def select(self, field):
+        return self.map(op.attrgetter(field))
+    
+    def chain(self):
+        return Seq(chain.from_iterable(self))
+    
+    def reduce(self, fun):
+        return Seq(reduce(fun, self))
+    
+    def filter(self, fun, *args, **kwargs):
+        return Seq(filter(ft.partial(fun, *args, **kwargs), self))
 
+    def filter_false(self, fun, *args, **kwargs):
+        return Seq(filterfalse(ft.partial(fun, *args, **kwargs), self))
+    
+    def sum(self, init=0):
+        return Seq(sum(self, init))
+    
+    def sorted(self, key=None):
+        return sorted(self, key=key)
+    
+    def str(self):
+        return self.map(str)
+    
+    def join(self, txt):
+        return txt.join(self)
+    
+    def takewhile(fun):
+        return Seq(takewhile(fun, self))
+    
+    def take(self, *args):
+        return Seq(islice(self, *args))
+    
+    def any(self):
+        return any(self)
 
-All = op.and_
+    def all(self):
+        return all(self)
+    
+    def enum(self, **kwargs):
+        return enumerate(self, **kwargs)
+    
