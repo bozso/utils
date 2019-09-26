@@ -49,9 +49,6 @@ proton() {
     
 }
 
-
-PROOT="/home/istvan/packages"
-
 #local_install() {
 #    if [[ $# -ne 1 ]]; then
 #        echoerr "error: local_install: One argument (package name) is required!"
@@ -96,6 +93,7 @@ alias nbrc="nano -u ~/.bashrc"
 . "$PROGS/insar_meteo/insar_meteo.sh"
 
 
+PROOT="/home/istvan/packages"
 JULIA="$PROGS/julia-1.1.0/bin"
 SNAP="/home/istvan/snap/bin"
 SSARA="$PROGS/SSARA"
