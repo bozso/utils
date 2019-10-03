@@ -24,7 +24,7 @@ __all__ = (
     "ln", "mv", "mkdir", "compose", "isfile", "fs"
 )
 
-py3 = version[0] == 3
+py3 = version_info[0] == 3
 
 def flat(arg): return tup(chain.from_iterable(map(tup, arg)))
 
@@ -577,7 +577,17 @@ import textwrap
 def escape_path(word):
     return word.replace('$ ', '$$ ').replace(' ', '$ ').replace(':', '$:')
 
+
+home = pth.join("/", "home", "istvan")
+gpp_include = pth.join(home, "Dokumentumok", "texfiles", "gpp")
+
+
 class Ninja(object):
+    gpp_flags = (
+        '--nostdinc -I%s -U "\\\\" "" "{" "}{" "}" "{" "}" "#" "" '
+        '+c "/*" "*/" +c "%%" "\\n"'
+    ) % gpp_include
+    
     def __init__(self, output, width=78):
         self.output = output
         self.width = width
@@ -715,9 +725,27 @@ class Ninja(object):
             leading_space = '  ' * (indent+2)
 
         self.output.write(leading_space + text + '\n')
-
+    
     def close(self):
         self.output.close()
+    
+    # Own additions
+    
+    def gpp(self, **kwargs):
+        self.rule("gpp", "gpp %s -o $out $in " % self.gpp_flags,
+                  "gpp preprocessing", **kwargs)
+    
+    @staticmethod
+    def out(infile, outdir="build", ext=None):
+        ret = pth.join(outdir, infile)
+        
+        if ext is not None:
+            ret = reext(ret, ext)
+        
+        return ret
+    
+    
+
     
 def as_list(input):
     if input is None:
@@ -750,10 +778,5 @@ def expand(string, vars, local_vars={}):
     return re.sub(r'\$(\$|\w*)', exp, string)
 
 
-
-# Own modifications
-
-gpp_flags = (
-    '--nostdinc -I${inc_path} -U "@" "" "{" "}{" "}" "{" "}" "@" "" $'
-    '-M "#" "\n" "{" "}{" "}" "{" "}" +c "/*" "*/" +c "//" "\n"'
-)
+def reext(path, ext):
+    return pth.splitext(path)[0]+'.%s' % ext

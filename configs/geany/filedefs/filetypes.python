@@ -1,4 +1,4 @@
 [build-menu]
 FT_01_LB=Lint
-FT_01_CM=pyflakes "%f"
+FT_01_CM=pylint "%f"
 FT_01_WD=
