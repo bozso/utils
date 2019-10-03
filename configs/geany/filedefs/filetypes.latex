@@ -1,7 +1,0 @@
-[build-menu]
-FT_01_LB=buildpdf
-FT_01_CM=latexrun --bibtex-cmd "biber" --bibtex-args "%e" "%f"
-FT_01_WD=
-FT_00_LB=pdflatex
-FT_00_CM=pdflatex --file-line-error-style -shell-escape "%f"
-FT_00_WD=
