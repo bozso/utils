@@ -1,14 +1,16 @@
 PROGS="/home/istvan/progs"
-UTILS_DIR="$PROGS/utils"
+UTILS="${PROGS}/utils"
 
-
-alias reload='source $UTILS_DIR/utils.sh'
+alias reload='. ${UTILS}/utils.sh'
 
 export temu=lxterminal
 browser="chromium-browser"
 
-# alias pull_all="sh $UTILS_DIR/menu.sh pull_all"
-
+for file in $(ls ${UTILS}/bash_completion/); do
+    if [ -r ${file} ]; then
+        . ${file}
+    fi
+done
 
 buildpdf() {
     pdflatex --file-line-error-style -shell-escape "$1"
@@ -28,7 +30,7 @@ tar_ext() {
 
 
 gm() {
-    sh $UTILS_DIR/tools/git.sh $*
+    sh ${UTILS}/tools/git.sh $*
 }
 
 
@@ -71,29 +73,13 @@ TXA="$UTILS_DIR/configs/textadept"
 alias editor="$PROGS/textadept/textadept"
 alias editor_term="$PROGS/textadept/textadept-curses"
 
-taw() {
-    editor -u "$TXA" "$@" &
-}
-
-ta() {
-    editor_term -u "$TXA" "$@"
-}
-
-markdown_compile() {
-    local tmp="/tmp/tmp.md"
-
-    cpp -nostdinc -x c $1 -P > $tmp
-    $browser $tmp
-}
-
-
 alias nano="nano -u"
 alias nbrc="nano -u ~/.bashrc"
 
-. "$PROGS/insar_meteo/insar_meteo.sh"
+. "${PROGS}/insar_meteo/insar_meteo.sh"
 
 PROOT="/home/istvan/packages"
-JULIA="$PROGS/julia-1.1.0/bin"
+JULIA="${PROGS}/julia-1.1.0/bin"
 SNAP="/home/istvan/snap/bin"
 SSARA="${PROGS}/SSARA"
 GAMMA="${PROGS}/gamma"

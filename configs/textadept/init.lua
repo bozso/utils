@@ -61,6 +61,7 @@ textadept.run.run_commands["cml"] = cmd
 
 textadept.run.run_commands["py"] = "pycodestyle.py %f"
 
+buffer:set_theme('light', {font = 'Monospace', fontsize = 14})
 --
 -- keys.command_mode = {
 --    ["h"] = buffer.char_left,
@@ -75,35 +76,3 @@ textadept.run.run_commands["py"] = "pycodestyle.py %f"
 -- keys.MODE = "command_mode"
 
 -- textadept.run.build_commands["cpp"] = "ninja"
-
-
-local property, property_int = buffer.property, buffer.property_int
-
-property['color.white'] = 0xC0C0C0
-property['style.default'] = 'fore:$(color.black),back:$(color.white)'
-property['style.bracelight'] = 'fore:$(color.white),back:$(color.black)'
-property['style.folddisplaytext'] = 'fore:$(color.white),bold'
-property['style.linenumber'] = 'fore:$(color.black),back:$(color.white)'
-
-buffer:set_sel_fore(true, property_int['color.white'])
-buffer:set_sel_back(true, property_int['color.light_black'])
-buffer.caret_fore = property_int['color.grey_black']
-buffer.caret_line_back = property_int['color.white']
-
-property['style.class'] = 'fore:$(color.yellow)'
-property['style.comment'] = 'fore:$(color.black),bold'
-property['style.constant'] = 'fore:$(color.red)'
-property['style.embedded'] = '$(style.keyword),back:$(color.black)'
-property['style.error'] = 'fore:$(color.red),bold'
-property['style.function'] = 'fore:$(color.blue)'
-property['style.identifier'] = ''
-property['style.keyword'] = 'fore:$(color.white),bold'
-property['style.label'] = 'fore:$(color.red),bold'
-property['style.number'] = 'fore:$(color.blue)'
-property['style.operator'] = 'fore:$(color.yellow)'
-property['style.preprocessor'] = 'fore:$(color.magenta)'
-property['style.regex'] = 'fore:$(color.green),bold'
-property['style.string'] = 'fore:$(color.green)'
-property['style.type'] = 'fore:$(color.magenta),bold'
-property['style.variable'] = 'fore:$(color.blue),bold'
-property['style.whitespace'] = ''
