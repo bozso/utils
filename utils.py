@@ -583,6 +583,13 @@ gpp_include = pth.join(home, "Dokumentumok", "texfiles", "gpp")
 
 
 class Ninja(object):
+    gcc_debug_flag = (
+        "-Werror -Wall -Wextra -Wfloat-equal -Wundef -Wshadow -Wpointer-arith "
+        "-Wcast-align -Wstrict-prototypes -Weffc++ -Wstrict-aliasing "
+        "-Wstrict-overflow=5 -Wwrite-strings -Wcast-qual -Wswitch-default "
+        "-Wconversion -Wunreachable-code -O0"
+    )
+    
     gpp_flags = (
         '--nostdinc -I%s -U "\\\\" "" "{" "}{" "}" "{" "}" "#" "" '
         '+c "/*" "*/" +c "%%" "\\n"'
@@ -735,6 +742,9 @@ class Ninja(object):
         self.rule("gpp", "gpp %s -o $out $in " % self.gpp_flags,
                   "gpp preprocessing", **kwargs)
     
+    def cpp_obj(self, **kwargs):
+        self.rule("cpp_obj", "g++ %s -o $out $in" % self.gcc_debug_flag)
+        
     @staticmethod
     def out(infile, outdir="build", ext=None):
         ret = pth.join(outdir, infile)
