@@ -301,16 +301,13 @@
     <keybind key="W-r">
       <action name="Execute">
         <command>openbox --reconfigure</command>
-        <command>killall -SIGUSR1 tint2</command>
       </action>
     </keybind>
-    <!--
     <keybind key="W-i">
       <action name="Execute">
-        <command>parole</command>
+        <command>sh /home/istvan/progs/utils/menu.sh import</command>
       </action>
     </keybind>
-    -->
     <keybind key="W-w">
       <action name="Execute">
         <command>chromium-browser</command>

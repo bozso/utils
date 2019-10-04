@@ -1,9 +1,7 @@
-#!/usr/bin/env bash
 #! /usr/bin/env sh
 
-progs="$HOME/progs"
+progs="${HOME}/progs"
 icons="$progs/utils/icons"
-
 
 set -e
 
@@ -209,6 +207,27 @@ select_module() {
     done
 }
 
+Basename() {
+    while IFS= read -r line; do
+      printf '%s\n' "$(basename $line .png)"
+    done    
+}
+
+import() {
+    local root="${HOME}/screencap"
+    mkdir -p "${root}"
+    
+    last="$(ls ${root}/img_*.png \
+            | Basename \
+            | tr -d '[:alpha:]' \
+            | tr -d '_' \
+            | sort -g \
+            | tail -1)"
+    
+    new=$((last+1))
+    
+    import "${root}/img_${new}.png" > "${HOME}/import.log"
+}
 
 main() {
     check_narg $# 1
@@ -225,6 +244,9 @@ main() {
             ;;
         "shutdown")
             shutdown_now
+            ;;
+        "import")
+            import
             ;;
         *)
             printf "Unrecognized option %s!\n" $1 >&2

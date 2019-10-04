@@ -18,7 +18,7 @@ from multiprocessing.pool import Pool
 
 
 __all__ = (
-    "Ninja", "gpp_flags", "Seq", "flat", "new_type", "str_t", 
+    "Ninja", "HTML", "Seq", "flat", "new_type", "str_t", 
     "ls", "isiter", "all_same", "make_object", "tmp_file", "get_par", "cat", 
     "Files", "Multi", "Base", "CParse", "annot", "pos", "opt", "flag", "rm",
     "ln", "mv", "mkdir", "compose", "isfile", "fs"
@@ -579,14 +579,8 @@ def escape_path(word):
 
 
 home = pth.join("/", "home", "istvan")
-gpp_include = pth.join(home, "Dokumentumok", "texfiles", "gpp")
-
 
 class Ninja(object):
-    gpp_flags = (
-        '--nostdinc -I%s -U "\\\\" "" "{" "}{" "}" "{" "}" "#" "" '
-        '+c "/*" "*/" +c "%%" "\\n"'
-    ) % gpp_include
     
     def __init__(self, output, width=78):
         self.output = output
@@ -743,9 +737,39 @@ class Ninja(object):
             ret = reext(ret, ext)
         
         return ret
-    
-    
 
+    
+class HTML(Ninja):
+    gpp_include = pth.join(home, "Dokumentumok", "texfiles", "gpp")
+    
+    gpp_flags = (
+        '--nostdinc -I%s -U "\\\\" "" "{" "}{" "}" "{" "}" "#" "" '
+        '+c "/*" "*/" +c "%%" "\\n"'
+    ) % gpp_include
+    
+    extension = "html"
+    
+    def __init__(self, path="build.ninja", **kwargs):
+        
+        Ninja.__init__(self, open(path, "w"), **kwargs)
+        
+        self.rule("html", "gpp %s -o $out $in " % self.gpp_flags,
+                  "html preprocessing", **kwargs)
+        self.newline()
+    
+    def sources(self, sources, **kwargs):
+        for src in sources:
+            out = self.out(src, ext=self.extension)
+            self.build(out, "html", inputs=src, **kwargs)
+            self.newline()
+    
+    def full(self, sources, **kwargs):
+        infile = "full.cml"
+        out = self.out(infile, ext=self.extension)
+        
+        self.build(out, "html", inputs=infile, implicit=sources)
+        self.newline()
+    
     
 def as_list(input):
     if input is None:
