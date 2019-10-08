@@ -328,9 +328,8 @@ class CParse(object):
             if value.pop("kind") == "pos":
                 self.argp.add_argument(key, **value)
             else:
-                self.argp.add_argument("--" + key, **value)
+                self.argp.add_argument(self.prefix_char + key, **value)
             
-        
         self.subparser = self.argp.add_subparsers(**kwargs)
         
         try:
