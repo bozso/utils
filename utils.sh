@@ -20,6 +20,24 @@ buildpdf() {
 }
 
 
+PROOT="/home/istvan/packages"
+
+local_install() {
+    if [ "$#" != "1" ]; then
+        printf "error: local_install: One argument (package name) is required!\n" >&2
+        return 1
+    fi
+    
+    rm *.deb
+    
+    apt download $1
+    mkdir -p $PROOT
+
+    dpkg -x *.deb $PROOT
+    
+    rm *.deb
+}
+
 tar_com() {
     tar -czvf $1.tar.gz $1
 }
