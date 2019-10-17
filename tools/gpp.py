@@ -4,7 +4,7 @@ from sys import path, argv
 
 path.append("/home/istvan/progs/utils")
 
-from utils import CParse, annot, pos, opt
+from utils import new_type
 
 def cast(item, caster):
     if caster is str:
@@ -18,7 +18,7 @@ class HTMLArgs(object):
     
     def __init__(self, args=None):
         if args is None:
-            args = args[1:]
+            args = argv[2:]
         
         self.optional = {
             elem.split("=")[0]: elem.split("=")[1]
@@ -32,27 +32,17 @@ class HTMLArgs(object):
     def pop(self, *args, **kwargs):
         type = kwargs.pop("type", str)
         
-        return cast(self.pop(*args, **kwargs), type)
+        return cast(self.optional.pop(*args, **kwargs), type)
     
     def __getitem__(self, *args, **kwargs):
         return self.optional.__getitem__(*args, **kwargs)
     
     
-    def pos(idx, type=str):
+    def pos(self, idx, type=str):
         return cast(self.positional[idx], type)
 
 
 templates = {
-    "imgit_float": 
-    """\
-    <img style="float: left; width: {img_width}"
-    src="https://raw.githubusercontent.com/bozso/texfiles/master/images/{source}"
-    title="{title}" alt="{title}">
-    
-    <div style="float: right; width: {text_width}">
-        <font size="{font_size}">{title} </font>
-    </div>
-    """,
     "imgit":
     """\
     <img style="float: left; width: {img_width}"
@@ -66,38 +56,41 @@ templates = {
 }
 
 
-commands = {
-    "imgit_float": imgit_float
-}
+FloatOpts = new_type("FloatOpts", "width, font_size, unit, total_width, "
+                       "title, text_width, img_width, source")
 
-        width=opt(help="Width of the image.", type=int, default=500),
-        font_size=opt(help="Font size of title.", type=int, default=4),
-        title=opt(help="Title of the image.", type=str, default=""),
-        unit=opt(help="Units to use.", type=str, default="px"),
-        total_width=opt(help="Total width of the page.", type=int,
-                        default=1000),
-        source=pos(help="Sourcefile path.", type=str)
-    )
-
-
-FloatOpts = namedtuple("FloatOpts", "width", "font_size"
-
-def imgit_float(self, args):
-    opts = {
-        width = args.pop("width", 500, type=int)
-        font_size = args.pop("fontsize", 4, type=int)
-        units = args.pop("units", "px")
-        total_width = args.pop("totalWidth", 1000, type=int)
-        title = args.pop("title", "")
-    }
-    args.text_width = "%d%s" % (args.total_width - args.width , unit)
-    args.img_width = "%d%s" % (args.width, unit)
+def imfloat(args):
+    tpl = """\
+    <img style="float: left; width: {img_width}"
+    src="https://raw.githubusercontent.com/bozso/texfiles/master/images/{source}"
+    title="{title}" alt="{title}">
     
-    print(templates["imgit_float"].format(**vars(args)))
+    <div style="float: right; width: {text_width}">
+        <font size="{font_size}">{title} </font>
+    </div>
+    """
+    
+    opts = FloatOpts(
+        width = args.pop("width", 500, type=int),
+        font_size = args.pop("fontsize", 4, type=int),
+        unit = args.pop("units", "px"),
+        total_width = args.pop("totalWidth", 1000, type=int),
+        title = args.pop("title", ""),
+        text_width = None,
+        img_width = None,
+        source = None,
+    )
+    
+    opts.text_width = "%d%s" % (opts.total_width - opts.width , opts.unit)
+    opts.img_width = "%d%s" % (opts.width, opts.unit)
+    opts.source = args.pos(0)
+    
+    return tpl.format(**opts.to_dict())
 
 
 def main():
-    print(argv)
+    args = HTMLArgs()
+    print(imfloat(args))
     # GPP().parse().args.fun()    
     
 if __name__ == "__main__":

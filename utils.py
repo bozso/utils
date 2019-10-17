@@ -402,7 +402,7 @@ def new_type(type_name, field_names):
         {
             "__slots__": field_names,
             "__init__": make_constructor(field_names),
-            "derive": derive
+            "derive": derive,
         }
     )
 
