@@ -7,6 +7,7 @@ from os import path as pth
 from errno import EEXIST
 from tempfile import _get_default_tempdir, _get_candidate_names
 from shutil import copyfileobj
+from shlex import split
 from argparse import ArgumentParser
 from glob import iglob
 from sys import version_info
@@ -15,7 +16,7 @@ from collections import OrderedDict
 from copy import copy
 from inspect import getfullargspec
 from multiprocessing.pool import Pool
-
+from subprocess import CalledProcessError, check_output, STDOUT
 
 __all__ = (
     "Ninja", "HTML", "Seq", "flat", "new_type", "str_t", 
@@ -33,7 +34,55 @@ if py3:
 else:
     str_t = basestring,
 
+
+def make_cmd(command, tpl="--%s=%s"):
+    def cmd(*args, **kwargs):
+        debug = kwargs.pop("_debug_", False)
+        
+        Cmd = command
+        
+        if len(args) > 0:
+            Cmd += " %s" % " ".join(args)
+        
+        if len(kwargs) > 0:
+            Cmd += " %s" % " ".join(tpl % (key, val)
+                                        for key, val in kwargs.items())
+        
+        if debug:
+            print("Command is '%s'" % Cmd)
+            return
+        
+        try:
+            proc = check_output(split(Cmd), stderr=STDOUT)
+        except CalledProcessError as e:
+            print("\nNon zero returncode from command: \n'{}'\n"
+                  "\nOUTPUT OF THE COMMAND: \n\n{}\nRETURNCODE was: {}"
+                  .format(Cmd, e.output.decode(), e.returncode))
     
+            raise e
+        
+        
+        return proc
+    return cmd
+
+def cmd_line_prog(path, *args, **kwargs):
+    prefix    = kwargs.pop("prefix", "--")
+    separator = kwargs.pop("separator", "=")
+    name = kwargs.pop("name", None)
+    
+    if name is None:
+        name = path
+    
+    tpl = "%s%%s%s%%s" % (prefix, separator)
+    
+    cmds = {
+        name: make_cmd("%s %s" % (path, name), tpl=tpl)
+        for name in args
+    }
+    
+    return make_object(name, cmds)
+
+
 def fs(*elems):
     return frozenset(elems)
 

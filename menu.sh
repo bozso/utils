@@ -181,6 +181,19 @@ shutdown_now() {
 }
 
 
+gamma() {
+    local path="/home/istvan/Dokumentumok/gamma_doc"
+    
+    local sel=$(ls -1 $path/*.html | last_field | \
+                mymenu -p "Select program:" -l 10)
+    
+    if [ -n "$sel" ]; then
+        local path="$path/$sel"
+        notify "Opening documentation" "${sel}" "music_note.png"
+        chromium-browser "${path}"
+    fi
+}
+
 modules="
 playlists
 git
@@ -189,6 +202,7 @@ ssh
 repos_all
 extract_music
 work
+gamma
 "
 
 
