@@ -794,7 +794,7 @@ class HTML(Ninja):
     
     gpp_flags = (
         '--nostdinc -I%s -U "\\\\" "" "{" "}{" "}" "{" "}" "#" "" '
-        '+c "/*" "*/" +c "%%" "\\n" -x'
+        '+c "/*" "*/" +c "#" "\\n" -x'
     ) % gpp_include
     
     ext = ".html"
