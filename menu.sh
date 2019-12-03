@@ -36,6 +36,7 @@ dprompt() {
 
 
 notify() {
+    return
     if [ -n "$3" ]; then
         notify-send -i "$icons/$3" "$1" "$2" -t 1500
     else
