@@ -2,6 +2,7 @@ PROGS="/home/istvan/progs"
 UTILS="${PROGS}/utils"
 
 alias reload='. ${UTILS}/utils.sh'
+alias mods='sh ${UTILS}/menu.sh modules'
 
 export temu=lxterminal
 browser="chromium-browser"

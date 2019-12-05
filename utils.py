@@ -22,7 +22,7 @@ __all__ = (
     "Ninja", "HTML", "Seq", "flat", "new_type", "str_t", 
     "ls", "isiter", "all_same", "make_object", "tmp_file", "get_par", "cat", 
     "Files", "Multi", "Base", "CParse", "annot", "pos", "opt", "flag", "rm",
-    "ln", "mv", "mkdir", "compose", "isfile", "fs"
+    "ln", "mv", "mkdir", "compose", "isfile", "fs", "Compiled", "C"
 )
 
 py3 = version_info[0] == 3
@@ -771,20 +771,16 @@ class Ninja(object):
         self.output.close()
     
     # Own additions
-    
-    def gpp(self, **kwargs):
-        self.rule("gpp", "gpp %s -o $out $in " % self.gpp_flags,
-                  "gpp preprocessing", **kwargs)
-    
-    def cpp_obj(self, **kwargs):
-        self.rule("cpp_obj", "g++ %s -o $out $in" % self.gcc_debug_flag)
         
     @staticmethod
-    def out(infile, outdir="build", ext=None):
-        ret = pth.join(outdir, infile)
+    def out(infile, **kwargs):
+        ext = kwargs.get("ext", None)
+        outdir = kwargs.get("outdir", "build")
+        
+        ret = pth.join(outdir, pth.splitext(pth.basename(infile))[0])
         
         if ext is not None:
-            ret = reext(ret, ext)
+            ret += ext
         
         return ret
 
@@ -809,46 +805,141 @@ class HTML(Ninja):
     
     def sources(self, sources, **kwargs):
         for src in sources:
-            out = self.out(src, ext=self.ext)
-            self.build(out, "html", inputs=src, **kwargs)
+            out = HTML.out(src, ext=self.ext, **kwargs)
+            self.build(out, "html", inputs=src)
             self.newline()
     
     def full(self, sources, **kwargs):
         infile = "full.cml"
-        out = self.out(infile, ext=self.ext)
+        out = HTML.out(infile, ext=self.ext, **kwargs)
         
         self.build(out, "html", inputs=infile, implicit=sources)
         self.newline()
 
+eset = set()
 
-class CPP(Ninja):
-    gcc_debug_flag = (
-        "-Werror -Wall -Wextra -Wfloat-equal -Wundef -Wshadow -Wpointer-arith "
-        "-Wcast-align -Wstrict-prototypes -Weffc++ -Wstrict-aliasing "
-        "-Wstrict-overflow=5 -Wwrite-strings -Wcast-qual -Wswitch-default "
-        "-Wconversion -Wunreachable-code -O0"
-    )
-    
+class Compiled(Ninja):
     obj_ext = ".o"
     
-    def __init__(self, path="build.ninja", **kwargs):
+    # TODO: change it in case of Windows OS
+    exe_ext = None
+    
+    def __init__(self, **kwargs):
+        path = kwargs.pop("path", "build.ninja")
+        
+        inc_dirs = set(kwargs.pop("inc_dirs", eset))
+        link_dirs = set(kwargs.pop("link_dirs", eset))
+        defines = set(kwargs.pop("defines", eset))
+        link_flags = set(kwargs.pop("link_flags", eset))
+        compile_flags = set(kwargs.pop("compile_flags", eset))
+        
         Ninja.__init__(self, open(path, "w"), **kwargs)
         
-        self.rule("cpp_obj", "g++ %s -o $out $in" % self.gcc_debug_flag,
-                  "Creating object file")
+        
+        compile_cmd = \
+        "{compiler} {compiler_flags} {inc_dirs} {defines} -c "\
+        "-o ${{out}} ${{in}}"\
+        .format(
+            compiler=self.compiler,
+            inc_dirs=" ".join("-I" + elem for elem in inc_dirs),
+            compiler_flags=" ".join(self.compile_flags | compile_flags),
+            defines=" ".join(map(proc_define, defines))
+        )
+        
+        self.rule("compile_object", compile_cmd,
+                  "Compiling object ${out}.")
         self.newline()
         
-    def sources(self, sources, **kwargs):
-        for src in sources:
-            out = self.out(src, ext=self.obj_ext)
-            self.build(out, "cpp_obj", inputs=src, **kwargs)
-            self.newline()
+        link_cmd = \
+        "{compiler} ${{in}} {link_flags} {link_dirs} -o ${{out}}"\
+        .format(
+            compiler=self.compiler,
+            link_dirs=" ".join("-L" + elem for elem in link_dirs),
+            link_flags=" ".join(link_flags)
+        )
+        
+        # TODO: make a specialized message for linking and creating an
+        # executable
+        self.rule("link", link_cmd, "Linking executable ${out}.")
+        self.newline()
+    
+    
+    def obj(self, source, **kwargs):
+        out = self.out(source, ext=self.obj_ext)
+        self.build(out, "compile_object", inputs=source, **kwargs)
+        self.newline()
+        
+        return out
+    
+    
+    def exe(self, source, **kwargs):
+        depends = kwargs.pop("depends", None)
+        outdir = kwargs.pop("outdir", "bin")
+        
+        src = as_list(source)
+        
+        if depends is not None:
+            src += as_list(depends)
+        
+        
+        
+        out = self.out(source, ext=self.exe_ext, outdir=outdir)
+        self.build(out, "link", inputs=src, **kwargs)
+        self.newline()
 
+
+class C(Compiled):
+    gcc_debug_flags = {
+        "-Werror -Wall -Wextra -Wfloat-equal -Wundef -Wshadow -Wpointer-arith "
+        "-Wcast-align -Wstrict-prototypes -Wstrict-aliasing "
+        "-Wstrict-overflow=5 -Wwrite-strings -Wcast-qual -Wswitch-default "
+        "-Wconversion -Wunreachable-code -O0"
+    }
+    
+    def __init__(self, **kwargs):
+        # mode = kwargs.pop("mode", "debug")
+        
+        standard = kwargs.pop("std", None)
+        
+        self.compiler = "gcc"
+        
+        flags = eset
+
+        if standard is not None:
+            assert standard in {"89", "99"}
+            flags.add("-std=c%s" % standard)
+
+        self.compile_flags = flags
+        self.link_flags = {"-lm",}
+        
+        Compiled.__init__(self, **kwargs)
+        
+
+class Cpp(Compiled):
+    gcc_debug_flags = C.gcc_debug_flags | {"-Weffc++",}
+    
+    def __init__(self, **kwargs):
+        # mode = kwargs.pop("mode", "debug")
+        
+        standard = kwargs.pop("std", None)
+        
+        self.compiler = "gcc"
+        
+        flags = self.gcc_debug_flags
+
+        if standard is not None:
+            assert standard in {"98", "03", "11", "14", "17", "20"}
+            flags.add("-std=c++%s" % standard)
+
+        self.compile_flags = flags
+        self.link_flags = {"-lstc++", "-lm"}
+        
+        Compiled.__init__(self, **kwargs)
 
 def as_list(input):
     if input is None:
         return []
-    if isinstance(input, list):
+    if isinstance(input, (list, tuple)):
         return input
     return [input]
 
@@ -876,5 +967,11 @@ def expand(string, vars, local_vars={}):
     return re.sub(r'\$(\$|\w*)', exp, string)
 
 
+def proc_define(elem):
+    try:
+        return "-D%s=%s" %(elem[0], elem[1])
+    except TypeError:
+        return "-D%s" % elem
+    
 def reext(path, ext):
     return pth.splitext(path)[0] + ext
