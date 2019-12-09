@@ -166,7 +166,7 @@ manage_ssh() {
                           | cut -d ':' -f 1 \
                           | tr -d ' ')"
             
-            local path="${HOME}/${name}"
+            local path="${HOME}/mount/${name}"
             local cmd="$(printf 'sshfs %s: %s' "${addr}" "${path}")"
             #local cmd="${temu} --command=\"${cmd}\""
             $cmd

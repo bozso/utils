@@ -21,8 +21,6 @@ buildpdf() {
 }
 
 
-PROOT="/home/istvan/packages"
-
 local_install() {
     if [ "$#" != "1" ]; then
         printf "error: local_install: One argument (package name) is required!\n" >&2
@@ -86,31 +84,26 @@ proton() {
 #    rm *.deb
 #}
 
-
-TXA="$UTILS_DIR/configs/textadept"
-
-alias editor="$PROGS/textadept/textadept"
-alias editor_term="$PROGS/textadept/textadept-curses"
-
 alias nano="nano -u"
 alias nbrc="nano -u ~/.bashrc"
 
-. "${PROGS}/insar_meteo/insar_meteo.sh"
-
 PROOT="/home/istvan/packages"
-JULIA="${PROGS}/julia-1.1.0/bin"
-SNAP="/home/istvan/snap/bin"
-SSARA="${PROGS}/SSARA"
-GAMMA="${PROGS}/gamma"
-GEOD="${PROGS}/geodynamics"
 PKGS="${HOME}/packages"
 
-PATH="$PATH:$JULIA:$SNAP:$SSARA:$PROGS/bin:$PROOT/usr/bin:$UTILS_DIR/bin"
-PATH="$PATH:$GAMMA/bin:${PKGS}/bin"
 
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PROOT/usr/lib/x86_64-linux-gnu"
-export PYTHONPATH="$PYTHONPATH:$UTILS_DIR:$GAMMA:$GEODYNAMICS"
-export CDPATH=".:~:~/progs:/mnt/bozso_i"
+paths=\
+"
+${PROGS}/gamma
+${PROGS}/insar_meteo
+"
+
+for path in ${paths}; do
+    source "${path}/init.sh"
+done
+
+export PATH="$PATH:$PROOT/usr/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PROOT}/usr/lib/x86_64-linux-gnu"
+export PYTHONPATH="${PYTHONPATH}:${UTILS}"
 
 export OMP_NUM_THREADS=8
 
