@@ -55,11 +55,9 @@ def make_cmd(command, tpl="--%s=%s"):
         try:
             proc = check_output(split(Cmd), stderr=STDOUT)
         except CalledProcessError as e:
-            print("\nNon zero returncode from command: \n'{}'\n"
-                  "\nOUTPUT OF THE COMMAND: \n\n{}\nRETURNCODE was: {}"
-                  .format(Cmd, e.output.decode(), e.returncode))
-    
-            raise e
+            raise RuntimeError("\nNon zero returncode from command: \n'{}'\n"
+                "\nOUTPUT OF THE COMMAND: \n\n{}\nRETURNCODE was: {}"
+                .format(Cmd, e.output.decode(), e.returncode))
         
         
         return proc
