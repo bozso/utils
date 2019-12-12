@@ -46,7 +46,8 @@ def make_cmd(command, tpl="--%s=%s"):
         
         if len(kwargs) > 0:
             Cmd += " %s" % " ".join(tpl % (key, val)
-                                        for key, val in kwargs.items())
+                                        for key, val in kwargs.items()
+                                        if val is not None)
         
         if debug:
             print("Command is '%s'" % Cmd)

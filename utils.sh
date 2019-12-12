@@ -94,11 +94,14 @@ PKGS="${HOME}/packages"
 paths=\
 "
 ${PROGS}/gamma
+${PROGS}/stm-bi
 ${PROGS}/insar_meteo
 "
 
 for path in ${paths}; do
-    source "${path}/init.sh"
+    if [ -f "${path}/init.sh" ]; then
+        source "${path}/init.sh" "${path}"
+    fi
 done
 
 export PATH="$PATH:$PROOT/usr/bin"
