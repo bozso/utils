@@ -18,7 +18,7 @@ class HTMLArgs(object):
     
     def __init__(self, args=None):
         if args is None:
-            args = argv[2:]
+            args = argv[1:]
         
         self.optional = {
             elem.split("=")[0]: elem.split("=")[1]
