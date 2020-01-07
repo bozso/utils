@@ -156,6 +156,29 @@ def labels(item):
     
 
 
+
+
+class Options(object):
+    __slots__ = ("prefix",)
+    
+    def __init__(self, *args, **kwargs):
+        name = kwargs.pop("name", None)
+        prefix = kwargs.pop("prefix", None)
+        
+        assert prefix is not None
+        
+        if name is not None:
+            self.prefix = "%s%s" % (name, prefix)
+        else:
+            self.prefix = prefix
+        
+        for key, val in self.options.items():
+            setattr(self, key, kwargs.get(key, val))
+    
+    
+    def __getattr__(self, item):
+        assert item in self.__slots__
+    
 def make_property(name, validator):
     mangled = "_%s" % name
     
@@ -178,14 +201,6 @@ def properties(cls):
     
     nt = new_type(cname, names)
     
-    def init(self, *args, name=None, **kwargs):
-        if name is not None:
-            self.prefix = "%s%s" % (name, prefix)
-        else:
-            self.prefix = prefix
-        
-        for key, val in attribs.items():
-            setattr(self, "%s" % key, kwargs.get(key, val))
     
     
     def iter(self):

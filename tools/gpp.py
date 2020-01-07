@@ -57,7 +57,7 @@ templates = {
 
 
 FloatOpts = new_type("FloatOpts", "width, font_size, unit, total_width, "
-                       "title, text_width, img_width, source")
+                     "title, text_width, img_width, source")
 
 def imfloat(args):
     tpl = """\
@@ -89,8 +89,13 @@ def imfloat(args):
 
 
 def main():
-    args = HTMLArgs()
-    print(imfloat(args))
+    try:
+        args = HTMLArgs()
+        print(imfloat(args))
+    except Exception as e:
+        raise TypeError("Exception caught: %s\nCalled with arguemnts: %s" % (e, argv))
+        
+        
     # GPP().parse().args.fun()    
     
 if __name__ == "__main__":

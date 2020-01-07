@@ -140,40 +140,54 @@ mc() {
 }
 
 
-ssh() {
-    local select=$(printf "robosztus\nzafir\n" | mymenu -p "Select server")
+
+servers="\
+robosztus : robosztus.ggki.hu
+zafir     : zafir.ggki.hu
+eejit     : eejit.geo.uu.nl
+"
+
+manage_ssh() {
+    local mode="$1"
     
-    local header="Connecting to remote machine."
+    server=$(printf '%s\n' "${servers}" | \
+             mymenu -p "Select server" -l 3)
     
-    case $select in
-        "robosztus")
-            notify "$header" "istvan@robosztus.ggki.hu" "ssh.png"
-            $temu -e 'ssh -Y istvan@robosztus.ggki.hu'
+    
+    local addr="$(printf '%s' "${server}" \
+                  | cut -d ':' -f 2 \
+                  | tr -d ' ')"
+    
+    local addr="$(printf 'istvan@%s' "${addr}")"
+    
+    case "${mode}" in
+        "mount")
+            local name="$(printf '%s' "${server}" \
+                          | cut -d ':' -f 1 \
+                          | tr -d ' ')"
+            
+            local path="${HOME}/mount/${name}"
+            local cmd="$(printf 'sshfs %s: %s' "${addr}" "${path}")"
+            #local cmd="${temu} --command=\"${cmd}\""
+            $cmd
+            # >&2 "${HOME}/menu.log"
             ;;
-        "zafir")
-            notify "$header" "istvan@zafir.ggki.hu" "ssh.png"
-            $temu -e 'ssh -Y istvan@zafir.ggki.hu'
+        "join")
+            local cmd="$(printf 'ssh -Y %s' "${addr}")"
+            $cmd
             ;;
         *)
-            printf "Unknown option: %s!\n" $select
+            printf 'Unknown option: %s!\n' "{mode}"
     esac
 }
 
-
-md_tmp="/tmp/tmp.md"
-
-
-markdown() {
-    local inc_path="$HOME/Dokumentumok/texfiles/gpp"
-    check_narg $# 1
-    notify "Preprocessing markdown." "$1" "markdown.png"
-    
-    gpp $1 --nostdinc -o $md_tmp -I${inc_path} \
-    -U "@" "" "{" "}{" "}" "{" "}" "@" "" \
-    -M "#" "\n" "{" "}{" "}" "{" "}" \
-    +c "/*" "*/" +c "//" "\n"
+connect() {
+    manage_ssh "join"
 }
 
+mount() {
+    manage_ssh "mount"
+}
 
 shutdown_now() {
     notify-send "Did you push all git repositories?" \
@@ -199,22 +213,24 @@ modules="
 playlists
 git
 mc
-ssh
+connect
 repos_all
 extract_music
 work
 gamma
+mount
 "
 
 
 select_module() {
     local log="$HOME/menu.log"
-    local sel=$(printf "%s\n" $modules | mymenu -p "Select from modules:")
+    local sel=$(printf "%s\n" ${modules} | mymenu -p "Select from modules:")
     
     for module in $(printf "%s\n" $modules); do
         case $sel in
             $module)
-                $module > $log
+                #$module > $log
+                $module
                 ;;
             *)
                 ;;
@@ -253,9 +269,6 @@ main() {
             ;;
         "modules")
             select_module
-            ;;
-        "markdown")
-            markdown $2
             ;;
         "shutdown")
             shutdown_now
