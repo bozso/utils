@@ -98,8 +98,11 @@ class TMP(object):
     def __init__(self):
         self.tmps = []
     
-    def tmp_file(self, path=tmpdir):
+    def tmp_file(self, path=tmpdir, ext=None):
         path = pth.join(path, next(_get_candidate_names()))
+        
+        if ext is not None:
+            path = "%s.%s" % (path, ext)
         
         self.tmps.append(path)
         
@@ -631,6 +634,11 @@ class Ninja(object):
     def __init__(self, output, width=78):
         self.output = output
         self.width = width
+
+    @classmethod
+    def in_path(cls, *args, **kwargs):
+        p = pth.join(*args, "build.ninja")
+        return cls(open(p, "w"), **kwargs)
     
     def __del__(self):
         self.close()
@@ -817,6 +825,8 @@ class HTML(Ninja):
 
 eset = set()
 
+
+
 class Compiled(Ninja):
     obj_ext = ".o"
     
@@ -835,10 +845,10 @@ class Compiled(Ninja):
         Ninja.__init__(self, open(path, "w"), **kwargs)
         
         
-        compile_cmd = \
-        "{compiler} {compiler_flags} {inc_dirs} {defines} -c "\
-        "-o ${{out}} ${{in}}"\
-        .format(
+        compile_cmd = (
+            "{compiler} {compiler_flags} {inc_dirs} {defines} -c "
+            "-o ${{out}} ${{in}}"
+        ).format(
             compiler=self.compiler,
             inc_dirs=" ".join("-I" + elem for elem in inc_dirs),
             compiler_flags=" ".join(self.compile_flags | compile_flags),
