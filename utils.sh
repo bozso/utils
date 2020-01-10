@@ -1,4 +1,4 @@
-PROGS="/home/istvan/progs"
+PROGS="${HOME}/progs"
 UTILS="${PROGS}/utils"
 
 alias reload='. ${UTILS}/utils.sh'
@@ -99,8 +99,9 @@ ${PROGS}/insar_meteo
 "
 
 for path in ${paths}; do
-    if [ -f "${path}/init.sh" ]; then
-        source "${path}/init.sh" "${path}"
+    p="${path}/init.sh"
+    if [ -f "${p}" ]; then
+        source "${p}" "${path}"
     fi
 done
 
