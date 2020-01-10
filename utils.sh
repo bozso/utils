@@ -1,4 +1,4 @@
-PROGS="/home/istvan/progs"
+PROGS="${HOME}/progs"
 UTILS="${PROGS}/utils"
 
 alias reload='. ${UTILS}/utils.sh'
