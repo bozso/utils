@@ -104,7 +104,7 @@ for path in ${paths}; do
     fi
 done
 
-export PATH="$PATH:$PROOT/usr/bin"
+export PATH="${PATH}:$PROOT/usr/bin:${HOME}/.nimble/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PROOT}/usr/lib/x86_64-linux-gnu"
 export PYTHONPATH="${PYTHONPATH}:${UTILS}"
 
