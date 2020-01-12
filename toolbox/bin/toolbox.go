@@ -18,8 +18,8 @@ func main() {
     var err error
     
     switch mode {
-    case "jade":
-        err = main_jade()
+    case "ace":
+        err = ace()
     default:
         fmt.Printf("Unrecognized mode: %s\n", mode)
         return

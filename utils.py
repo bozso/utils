@@ -802,12 +802,12 @@ class HTML(Ninja):
     
     ext = ".html"
     
-    def __init__(self, path="build.ninja", **kwargs):
+    def __init__(self, *args, **kwargs):
         
-        Ninja.__init__(self, open(path, "w"), **kwargs)
+        Ninja.__init__(self, *args, **kwargs)
         
         self.rule("html", "gpp %s -o $out $in " % self.gpp_flags,
-                  "html preprocessing", **kwargs)
+                  "Preprocessing into HTML file.", **kwargs)
         self.newline()
     
     def sources(self, sources, **kwargs):
