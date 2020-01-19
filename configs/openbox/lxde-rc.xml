@@ -289,6 +289,16 @@
       </action>
     </keybind>
     <!-- Keybindings for running applications -->
+    <keybind key="W-Prior">
+      <action name="Execute">
+        <command>amixer -D pulse sset Master 2.5%+</command>
+      </action>
+    </keybind>
+    <keybind key="W-Next">
+      <action name="Execute">
+        <command>amixer -D pulse sset Master 2.5%-</command>
+      </action>
+    </keybind>
     <keybind key="W-e">
       <action name="Execute">
         <startupnotify>
@@ -467,18 +477,6 @@
         <action name="FocusToBottom"/>
         <action name="Unfocus"/>
       </mousebind>
-<!--
-      <mousebind button="A-Up" action="Click">
-        <action name="GoToDesktop">
-          <to>previous</to>
-        </action>
-      </mousebind>
-      <mousebind button="A-Down" action="Click">
-        <action name="GoToDesktop">
-          <to>next</to>
-        </action>
-      </mousebind>
--->
       <mousebind button="C-A-Up" action="Click">
         <action name="GoToDesktop">
           <to>previous</to>
@@ -489,18 +487,6 @@
           <to>next</to>
         </action>
       </mousebind>
-      <!--
-      <mousebind button="A-S-Up" action="Click">
-        <action name="SendToDesktop">
-          <to>previous</to>
-        </action>
-      </mousebind>
-      <mousebind button="A-S-Down" action="Click">
-        <action name="SendToDesktop">
-          <to>next</to>
-        </action>
-      </mousebind>
--->
     </context>
     <context name="Titlebar">
       <mousebind button="Left" action="Drag">
@@ -694,28 +680,6 @@
       </mousebind>
     </context>
     <context name="Desktop">
-<!--
-      <mousebind button="Up" action="Click">
-        <action name="GoToDesktop">
-          <to>previous</to>
-        </action>
-      </mousebind>
-      <mousebind button="Down" action="Click">
-        <action name="GoToDesktop">
-          <to>next</to>
-        </action>
-      </mousebind>
-      <mousebind button="A-Up" action="Click">
-        <action name="GoToDesktop">
-          <to>previous</to>
-        </action>
-      </mousebind>
-      <mousebind button="A-Down" action="Click">
-        <action name="GoToDesktop">
-          <to>next</to>
-        </action>
-      </mousebind>
--->
       <mousebind button="C-A-Up" action="Click">
         <action name="GoToDesktop">
           <to>previous</to>
