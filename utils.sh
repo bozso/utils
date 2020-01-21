@@ -87,7 +87,6 @@ proton() {
 alias nano="nano -u"
 alias nbrc="nano -u ~/.bashrc"
 
-PROOT="/home/istvan/packages"
 PKGS="${HOME}/packages"
 
 
@@ -105,8 +104,8 @@ for path in ${paths}; do
     fi
 done
 
-export PATH="${PATH}:$PROOT/usr/bin:${HOME}/.nimble/bin:${HOME}/go/bin"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PROOT}/usr/lib/x86_64-linux-gnu"
+export PATH="${PATH}:${PKGS}/usr/bin:${HOME}/.nimble/bin:${HOME}/go/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PKGS}/usr/lib/x86_64-linux-gnu"
 export PYTHONPATH="${PYTHONPATH}:${UTILS}"
 
 export OMP_NUM_THREADS=8
