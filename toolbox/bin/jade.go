@@ -33,7 +33,7 @@ func ace() error {
         defer outf.Close()
     }
     
-    tpl, err := ace.Load(
+    tpl, err := ace.Load()
     
     if err := tpl.Execute(outf, nil); err != nil {
         return err

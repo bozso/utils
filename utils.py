@@ -791,40 +791,118 @@ class Ninja(object):
         
         return ret
 
+eset = set()
+
+class Dependencies(object):
+    __slots__ = ("pattern", "include_paths", "files")
+    
+    def __init__(self, *args, **kwargs):
+        self.pattern, self.include_paths, self.files = \
+        kwargs["pattern"], kwargs["include_paths"], eset
+    
+    def search_file(self, path):
+        for p in self.include_paths:
+            f = pth.join(p, path)
+            
+            # print(f, pth.isfile(f))
+            
+            if pth.isfile(f):
+                return f
+        
+        return None
+    
+    def clear(self):
+        self.files.clear()
+    
+    def get_dependencies(self, path):
+        with open(path, "r") as f:
+            for line in f:
+                m = self.pattern.match(line)
+                
+                
+                if m:
+                    g = m.group(1)
+                    f = self.search_file(g)
+                    
+                    if f is None:
+                        raise RuntimeError("Could not find '%s' in "
+                            "include paths: %s while processing: '%s'" % 
+                            (g, self.include_paths, path)
+                        )
+                    
+                    
+                    if f in self.files:
+                        continue
+                    else:
+                        self.files.add(f)
+                        self.get_dependencies(f)
+                    
+    
     
 class HTML(Ninja):
-    gpp_include = pth.join(home, "Dokumentumok", "texfiles", "gpp")
+    __slots__ = ("deps",)
+    
+    regex_include = re.compile(r"\\include{(\D+)}")
     
     gpp_flags = (
-        '--nostdinc -I%s -U "\\\\" "" "{" "}{" "}" "{" "}" "#" "" '
+        '--nostdinc -U "\\\\" "" "{" "}{" "}" "{" "}" "#" "" '
         '+c "/*" "*/" +c "#" "\\n" -x'
-    ) % gpp_include
+    )
+    
+    cmd_tpl = "gpp {include_dirs} {flags} -o ${{out}} ${{in}} "
     
     ext = ".html"
     
+    _include_dirs = {pth.join(home, "Dokumentumok", "texfiles", "gpp"),}
+    
     def __init__(self, *args, **kwargs):
+        include_dirs = \
+        self._include_dirs | kwargs.pop("include_dirs", eset)
+        
+        self.deps = Dependencies(
+            pattern = self.regex_include,
+            include_paths = include_dirs
+        )
+        
+        _include_dirs = " ".join(
+            "-I%s" % elem for elem in include_dirs
+        )
         
         Ninja.__init__(self, *args, **kwargs)
         
-        self.rule("html", "gpp %s -o $out $in " % self.gpp_flags,
-                  "Preprocessing into HTML file.", **kwargs)
+        self.rule("html",
+            self.cmd_tpl.format(
+                flags=self.gpp_flags, include_dirs=_include_dirs
+            ),
+            "Preprocessing into HTML file.",
+            **kwargs
+        )
+        
         self.newline()
     
+        
     def sources(self, sources, **kwargs):
         for src in sources:
-            out = HTML.out(src, ext=self.ext, **kwargs)
-            self.build(out, "html", inputs=src)
+            self.deps.include_paths.add(pth.abspath(pth.dirname(src)))
+            
+            self.deps.get_dependencies(src)
+            
+            implicit = kwargs.pop("implicit", eset)
+            implicit |= self.deps.files
+            
+            out = self.out(src, ext=self.ext, **kwargs)
+            self.build(out, "html", inputs=src, implicit=list(implicit),
+                **kwargs)
             self.newline()
+
+            self.deps.clear()
     
     def full(self, sources, **kwargs):
         infile = "full.cml"
-        out = HTML.out(infile, ext=self.ext, **kwargs)
+        out = self.out(infile, ext=self.ext, **kwargs)
         
         self.build(out, "html", inputs=infile, implicit=sources)
         self.newline()
-
-eset = set()
-
 
 
 class Compiled(Ninja):
