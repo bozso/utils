@@ -683,12 +683,22 @@ class HTML(SimpleDoc):
     def presentation(*args, **kwargs):
         return Presentation(*args, **kwargs)
 
+
 class Presentation(HTML):
+    engine_path = "https://shwr.me/shower/shower.min.js"
+    
     def slide(self, *args, **kwargs):
         kwargs["klass"] = "slide"
         
         return self.section(*args, **kwargs)
+    
+    def import_engine(self, path=None):
+        if path is None:
+            path = self.engine_path
+        
+        self.line("script", "", src=path)
 
+        
 def main():
     d, tag, text = new(outfile="test.html").tagtext()
     
