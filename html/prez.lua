@@ -5,7 +5,12 @@ a = h.html {
             h.div {
                 class = "class",
                 h.p "Hello",
-                h.p "Hello"
+                h.p "Hello",
+                h.p[[
+                    Hello
+                    aaaa
+                    bbb
+                ]]
             },
             
             h.header{

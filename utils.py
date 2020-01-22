@@ -1063,3 +1063,8 @@ def proc_define(elem):
 def reext(path, ext):
     return pth.splitext(path)[0] + ext
 
+
+from importlib.machinery import SourceFileLoader
+
+def load(name, path):
+    return SourceFileLoader(name, path).load_module()
