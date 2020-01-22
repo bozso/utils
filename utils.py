@@ -1062,3 +1062,4 @@ def proc_define(elem):
     
 def reext(path, ext):
     return pth.splitext(path)[0] + ext
+
