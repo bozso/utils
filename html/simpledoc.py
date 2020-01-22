@@ -1,8 +1,9 @@
 __all__ = (
-    "HTML",
+    "HTML", "libs",
 )
 
 import re
+import os.path as path
 
 class DocError(Exception):
     pass
@@ -672,6 +673,37 @@ for line in lines:
     setattr(SimpleDoc, line, make_line(line))
 
 
+class ImagePaths(object):
+    __slots__ = ("paths", "doc",)
+    
+    def __init__(self, doc, *paths):
+        self.doc, self.paths = doc, frozenset(paths)
+    
+    def search(self, name):
+        m = map(lambda p: path.join(p, name), self.paths)
+        f = frozenset(filter(path.isfile, m))
+        l = len(f)
+        
+        if l == 0:
+            raise RuntimeError("No image found with name '%s', "
+                "in image paths: %s" % (name, self.paths)
+            )
+        
+        if l != 1:
+            raise RuntimeError("Unambigous image name '%s', "
+                "image paths: %s" % (name, self.paths)
+            )
+        
+        r, = f
+        
+        return r
+    
+    def img(self, name, *args, **kwargs):
+        kwargs["src"] = self.search(name)
+        
+        self.doc.img(*args, **kwargs)
+
+
 class HTML(SimpleDoc):
     @classmethod
     def new(cls, *args, **kwargs):
@@ -683,20 +715,30 @@ class HTML(SimpleDoc):
     def presentation(*args, **kwargs):
         return Presentation(*args, **kwargs)
 
+    def use(self, path):
+        self.line("script", "", src=path)
+
+    
+    def image_paths(self, *paths):
+        return ImagePaths(self, *paths)
+    
+    
+libs = type("JSLibs", (object,), {
+    "shower": "https://shwr.me/shower/shower.min.js",
+    "mathjax": "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+})
 
 class Presentation(HTML):
-    engine_path = "https://shwr.me/shower/shower.min.js"
-    
     def slide(self, *args, **kwargs):
         kwargs["klass"] = "slide"
         
         return self.section(*args, **kwargs)
     
-    def import_engine(self, path=None):
-        if path is None:
-            path = self.engine_path
-        
-        self.line("script", "", src=path)
+    def math(self, txt):
+        self._append("\[ %s \]" % (txt))
+
+    def imath(self, txt):
+        self._append("\( %s \)" % (txt))
 
         
 def main():
