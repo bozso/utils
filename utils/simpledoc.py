@@ -629,7 +629,7 @@ def make_tag(name):
 
 tags = {
     "div", "head", "header", "body", "html", "center", "ul", "ol",
-    "script", "style", "section"
+    "script", "style", "section", "video"
 }
 
 for tag in tags:
@@ -646,7 +646,7 @@ def make_stag(name):
     return inner
 
 stags = {
-    "meta", "link", "img"
+    "meta", "link", "img", "source"
 }
 
 for stag in stags:
