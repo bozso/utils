@@ -22,7 +22,8 @@ __all__ = (
     "Ninja", "HTML", "Seq", "flat", "new_type", "str_t", 
     "ls", "isiter", "all_same", "make_object", "tmp_file", "get_par", "cat", 
     "Files", "Multi", "Base", "CParse", "annot", "pos", "opt", "flag", "rm",
-    "ln", "mv", "mkdir", "compose", "isfile", "fs", "Compiled", "C"
+    "ln", "mv", "mkdir", "compose", "isfile", "fs", "Compiled", "C",
+    "load",
 )
 
 py3 = version_info[0] == 3

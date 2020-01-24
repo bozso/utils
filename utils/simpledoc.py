@@ -629,7 +629,7 @@ def make_tag(name):
 
 tags = {
     "div", "head", "header", "body", "html", "center", "ul", "ol",
-    "script", "style", "section", "video"
+    "script", "style", "section", "video", "table", "tr"
 }
 
 for tag in tags:
@@ -666,7 +666,7 @@ def make_line(name):
 
 lines = {
     "h1", "h2", "h3", "h4", "p", "li", "bold", "q", "u", "em",
-    "it", "del", "strong",
+    "it", "del", "strong", "th", "td",
 }
 
 for line in lines:
