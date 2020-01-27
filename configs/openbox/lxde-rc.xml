@@ -291,12 +291,12 @@
     <!-- Keybindings for running applications -->
     <keybind key="W-Prior">
       <action name="Execute">
-        <command>amixer -D pulse sset Master 2.5%+</command>
+        <command>amixer -D pulse sset Master 3.0%+</command>
       </action>
     </keybind>
     <keybind key="W-Next">
       <action name="Execute">
-        <command>amixer -D pulse sset Master 2.5%-</command>
+        <command>amixer -D pulse sset Master 3.0%-</command>
       </action>
     </keybind>
     <keybind key="W-e">
@@ -320,7 +320,7 @@
     </keybind>
     <keybind key="W-w">
       <action name="Execute">
-        <command>chromium-browser</command>
+        <command>brave-browser</command>
       </action>
     </keybind>
     <keybind key="W-m">
