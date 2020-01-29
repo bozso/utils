@@ -666,7 +666,7 @@ def make_line(name):
 
 lines = {
     "h1", "h2", "h3", "h4", "p", "li", "bold", "q", "u", "em",
-    "it", "del", "strong", "th", "td",
+    "it", "del", "strong", "th", "td", "font",
 }
 
 for line in lines:
@@ -674,10 +674,10 @@ for line in lines:
 
 
 class ImagePaths(object):
-    __slots__ = ("paths", "doc",)
+    __slots__ = ("paths", "doc", "width",)
     
-    def __init__(self, doc, *paths):
-        self.doc, self.paths = doc, frozenset(paths)
+    def __init__(self, doc, width, *paths):
+        self.doc, self.width, self.paths = doc, width, frozenset(paths)
     
     def search(self, name):
         m = map(lambda p: path.join(p, name), self.paths)
@@ -698,6 +698,32 @@ class ImagePaths(object):
         
         return r
     
+    def with_title(self, path, *args, **kwargs):
+        title, font_size, img_width, mode = (
+            kwargs.pop("title"),
+            kwargs.pop("font_size", 5.0),
+            kwargs.pop("width", 500),
+            kwargs.pop("mode", "top")
+        )
+        
+        d = self.doc
+        
+        if mode == "side":
+            d.img(style="float: left; width: %d" % int(img_width - 50),
+                src=path, title=title, **kwargs)
+            
+            txt_width = self.width - img_width - 150
+            
+            # TODO: check for negative numbers
+            
+            with d.div(style="float: right; width: %d" % int(txt_width)):
+                d.font(title, size=font_size)
+        elif mode == "top":
+            d.font(title, size=font_size)
+            d.img(src=path, title=title, **kwargs)
+        else:
+            raise TypeError("Unrecognized mode: '%s'" % mode)
+        
     def img(self, name, *args, **kwargs):
         kwargs["src"] = self.search(name)
         
@@ -716,16 +742,20 @@ class HTML(SimpleDoc):
         return Presentation(*args, **kwargs)
 
     def use(self, path):
-        self.line("script", "", src=path)
+        with self.tag("script", "async", src=path):
+            pass
+        
+        # self.line("script", "", src=path)
 
     
-    def image_paths(self, *paths):
-        return ImagePaths(self, *paths)
+    def image_paths(self, width, *paths):
+        return ImagePaths(self, width, *paths)
     
     
 libs = type("JSLibs", (object,), {
     "shower": "https://shwr.me/shower/shower.min.js",
-    "mathjax": "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    "mathjax": "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
+    "plotly": "https://cdn.plot.ly/plotly-latest.min.js",
 })
 
 class Presentation(HTML):

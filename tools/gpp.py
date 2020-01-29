@@ -44,15 +44,6 @@ class HTMLArgs(object):
 
 templates = {
     "imgit":
-    """\
-    <img style="float: left; width: {img_width}"
-    src="https://raw.githubusercontent.com/bozso/texfiles/master/images/{source}"
-    title="{title}" alt="{title}">
-    
-    <div style="float: right; width: {text_width}">
-        <font size="{font_size}">{title} </font>
-    </div>
-    """    
 }
 
 
