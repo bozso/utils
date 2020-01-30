@@ -709,14 +709,14 @@ class ImagePaths(object):
         d = self.doc
         
         if mode == "side":
-            d.img(style="float: left; width: %d" % int(img_width - 50),
+            d.img(style="float: left; width: %d" % int(img_width - 5),
                 src=path, title=title, **kwargs)
             
-            txt_width = self.width - img_width - 150
+            txt_width = self.width - img_width - 20
             
             # TODO: check for negative numbers
             
-            with d.div(style="float: right; width: %d" % int(txt_width)):
+            with d.div(style="float: right; width: %d;" % int(txt_width)):
                 d.font(title, size=font_size)
         elif mode == "top":
             d.font(title, size=font_size)
