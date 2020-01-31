@@ -1,5 +1,7 @@
 # Utils
 
+Utility modules and scripts written mainly in `python`.
+
 ## gnuplot.py
 
 I have discovered [gnuplot-py](http://gnuplot-py.sourceforge.net/) not so long
@@ -19,9 +21,13 @@ all platforms (Windows, Mac, Linux).
 
 If you have found any bugs or have any suggestions feel free to contact me.
 
+## gmt.py
+
+Thin wrapper around the [General Mapping Tools](https://gmt.soest.hawaii.edu/)
+binary. Unlikely I will continue to develop it since the project already
+has a quite mature [python wrapper](https://github.com/GenericMappingTools/pygmt).
+
 ## Acknowledgement
 
 I took a couple of code snippets and concepts from
 [gnuplot-py](http://gnuplot-py.sourceforge.net/).
-
-`plac_core.py` is from the [plac](https://github.com/micheles/plac) package.
