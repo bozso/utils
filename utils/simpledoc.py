@@ -646,7 +646,7 @@ def make_stag(name):
     return inner
 
 stags = {
-    "meta", "link", "img", "source"
+    "meta", "link", "img", "source", "iframe",
 }
 
 for stag in stags:
@@ -751,6 +751,24 @@ class HTML(SimpleDoc):
     def image_paths(self, width, *paths):
         return ImagePaths(self, width, *paths)
     
+    def youtube(self, video_id, *args, **kwargs):
+        src = "https://www.youtube.com/embed/%s" % video_id
+        
+        kwargs["src"] = "%s?%s" % (src, proc_yt_opt(kwargs))
+        
+        self.iframe(*args, **kwargs)
+
+yt_opts = {
+    "autoplay": False,
+    "controls": True,
+    "loop": False,
+}
+
+def proc_yt_opt(kwargs):
+    return "?".join(
+        kwargs.pop(key, yt_opts[key])
+        for key in yt_opts
+    )
     
 libs = type("JSLibs", (object,), {
     "shower": "https://shwr.me/shower/shower.min.js",
