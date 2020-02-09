@@ -1,5 +1,5 @@
 __all__ = (
-    "HTML", "libs",
+    "HTML", "libs", "JSLib",
 )
 
 import re
@@ -741,12 +741,8 @@ class HTML(SimpleDoc):
     def presentation(*args, **kwargs):
         return Presentation(*args, **kwargs)
 
-    def use(self, path):
-        with self.tag("script", "async", src=path):
-            pass
-        
-        # self.line("script", "", src=path)
-
+    def use(self, lib):
+        lib.add(self)
     
     def image_paths(self, width, *paths):
         return ImagePaths(self, width, *paths)
@@ -769,11 +765,41 @@ def proc_yt_opt(kwargs):
         kwargs.pop(key, yt_opts[key])
         for key in yt_opts
     )
+
+class Library(object):
+    __slots__ = (
+        "path",
+    )
     
-libs = type("JSLibs", (object,), {
-    "shower": "https://shwr.me/shower/shower.min.js",
-    "mathjax": "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
-    "plotly": "https://cdn.plot.ly/plotly-latest.min.js",
+    def __init__(self, path):
+        self.path = path
+    
+
+class CSSLib(Library):
+    pass
+    
+class JSLib(Library):
+    __slots__ = (
+        "async",
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.async = bool(kwargs.get("async", True))
+        Library.__init__(self, kwargs["path"])
+    
+    def add(self, doc):
+        if self.async:
+            with doc.tag("script", "async", src=self.path):
+                pass
+        else:
+            with doc.tag("script", src=self.path):
+                pass
+
+
+jslibs = type("JSLibs", (object,), {
+    "shower": JSLib(path="https://shwr.me/shower/shower.min.js"),
+    "mathjax": JSLib(path="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
+    "plotly": JSLib(path="https://cdn.plot.ly/plotly-latest.min.js"),
 })
 
 class Presentation(HTML):
