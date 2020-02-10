@@ -64,7 +64,7 @@ class Command(object):
         return proc
 
 
-def subcmommands(root, *args, **kwargs):
+def subcommands(root, *args, **kwargs):
     p = Parser(**kwargs)
     
     return type(root, (object,),

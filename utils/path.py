@@ -51,7 +51,7 @@ class Path(object):
         return Path(p)
     
     def join(self, *args):
-        return Path(pth.join(self.path, *args))
+        return Path(path.join(self.path, *args))
     
     def iglob(self):
         return glob.iglob(self.path)

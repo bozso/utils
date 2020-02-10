@@ -1,11 +1,13 @@
+from functools import partial
+
 __all__ = (
-    "Enforcer",
+    "enforce", "type_enforce",
 )
 
-class Enforcer(object):
-    def enforce(self, cond, *args, **kwargs):
-        if not cond:
-            raise self(*args, **kwargs)
+def enforce(cond, *args, **kwargs):
+    exc = kwargs.pop("exception", Exception)
+    
+    if not cond:
+        raise exc(*args, **kwargs)
 
-class TypeEnforce(TypeError, Enforcer):
-    pass
+type_enforce = partial(enforce, exception=TypeError)

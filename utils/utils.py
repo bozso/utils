@@ -1,17 +1,19 @@
+import sys
+import functools as ft
 
 __all__ = (
     "Seq", "flat", "new_type", "str_t", "isiter", "all_same",
-    "make_object", "tmp_file", "get_par", "cat", "compose",
-    "fs", "load", "Enum",
+    "make_object", "cat", "compose",
+    "fs", "load", "Enum", "namespace",
 )
 
-py3 = version_info[0] == 3
+py3 = sys.version_info[0] == 3
 
 
 if py3:
-    str_t = str,
+    str_t = str
 else:
-    str_t = basestring,
+    str_t = basestring
 
 
 def flat(arg):
@@ -53,33 +55,7 @@ class Enum(object):
         return self.__dict__.items()
 
 
-class TMP(object):
-    tmpdir = _get_default_tempdir()
-    
-    def __init__(self):
-        self.tmps = []
-    
-    def tmp_file(self, path=tmpdir, ext=None):
-        path = pth.join(path, next(_get_candidate_names()))
-        
-        if ext is not None:
-            path = "%s.%s" % (path, ext)
-        
-        self.tmps.append(path)
-        
-        return path
-    
-    def __del__(self):
-        for path in self.tmps:
-            rm(path)
-
-
-tmp = TMP()
-tmp_file = tmp.tmp_file
-
 empty_iter = iter([])
-isfile = compose(pth.isfile, pth.join)
-ls = compose(iglob, pth.join)
 
 def all_same(iterable, fun=None):
     if fun is not None:

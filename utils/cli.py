@@ -1,4 +1,4 @@
-import argparser
+import argparse as ap
 
 def annot(**kwargs):
     parent = kwargs.pop("parent", None)
@@ -14,7 +14,7 @@ def annot(**kwargs):
 
 class CParse(object):
     def __init__(self, **kwargs):
-        self.argp, self.args = ArgumentParser(**kwargs), None
+        self.argp, self.args = ap.ArgumentParser(**kwargs), None
         
         for key, value in self.__init__.__annotations__.items():
             if value.pop("kind") == "pos":

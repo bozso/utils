@@ -1,5 +1,5 @@
 __all__ = (
-    "HTML", "libs", "JSLib",
+    "HTML", "jslibs", "JSLib",
 )
 
 import re
@@ -780,15 +780,15 @@ class CSSLib(Library):
     
 class JSLib(Library):
     __slots__ = (
-        "async",
+        "_async",
     )
     
     def __init__(self, *args, **kwargs):
-        self.async = bool(kwargs.get("async", True))
+        self._async = bool(kwargs.get("async", True))
         Library.__init__(self, kwargs["path"])
     
     def add(self, doc):
-        if self.async:
+        if self._async:
             with doc.tag("script", "async", src=self.path):
                 pass
         else:

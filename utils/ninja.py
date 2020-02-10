@@ -8,6 +8,8 @@ use Python.
 import re
 import textwrap
 
+from utils import Path
+
 __all__ = (
     "Ninja",
 )
@@ -15,7 +17,7 @@ __all__ = (
 def escape_path(word):
     return word.replace('$ ', '$$ ').replace(' ', '$ ').replace(':', '$:')
 
-home = pth.join("/", "home", "istvan")
+home = Path.joined("/", "home", "istvan")
 
 class Ninja(object):
     def __init__(self, output, width=78):
@@ -240,7 +242,7 @@ class HTML(Ninja):
     
     ext = ".html"
     
-    _include_dirs = {pth.join(home, "Dokumentumok", "texfiles", "gpp"),}
+    _include_dirs = {home.join("Dokumentumok", "texfiles", "gpp"),}
     
     def __init__(self, *args, **kwargs):
         include_dirs = \

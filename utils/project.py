@@ -11,7 +11,7 @@ class ProjectMixin(object):
         pass
 
 class Git(object):
-    
+    pass
 
 class Project(object):
     __slots__ = (
