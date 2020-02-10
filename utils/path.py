@@ -1,6 +1,7 @@
 import os
-import os.path as path
+import os.path as pth
 import glob
+import subprocess as sub
 
 __all__ = (
     "cd", "Path",
@@ -15,7 +16,7 @@ class cd(object):
     
     def __init__(self, path):
         self.newPath, self.savedPath = (
-            path.expanduser(path),
+            pth.expanduser(path),
             None
         )
 
@@ -40,7 +41,7 @@ class Path(object):
     
     @classmethod
     def joined(cls, *args):
-        return cls(path.join(*args))
+        return cls(pth.join(*args))
     
     def mkdir(self):
         p = self.path
@@ -51,7 +52,7 @@ class Path(object):
         return Path(p)
     
     def join(self, *args):
-        return Path(path.join(self.path, *args))
+        return Path(pth.join(self.path, *args))
     
     def iglob(self):
         return glob.iglob(self.path)
@@ -60,10 +61,10 @@ class Path(object):
         return tuple(self.iglob())
     
     def exists(self):
-        return path.exists(self.path)
+        return pth.exists(self.path)
     
     def isfile(self):
-        return path.isfile(self.path)
+        return pth.isfile(self.path)
     
     def __str__(self):
         return self.path
