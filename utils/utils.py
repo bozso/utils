@@ -3,8 +3,8 @@ import functools as ft
 
 __all__ = (
     "Seq", "flat", "new_type", "str_t", "isiter", "all_same",
-    "make_object", "cat", "compose",
-    "fs", "load", "Enum", "namespace",
+    "make_object", "cat", "compose", "fs", "load", "Enum", "namespace",
+    "export",
 )
 
 py3 = sys.version_info[0] == 3
@@ -15,6 +15,13 @@ if py3:
 else:
     str_t = basestring
 
+def export(fn):
+    mod = sys.modules[fn.__module__]
+    if hasattr(mod, '__all__'):
+        mod.__all__.append(fn.__name__)
+    else:
+        mod.__all__ = [fn.__name__]
+    return fn
 
 def flat(arg):
     return tup(chain.from_iterable(map(tup, arg)))
