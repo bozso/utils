@@ -4,6 +4,7 @@ __all__ = (
 
 import re
 import os.path as path
+import base64
 
 class DocError(Exception):
     pass
@@ -646,7 +647,7 @@ def make_stag(name):
     return inner
 
 stags = {
-    "meta", "link", "img", "source", "iframe",
+    "meta", "link", "source", "iframe",
 }
 
 for stag in stags:
@@ -677,7 +678,8 @@ class ImagePaths(object):
     __slots__ = ("paths", "doc", "width",)
     
     def __init__(self, doc, width, *paths):
-        self.doc, self.width, self.paths = doc, width, frozenset(paths)
+        self.doc, self.width, self.paths, self.bundle = \
+        doc, width, frozenset(paths), doc.bundle
     
     def search(self, name):
         m = map(lambda p: path.join(p, name), self.paths)
@@ -731,11 +733,16 @@ class ImagePaths(object):
 
 
 class HTML(SimpleDoc):
-    @classmethod
-    def new(cls, *args, **kwargs):
-        kwargs.setdefault("stag_end", ">")
-        return cls(*args, **kwargs)
+    __slots__ = (
+        "bundle",
+    )
     
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("stag_end", ">")
+        self.bundle = bool(kwargs.get("bundle", False))
+        
+        SimpleDoc.__init__(self, *args, **kwargs)
+        
     
     @staticmethod
     def presentation(*args, **kwargs):
@@ -743,6 +750,27 @@ class HTML(SimpleDoc):
 
     def use(self, lib):
         lib.add(self)
+    
+    
+    def img(self, *args, **kwargs):
+        path = kwargs.pop("src")
+        
+        if self.bundle:
+            ext = path.splitext(path)[1]
+            
+            with open(path, "rb") as f:
+                enc = base64.b64encode(f.read())
+            
+            src = "data:image/%s;base64,%s" % (
+                ext, enc
+            )
+            
+        else:
+            src = path
+        
+        kwargs["src"] = path
+        
+        self.stag("img", *args, **kwargs)
     
     def image_paths(self, width, *paths):
         return ImagePaths(self, width, *paths)

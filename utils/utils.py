@@ -1,10 +1,11 @@
 import sys
 import functools as ft
+import json
 
 __all__ = (
     "Seq", "flat", "new_type", "str_t", "isiter", "all_same",
     "make_object", "cat", "compose", "fs", "load", "Enum", "namespace",
-    "export",
+    "export", "JSONSave"
 )
 
 py3 = sys.version_info[0] == 3
@@ -279,3 +280,90 @@ from importlib.machinery import SourceFileLoader
 
 def load(name, path):
     return SourceFileLoader(name, path).load_module()
+
+
+class JSONSave(object):
+
+    class Encoder(json.JSONEncoder):
+        def default(self, obj):
+            try:
+                return {
+                    key: getattr(obj, key)
+                    for key in obj.json_serialize
+                }
+            except AttributeError:
+                return json.JSONEncoder.default(self, obj)    
+    
+
+    json_options = {
+        "indent": 4,
+        "cls": Encoder,
+    }
+    
+    def save_to(self, path, **kwargs):
+        with open(path, "w") as f:
+            self.save(f)
+    
+    @staticmethod
+    def save_any(obj, writable, **kwargs):
+        try:
+            kwargs.update(obj.json_options)
+        except AttributeError:
+            kwargs.update(JSONSave.json_options)
+        
+        json.dump(obj, writable, **kwargs)
+        
+    
+    def save(self, writable, **kwargs):
+        self.save_any(self, writable, **kwargs)
+    
+    @classmethod
+    def from_dict(cls, d, *args, **kwargs):
+        ret = cls(*args, **kwargs)
+        
+        for key in cls.json_serialize:
+            try:
+                val = d[key]
+            except KeyError:
+                val = None
+            
+            setattr(ret, key, val)
+        
+        return ret
+    
+    @classmethod
+    def load_from(cls, path, *args, **kwargs):
+        ret = cls(*args, **kwargs)
+        
+        with open(path, "r") as f:
+            ret.load(f, **kwargs)
+        
+        return ret
+        
+    def load(self, readable, **kwargs):
+        kwargs.update(self.json_options)
+        
+        self = json.load(self, readable, **kwargs)
+    
+    @classmethod
+    def tree_from(cls, path, *args, **kwargs):
+        with open(path, "r") as f:
+            return cls.load_tree(f, *args, **kwargs)
+    
+    @classmethod
+    def load_tree(cls, readable, *args, **kwargs):
+        d = json.load(readable, **kwargs, **self.json_options)
+        
+        dd = {}
+        for key, val in d.items():
+            if isinstance(val, dict):
+                dd[key] = cls.from_dict(val, *args, **kwargs)
+            else:
+                dd[key] = tuple(
+                    cls.from_dict(elem, *args, **kwargs)
+                    for elem in val
+                )
+        
+        return namespace(**dd)
+    
+

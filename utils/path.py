@@ -34,7 +34,11 @@ class cd(object):
 
 
 class Path(object):
-    __slots__ = ("path",)
+    json_serialize = (
+        "path",
+    )
+    
+    __slots__ = json_serialize
     
     def __init__(self, path):
         self.path = path
