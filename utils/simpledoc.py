@@ -5,6 +5,7 @@ __all__ = (
 import re
 import os.path as path
 import base64
+import collections as coll
 
 class DocError(Exception):
     pass
@@ -674,6 +675,63 @@ for line in lines:
     setattr(SimpleDoc, line, make_line(line))
 
 
+
+class Encoder(object):
+    __slots__ = (
+        "encoder",
+    )
+    
+    klass2ext = {
+        "text" : frozenset({
+            "js", "css",
+        }),
+        
+        "video" : frozenset({
+            "mp4",
+        }),
+        
+        "image": frozenset({
+            "png", "jpg",
+        }),
+    }
+    
+    tpl = "data:{klass}/{mode};charset=utf-8;base64,{data}"
+    
+    ext2klass = {v: k for k, v in klass2ext.items()}
+    
+    convert = {
+        "js": "javascript",
+    }
+    
+    def __init__(self, *args, **kwargs):
+        self.encoder = kwargs.get("encoder", base64.b64encode)
+
+    
+    def __call__(self, media_path):
+        mode = ext = path.splitext(media_path)[1].strip(".")
+        
+        for key, val in self.ext2klass.items():
+            if ext in key:
+                klass = val
+                break
+        
+        if mode in self.convert:
+            mode = convert[ext]
+        
+        with open(media_path, "rb") as f:
+            data = self.encoder(f.read())
+        
+        return self.tpl.format(
+            klass=klass, mode=mode, data=data.decode("utf-8")
+        )
+
+
+encoder = Encoder()
+
+encodable = {
+    "img", "video",
+}
+
 class ImagePaths(object):
     __slots__ = ("paths", "doc", "width",)
     
@@ -734,12 +792,16 @@ class ImagePaths(object):
 
 class HTML(SimpleDoc):
     __slots__ = (
-        "bundle",
+        "bundle", "encoder",
     )
     
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("stag_end", ">")
-        self.bundle = bool(kwargs.get("bundle", False))
+        
+        self.bundle, self.encoder = (
+            bool(kwargs.pop("bundle", False)),
+            kwargs.pop("encoder", encoder),
+        )
         
         SimpleDoc.__init__(self, *args, **kwargs)
         
@@ -756,19 +818,11 @@ class HTML(SimpleDoc):
         path = kwargs.pop("src")
         
         if self.bundle:
-            ext = path.splitext(path)[1]
-            
-            with open(path, "rb") as f:
-                enc = base64.b64encode(f.read())
-            
-            src = "data:image/%s;base64,%s" % (
-                ext, enc
-            )
-            
+            src = self.encoder(path)
         else:
             src = path
         
-        kwargs["src"] = path
+        kwargs["src"] = src
         
         self.stag("img", *args, **kwargs)
     
