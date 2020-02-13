@@ -70,7 +70,7 @@ def subcommands(root, *args, **kwargs):
     return type(root, (object,),
         {
             cmd: staticmethod(
-                Command.with_parser("%s %s" % (root, cmd), p)
+                Command("%s %s" % (root, cmd), p)
             )
             for cmd in args
         }
