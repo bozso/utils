@@ -5,7 +5,7 @@ import json
 __all__ = (
     "Seq", "flat", "new_type", "str_t", "isiter", "all_same",
     "make_object", "cat", "compose", "fs", "load", "Enum", "namespace",
-    "export", "JSONSave"
+    "export", "JSONSave", "separate_options",
 )
 
 py3 = sys.version_info[0] == 3
@@ -366,4 +366,18 @@ class JSONSave(object):
         
         return namespace(**dd)
     
-
+def separate_options(d, key, tpl = "%s_"):
+    txt = tpl % key
+    
+    keys = tuple(filter(lambda k: k.startswith(txt), d.keys()))
+    
+    r = {}
+    
+    for key in keys:
+        r[key.lstrip(txt)] = d[key]
+    
+    for key in keys:
+        del d[key]
+    
+    return r
+    
