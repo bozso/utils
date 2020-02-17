@@ -13,62 +13,6 @@ __all__ = [
     "jslibs", 
 ]
 
-########
-# TAGS #
-########
-
-def make_tag(name):
-    def inner(self, *args, **kwargs):
-        return self.__class__.Tag(self, name, _attributes(args, kwargs))
-    
-    return inner
-
-tags = {
-    "div", "head", "header", "body", "html", "center", "ul", "ol",
-    "script", "style", "section", "video", "table", "tr"
-}
-
-for tag in tags:
-    setattr(SimpleDoc, tag, make_tag(tag))
-
-#########
-# STAGS #
-#########
-
-def make_stag(name):
-    def inner(self, *args, **kwargs):
-        return self.stag(name, *args, **kwargs)
-    
-    return inner
-
-stags = {
-    "meta", "link", "iframe",
-}
-
-for stag in stags:
-    setattr(SimpleDoc, stag, make_stag(stag))
-
-
-#########
-# LINES #
-#########
-
-
-def make_line(name):
-    def inner(self, text_contents, *args, **kwargs):
-        return self.line(name, text_contents, *args, **kwargs)
-    
-    return inner
-
-lines = {
-    "h1", "h2", "h3", "h4", "p", "li", "bold", "q", "u", "em",
-    "it", "del", "strong", "th", "td", "font",
-}
-
-for line in lines:
-    setattr(SimpleDoc, line, make_line(line))
-
-
 class Encoder(object):
     __slots__ = (
         "encoder",
@@ -202,6 +146,10 @@ class HTML(SimpleDoc):
     def presentation(*args, **kwargs):
         return Presentation(*args, **kwargs)
 
+    def line(self, tag_name, text_content, *args, **kwargs):
+        with self.tag(tag_name, *args, **kwargs):
+            self.asis(text_content)
+
     def use(self, lib):
         lib.add(self)
     
@@ -252,6 +200,62 @@ encodable = {
 
 for enc, mode in encodable.items():
     setattr(HTML, enc, make_encodable(enc, mode))
+
+
+########
+# TAGS #
+########
+
+def make_tag(name):
+    def inner(self, *args, **kwargs):
+        return self.__class__.Tag(self, name, _attributes(args, kwargs))
+    
+    return inner
+
+tags = {
+    "div", "head", "header", "body", "html", "center", "ul", "ol",
+    "script", "style", "section", "video", "table", "tr"
+}
+
+for tag in tags:
+    setattr(HTML, tag, make_tag(tag))
+
+#########
+# STAGS #
+#########
+
+def make_stag(name):
+    def inner(self, *args, **kwargs):
+        return self.stag(name, *args, **kwargs)
+    
+    return inner
+
+stags = {
+    "meta", "link", "iframe",
+}
+
+for stag in stags:
+    setattr(HTML, stag, make_stag(stag))
+
+
+#########
+# LINES #
+#########
+
+
+def make_line(name):
+    def inner(self, text_contents, *args, **kwargs):
+        return self.line(name, text_contents, *args, **kwargs)
+    
+    return inner
+
+lines = {
+    "h1", "h2", "h3", "h4", "p", "li", "b", "q", "u", "em",
+    "it", "del", "strong", "th", "td", "font",
+}
+
+for line in lines:
+    setattr(HTML, line, make_line(line))
 
         
 yt_opts = {
