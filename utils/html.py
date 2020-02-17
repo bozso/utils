@@ -4,6 +4,7 @@ simpledoc.py.
 """
 
 import base64
+import os.path as path
 
 from utils.utils import export
 from utils.simpledoc import SimpleDoc, _attributes
@@ -41,7 +42,7 @@ def make_stag(name):
     return inner
 
 stags = {
-    "meta", "link", "source", "iframe",
+    "meta", "link", "iframe",
 }
 
 for stag in stags:
@@ -120,9 +121,6 @@ class Encoder(object):
 
 encoder = Encoder()
 
-encodable = {
-    "img", "video",
-}
 
 class ImagePaths(object):
     __slots__ = ("paths", "doc", "width",)
@@ -181,21 +179,23 @@ class ImagePaths(object):
         
         self.doc.img(*args, **kwargs)
 
+def noencode(path):
+    return path
 
 @export
 class HTML(SimpleDoc):
     __slots__ = (
-        "bundle", "encoder",
+        "encoder",
     )
     
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("stag_end", ">")
         
-        self.bundle, self.encoder = (
-            bool(kwargs.pop("bundle", False)),
-            kwargs.pop("encoder", encoder),
-        )
-        
+        if bool(kwargs.pop("bundle", False)):
+            self.encoder = kwargs.pop("encoder", encoder)
+        else:
+            self.encoder = noencode
+
         SimpleDoc.__init__(self, *args, **kwargs)
     
     @staticmethod
@@ -210,18 +210,6 @@ class HTML(SimpleDoc):
 
     def imath(self, txt):
         self._append("\( %s \)" % (txt))
-
-    def img(self, *args, **kwargs):
-        path = kwargs.pop("src")
-        
-        if self.bundle:
-            src = self.encoder(path)
-        else:
-            src = path
-        
-        kwargs["src"] = src
-        
-        self.stag("img", *args, **kwargs)
     
     def image_paths(self, width, *paths):
         return ImagePaths(self, width, *paths)
@@ -239,7 +227,32 @@ class HTML(SimpleDoc):
     
     def doi(self, number, **kwargs):
         self.url("https://doi.org/%s" % number, **kwargs)
-        
+
+
+
+def make_encodable(name, mode):
+    if mode == "stag":
+        def inner(self, *args, **kwargs):
+            kwargs["src"] = self.encoder(kwargs.pop("src"))
+            
+            self.stag(name, *args, **kwargs)
+    elif mode == "tag":
+        def inner(self, *args, **kwargs):
+            kwargs["src"] = self.encoder(kwargs.pop("src"))
+            
+            return self.tag(self, name, *args, **kwargs)
+    
+    return inner
+
+encodable = {
+    "img": "stag",
+    "source": "stag",
+}
+
+
+for enc, mode in encodable.items():
+    setattr(HTML, enc, make_encodable(enc, mode))
+
         
 yt_opts = {
     "autoplay": False,
