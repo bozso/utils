@@ -6,3 +6,4 @@ from utils.cmd import *
 from utils.ninja import *
 from utils.project import *
 from utils.simpledoc import *
+from utils.html import *

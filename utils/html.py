@@ -3,202 +3,301 @@ HTML document generator based on https://github.com/leforestier/yattag's
 simpledoc.py.
 """
 
-__all__ = (
-    "new",
-)
+import base64
 
+from utils.utils import export
+from utils.simpledoc import SimpleDoc, _attributes
 
-class DocError(Exception):
-    pass
+__all__ = [
+    "jslibs", 
+]
 
-class Tag(object):
-    __slots__ = (
-        "doc", "name", "attrs", "position", "parent_tag", "attrs",
-    )
-    
-    def __init__(self, doc, name, attrs): # name is the tag name (ex: 'div')
-        # type: (SimpleDoc, str, Dict[str, Union[str, int, float]]) -> None
-        
-        print(doc, name, attrs)
-        
-        self.doc = doc
-        self.name = name
-        self.attrs = attrs
-        self.parent_tag, self.position, self.attrs = None, None, None
-
-    def __enter__(self):
-        # type: () -> None
-        self.parent_tag = self.doc.current_tag
-        self.doc.current_tag = self
-        self.position = len(self.doc.result)
-        self.doc._append('')
-
-    def __exit__(self, tpe, value, traceback):
-        # type: (Any, Any, Any) -> None
-        
-        if value is None:
-            if self.attrs:
-                self.doc.result[self.position] = "<%s %s>" % (
-                    self.name,
-                    dict_to_attrs(self.attrs),
-                )
-            else:
-                self.doc.result[self.position] = "<%s>" % self.name
-            
-            self.doc._append("</%s>" % self.name)
-            self.doc.current_tag = self.parent_tag
-
-
-class HTMLDoc(object):
-    __slots__ = (
-        "outfile", "result", "current_tag", "_append", "_stag_end",
-        "_br", "_nl2br",
-    )
-
-    class DocumentRoot(object):
-
-        class DocumentRootError(DocError, AttributeError):
-            # Raising an AttributeError on __getattr__ instead of just a DocError makes it compatible
-            # with the pickle module (some users asked for pickling of SimpleDoc instances).
-            # I also keep the DocError from earlier versions to avoid possible compatibility issues
-            # with existing code.
-            pass
-
-        def __getattr__(self, item):
-            # type: (str) -> Any
-            raise SimpleDoc.DocumentRoot.DocumentRootError("DocumentRoot here. You can't access anything here.")
-    
-    def __init__(self, *args, **kwargs):
-        self.result = [] # type: List[str]
-        self.current_tag = self.__class__.DocumentRoot() # type: Any
-        self._append = self.result.append
-        
-        stag_end = kwargs.get("stag_end", " />")
-        
-        self._stag_end = stag_end
-        self._br = '<br' + stag_end
-        self._nl2br = bool(kwargs.get("nl2br", False))
-    
-    def tag(self, tag_name, *args, **kwargs):
-        return Tag(self, tag_name, _attributes(args, kwargs))
-
-    def line(self, tag_name, text_content, *args, **kwargs):
-        with self.tag(tag_name, *args, **kwargs):
-            self.text(text_content)
-
-    def stag(self, tag_name, *args, **kwargs):
-        if args or kwargs:
-            self._append("<%s %s>" % (
-                tag_name,
-                dict_to_attrs(_attributes(args, kwargs)),
-                # self._stag_end
-            ))
-        else:
-            self._append("<%s%s" % (tag_name, self._stag_end))
-
-
-    def tagtext(self):
-        return self, self.tag, self.text
-
-    def nl(self):
-        # type: () -> None
-        self._append('\n')
-
-    def getvalue(self):
-        return "".join(self.result)
-
-    def text(self, *strgs):
-        for strg in strgs:
-            transformed_string = html_escape(strg)
-            if self._nl2br:
-                self._append(
-                    self.__class__._newline_rgx.sub(
-                        self._br,
-                        transformed_string
-                    )
-                )
-            else:
-                self._append(transformed_string)
-
-        
-def html_escape(s):
-    # type: (Union[str, int, float]) -> str
-    if isinstance(s, (int, float)):
-        return str(s)
-    try:
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    except AttributeError:
-        raise TypeError(
-            "You can only insert a string, an int or a float inside "
-            "a xml/html text node. Got %s (type %s) instead." % 
-            (repr(s), repr(type(s)))
-        )
-
-
-def attr_escape(s):
-    # type: (Union[str, int, float]) -> str
-    if isinstance(s,(int,float)):
-        return str(s)
-    try:
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace('"', "&quot;")
-    except AttributeError:
-        raise TypeError(
-            "xml/html attributes should be passed as strings, "
-            "ints or floats. Got %s (type %s) instead." %
-            (repr(s), repr(type(s)))
-        )
-
-def dict_to_attrs(dct):
-    # type: (Dict[str, Any]) -> str
-    return ' '.join(
-        (key if value is ATTR_NO_VALUE
-        else '%s="%s"' % (key, attr_escape(value)))
-        for key, value in dct.items()
-    )
-
-def _attributes(args, kwargs):
-    # type: (Any, Any) -> Dict[str, Any]
-    lst = [] # type: List[Any]
-    append = lst.append
-    
-    for arg in args:
-        if isinstance(arg, tuple):
-            append(arg)
-        elif isinstance(arg, str):
-            append((arg, ATTR_NO_VALUE))
-        else:
-            raise ValueError(
-                "Couldn't make a XML or HTML attribute/value pair "
-                "out of %s." % repr(arg)
-            )
-    
-    result = dict(lst)
-    
-    result.update(
-        (('class', value) if key == 'klass' else (key, value))
-        for key,value in kwargs.items()
-    )
-    
-    return result
-
-
-ATTR_NO_VALUE = object()
+########
+# TAGS #
+########
 
 def make_tag(name):
     def inner(self, *args, **kwargs):
-        return Tag(self, name, _attributes(args, kwargs))
+        return self.__class__.Tag(self, name, _attributes(args, kwargs))
     
     return inner
 
-tags = {"h1", "h2", "h3", "h4", "p", "div"}
+tags = {
+    "div", "head", "header", "body", "html", "center", "ul", "ol",
+    "script", "style", "section", "video", "table", "tr"
+}
 
 for tag in tags:
-    setattr(HTMLDoc, tag, make_tag(tag))
+    setattr(SimpleDoc, tag, make_tag(tag))
+
+#########
+# STAGS #
+#########
+
+def make_stag(name):
+    def inner(self, *args, **kwargs):
+        return self.stag(name, *args, **kwargs)
+    
+    return inner
+
+stags = {
+    "meta", "link", "source", "iframe",
+}
+
+for stag in stags:
+    setattr(SimpleDoc, stag, make_stag(stag))
 
 
-def new(*args, **kwargs):
-    return HTMLDoc(*args, **kwargs)
+#########
+# LINES #
+#########
 
+
+def make_line(name):
+    def inner(self, text_contents, *args, **kwargs):
+        return self.line(name, text_contents, *args, **kwargs)
+    
+    return inner
+
+lines = {
+    "h1", "h2", "h3", "h4", "p", "li", "bold", "q", "u", "em",
+    "it", "del", "strong", "th", "td", "font",
+}
+
+for line in lines:
+    setattr(SimpleDoc, line, make_line(line))
+
+
+class Encoder(object):
+    __slots__ = (
+        "encoder",
+    )
+    
+    klass2ext = {
+        "text" : frozenset({
+            "js", "css",
+        }),
+        
+        "video" : frozenset({
+            "mp4",
+        }),
+        
+        "image": frozenset({
+            "png", "jpg",
+        }),
+    }
+    
+    tpl = "data:{klass}/{mode};charset=utf-8;base64,{data}"
+    
+    ext2klass = {v: k for k, v in klass2ext.items()}
+    
+    convert = {
+        "js": "javascript",
+    }
+    
+    def __init__(self, *args, **kwargs):
+        self.encoder = kwargs.get("encoder", base64.b64encode)
+
+    
+    def __call__(self, media_path):
+        mode = ext = path.splitext(media_path)[1].strip(".")
+        
+        for key, val in self.ext2klass.items():
+            if ext in key:
+                klass = val
+                break
+        
+        if mode in self.convert:
+            mode = convert[ext]
+        
+        with open(media_path, "rb") as f:
+            data = self.encoder(f.read())
+        
+        return self.tpl.format(
+            klass=klass, mode=mode, data=data.decode("utf-8")
+        )
+
+
+encoder = Encoder()
+
+encodable = {
+    "img", "video",
+}
+
+class ImagePaths(object):
+    __slots__ = ("paths", "doc", "width",)
+    
+    def __init__(self, doc, width, *paths):
+        self.doc, self.width, self.paths, self.bundle = \
+        doc, width, frozenset(paths), doc.bundle
+    
+    def search(self, name):
+        m = map(lambda p: path.join(p, name), self.paths)
+        f = frozenset(filter(path.isfile, m))
+        l = len(f)
+        
+        if l == 0:
+            raise RuntimeError("No image found with name '%s', "
+                "in image paths: %s" % (name, self.paths)
+            )
+        
+        if l != 1:
+            raise RuntimeError("Unambigous image name '%s', "
+                "image paths: %s" % (name, self.paths)
+            )
+        
+        r, = f
+        
+        return r
+    
+    def with_title(self, path, *args, **kwargs):
+        title, font_size, img_width, mode = (
+            kwargs.pop("title"),
+            kwargs.pop("font_size", 5.0),
+            kwargs.pop("width", 500),
+            kwargs.pop("mode", "top")
+        )
+        
+        d = self.doc
+        
+        if mode == "side":
+            d.img(style="float: left; width: %d" % int(img_width - 5),
+                src=path, title=title, **kwargs)
+            
+            txt_width = self.width - img_width - 20
+            
+            # TODO: check for negative numbers
+            
+            with d.div(style="float: right; width: %d;" % int(txt_width)):
+                d.font(title, size=font_size)
+        elif mode == "top":
+            d.font(title, size=font_size)
+            d.img(src=path, title=title, **kwargs)
+        else:
+            raise TypeError("Unrecognized mode: '%s'" % mode)
+        
+    def img(self, name, *args, **kwargs):
+        kwargs["src"] = self.search(name)
+        
+        self.doc.img(*args, **kwargs)
+
+
+@export
+class HTML(SimpleDoc):
+    __slots__ = (
+        "bundle", "encoder",
+    )
+    
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("stag_end", ">")
+        
+        self.bundle, self.encoder = (
+            bool(kwargs.pop("bundle", False)),
+            kwargs.pop("encoder", encoder),
+        )
+        
+        SimpleDoc.__init__(self, *args, **kwargs)
+    
+    @staticmethod
+    def presentation(*args, **kwargs):
+        return Presentation(*args, **kwargs)
+
+    def use(self, lib):
+        lib.add(self)
+    
+    def math(self, txt):
+        self._append("\[ %s \]" % (txt))
+
+    def imath(self, txt):
+        self._append("\( %s \)" % (txt))
+
+    def img(self, *args, **kwargs):
+        path = kwargs.pop("src")
+        
+        if self.bundle:
+            src = self.encoder(path)
+        else:
+            src = path
+        
+        kwargs["src"] = src
+        
+        self.stag("img", *args, **kwargs)
+    
+    def image_paths(self, width, *paths):
+        return ImagePaths(self, width, *paths)
+    
+    def youtube(self, video_id, *args, **kwargs):
+        src = "https://www.youtube.com/embed/%s" % video_id
+        
+        kwargs["src"] = "%s?%s" % (src, proc_yt_opt(kwargs))
+        
+        self.iframe(*args, **kwargs)
+    
+    def url(self, address, txt, **kwargs):
+        with self.tag("a", href=address, **kwargs):
+            self.text(txt)
+    
+    def doi(self, number, **kwargs):
+        self.url("https://doi.org/%s" % number, **kwargs)
+        
+        
+yt_opts = {
+    "autoplay": False,
+    "controls": True,
+    "loop": False,
+}
+
+def proc_yt_opt(kwargs):
+    return "?".join(
+        kwargs.pop(key, yt_opts[key])
+        for key in yt_opts
+    )
+
+
+class Library(object):
+    __slots__ = (
+        "path",
+    )
+    
+    def __init__(self, path):
+        self.path = path
+    
+
+class CSSLib(Library):
+    pass
+    
+
+class JSLib(Library):
+    __slots__ = (
+        "_async",
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self._async = bool(kwargs.get("async", True))
+        Library.__init__(self, kwargs["path"])
+    
+    def add(self, doc):
+        if self._async:
+            with doc.tag("script", "async", src=self.path):
+                pass
+        else:
+            with doc.tag("script", src=self.path):
+                pass
+
+
+jslibs = type("JSLibs", (object,), {
+    "shower": JSLib(path="https://shwr.me/shower/shower.min.js"),
+    "mathjax": JSLib(path="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
+    "plotly": JSLib(path="https://cdn.plot.ly/plotly-latest.min.js"),
+})
+
+
+class Presentation(HTML):
+    def slide(self, *args, **kwargs):
+        kwargs["klass"] = "slide"
+        
+        return self.section(*args, **kwargs)
+    
 def main():
     d, tag, text = new().tagtext()
     
@@ -211,3 +310,71 @@ def main():
     
 if __name__ == "__main__":
     main()
+
+
+"""
+\define{\col2{in}}{<div class="column2"> \in </div>}
+\define{\col3{in}}{<div class="column3"> \in </div>}
+\define{\col4{in}}{<div class="column4"> \in </div>}
+\define{\row{in}}{<div class="row"> \in </div>}
+
+\define{\center{in}{args}}{<center \args> \in </center>}
+
+\define{\style{in}{attrib}}{<div style="\attrib>" \in </div>}
+
+\define{\pbreak}{<div class="page-break"></div>}
+\define{\pbreak}{<div class="page-break"></div>}
+
+\define{\imgit{in}{title}{attr}}{
+    <img src="https://raw.githubusercontent.com/bozso/texfiles/master/images/\in"
+     \attr title="\title" alt="\title"> 
+    <br> \title <a href="https://raw.githubusercontent.com/bozso/texfiles/master/images/\in">
+    Forrás </a>
+}
+
+\define{\imgit{in}{title}{attr}}{
+    <img src="https://raw.githubusercontent.com/bozso/texfiles/master/images/geodyn/prev_work/\in"
+     \attr title="\title" alt="\title"> 
+    <br> <font size="4">\title </font>
+}
+
+\define{\fleft{attrib}{in}}{
+    <div style="float: left; \attrib">
+        \in
+    </div>
+}
+
+\define{\fright{attrib}{in}}{
+    <div style="float: right; \attrib">
+        \in
+    </div>
+}
+
+\define{\col{in}}{<div class="column"> \in </div>}
+\define{\row{in}}{<div class="row"> \in </div>}
+\define{\pb{in}}{<p><b>\in</b></p>}
+
+\define{\imref{in}{title}{attr}}{<img src="\in" \attr title="\title" alt="\title"> <br> \title Forrás: <a href="in"> \in </a>}
+
+\define{\th{in}}{<th>\in</th>}
+\define{\td{in}}{<td>\in</td>}
+\define{\tr{in}}{<tr>\in</tr>}
+
+\define{\table{in}}{<table>\in</table>}
+\define{\caption{in}}{<caption>\in</caption>}
+
+\define{\with{class}{in}}{<div class="\class"> \in </div>}
+
+\define{\bib{authors}{title}{journal}{pages}{doi}}{
+    <tr valign="top">
+    <td class="bibtexitem">
+    \authors
+    \title
+     <em>\journal</em>, \pages
+    \ifdef{doi}
+        [&nbsp;<a href="\doi">DOI</a>&nbsp;]
+    \endif
+    </td>
+    </tr>
+}
+"""
