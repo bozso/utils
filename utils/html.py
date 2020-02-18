@@ -9,10 +9,6 @@ import os.path as path
 from utils.utils import export
 from utils.simpledoc import SimpleDoc, _attributes
 
-__all__ = [
-    "jslibs", 
-]
-
 class Encoder(object):
     __slots__ = (
         "encoder",
@@ -178,28 +174,29 @@ class HTML(SimpleDoc):
 
 
 
-def make_encodable(name, mode):
+def make_encodable(name, mode, attrib):
     if mode == "stag":
         def inner(self, *args, **kwargs):
-            kwargs["src"] = self.encoder(kwargs.pop("src"))
+            kwargs[attrib] = self.encoder(kwargs.pop(attrib))
             
             self.stag(name, *args, **kwargs)
     elif mode == "tag":
         def inner(self, *args, **kwargs):
-            kwargs["src"] = self.encoder(kwargs.pop("src"))
+            kwargs[attrib] = self.encoder(kwargs.pop(attrib))
             
             return self.tag(self, name, *args, **kwargs)
     
     return inner
 
 encodable = {
-    "img": "stag",
-    "source": "stag",
+    "img": ("stag", "src"),
+    "source": ("stag", "src"),
+    "link" : ("stag", "href"),
 }
 
 
-for enc, mode in encodable.items():
-    setattr(HTML, enc, make_encodable(enc, mode))
+for enc, (mode, attrib) in encodable.items():
+    setattr(HTML, enc, make_encodable(enc, mode, attrib))
 
 
 ########
@@ -231,7 +228,7 @@ def make_stag(name):
     return inner
 
 stags = {
-    "meta", "link", "iframe",
+    "meta", "iframe",
 }
 
 for stag in stags:
@@ -283,31 +280,6 @@ class Library(object):
 class CSSLib(Library):
     pass
     
-
-class JSLib(Library):
-    __slots__ = (
-        "_async",
-    )
-    
-    def __init__(self, *args, **kwargs):
-        self._async = bool(kwargs.get("async", True))
-        Library.__init__(self, kwargs["path"])
-    
-    def add(self, doc):
-        if self._async:
-            with doc.tag("script", "async", src=self.path):
-                pass
-        else:
-            with doc.tag("script", src=self.path):
-                pass
-
-
-jslibs = type("JSLibs", (object,), {
-    "shower": JSLib(path="https://shwr.me/shower/shower.min.js"),
-    "mathjax": JSLib(path="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
-    "plotly": JSLib(path="https://cdn.plot.ly/plotly-latest.min.js"),
-})
-
 
 class Presentation(HTML):
     def slide(self, *args, **kwargs):

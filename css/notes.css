@@ -1,0 +1,328 @@
+/*<meta />*/
+/*This stylesheet has styled boxes that are configured to use images*/
+
+/* Three image containers (use 25% for four, and 50% for two, etc) */
+.column2 {
+  float: left;
+  width: 47.5%;
+  padding: 5px;
+}
+
+.column3 {
+  float: left;
+  width: 33.33%;
+  padding: 5px;
+}
+
+.column4 {
+  float: left;
+  width: 24.5%;
+  padding: 5px;
+}
+
+/* Clear floats after image containers */
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+body {
+    font-family: Arial, Avenir, Myriad;
+    line-height: 1.7em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    border-bottom: 2.25px solid #CCC;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 2.0em;
+    margin-top: 40px;
+    padding-bottom: 10px;
+}
+
+h2 {
+    font-size: 1.5em;
+    margin-top: 30px;
+}
+
+h3 {
+    font-size: 1.25em;
+    margin-top: 20px;
+}
+
+.center {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+}
+
+table.center {
+    position: absolute;
+    top: 25px;
+    bottom: 25px;
+    left: 25px;
+    right: 25px;
+    margin: 10px;
+    width: 90%;
+}
+
+
+li {
+    margin-bottom: 6px;
+    margin-top: 10px;
+}
+
+MadCap|xref {
+    color: #2D8DCC;
+    font-weight: bold;
+    mc-format: '{para}';
+    text-decoration: underline;
+}
+
+MadCap|xref:hover {
+    color: #BED230;
+}
+
+p {
+    margin-bottom: 8px;
+    margin-top: 8px;
+}
+
+p.note {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #f0f7fb;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #3498db;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+p.warning {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #f9e7e5;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #c0392b;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+p.example {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #e7f6f0;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #27ae60;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+p.tip {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #fffbea;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #f1c40f;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+p.noteAlt {
+    background-color: #f0f7fb;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #3498db;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+p.warningAlt {
+    background-color: #fcf7f2;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #e74c3c;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+p.exampleAlt {
+    background-color: #e7f6f0;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #2ecc71;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+p.tipAlt {
+    background-color: #fffbea;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #f1c40f;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+
+/*Div styles*/
+
+div.note {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #f0f7fb;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #3498db;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+div.warning {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #f9e7e5;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #c0392b;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+div.example {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #e7f6f0;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #27ae60;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+div.tip {
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    background-color: #fffbea;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border: solid 1px #f1c40f;
+    border-radius: 6px;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+div.noteAlt {
+    background-color: #f0f7fb;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #3498db;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+div.warningAlt {
+    background-color: #fcf7f2;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #e74c3c;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+div.exampleAlt {
+    background-color: #e7f6f0;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #2ecc71;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+div.tipAlt {
+    background-color: #fffbea;
+    background-position: 9px 0px;
+    background-repeat: no-repeat;
+    border-left: solid 4px #f1c40f;
+    line-height: 18px;
+    overflow: hidden;
+    padding: 15px 60px;
+}
+
+
+
+/*Targets the caption text*/
+table caption {
+    font-size: 1.5em;
+    padding: 10px 5px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 15px;
+    border: 1px solid black;
+}
+
+th {
+    font-weight: bold;
+    background-color: bbbb77;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+
+/*Targets the headings and first column*/
+/*
+th, td:nth-child(1) {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+*/
+
+/*Targets footer explanation and attribution*/
+/*
+tfoot tr:nth-child(1n+2) {
+    font-size: 0.9em;
+    font-weight: normal;
+    text-align: left;
+}
+*/
