@@ -9,6 +9,7 @@ import re
 import textwrap
 
 from utils import Path
+import os.path as path
 
 __all__ = (
     "Ninja",
@@ -26,7 +27,7 @@ class Ninja(object):
 
     @classmethod
     def in_path(cls, *args, **kwargs):
-        p = pth.join(*args, "build.ninja")
+        p = path.join(*args, "build.ninja")
         return cls(open(p, "w"), **kwargs)
     
     def __del__(self):
