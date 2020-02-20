@@ -1,16 +1,5 @@
 from utils import export, str_t
 
-def parse_options(kwargs):
-    if "klass" in kwargs:
-        kwargs["class"] = kwargs.pop("klass")
-    
-    return " ".join(
-        "%s=%s" % (key, val)
-        if val is not True
-        else "%s" % key
-        for key, val in kwargs.items()
-    )
-
 class BaseTag(object):
     __slots__ = (
         "options",
@@ -19,6 +8,19 @@ class BaseTag(object):
     def __init__(self, *args, **kwargs):
         self.options = kwargs
     
+    def parse_options(self):
+        opts = self.options
+        
+        if "klass" in opts:
+            opts["class"] = opts.pop("klass")
+        
+        return " ".join(
+            "%s=%s" % (key, val)
+            if val is not True
+            else "%s" % key
+            for key, val in opts.items()
+        )
+
     
 class Tag(BaseTag):
     __slots__ = (
@@ -34,7 +36,7 @@ class Tag(BaseTag):
         name = self.__class__.__name__
         
         return "<%s %s>%s</%s>" % (
-            name, parse_options(self.options),
+            name, self.parse_options(),
             self.render_children(), name
         )
     
@@ -51,7 +53,7 @@ class SelfClosingTag(BaseTag):
     def render(self):
         return "<%s %s>" % (
             self.__class__.__name__,
-            self.options
+            self.parse_options()
         )
 
 
