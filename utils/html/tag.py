@@ -1,4 +1,4 @@
-from utils import export, str_t
+from utils import export, str_t, namespace
 
 class BaseTag(object):
     __slots__ = (
@@ -57,18 +57,25 @@ class SelfClosingTag(BaseTag):
         )
 
 
-@export
-class html(Tag):
-    pass
+tags = {
+    "a", "abbr", "acronym", "address", "applet", "article", "aside",
+    "audio", "b", "bdi", "bdo", "big", "body", "button", "canvas",
+    "caption",
+    # TODO: deprecation warning
+    "center",
+    "cite", "code", "colgroup", "data", "dd", "del", "details",
+    "dfn", "dialog",
+    
+}
 
-@export
-class p(Tag):
-    pass
 
-@export
-class div(Tag):
-    pass
 
-@export
-class img(SelfClosingTag):
-    pass
+
+stags = {
+    "area", "base", "basefont", "col", "input",
+}
+
+
+symbols = namespace(
+    linebreak = "<br>",
+)
