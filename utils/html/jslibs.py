@@ -1,5 +1,5 @@
+from utils import namespace, export
 from .html import Library
-from utils.utils import namespace, export
 
 __all__ = [
     "libs", "plotly",

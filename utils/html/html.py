@@ -6,7 +6,7 @@ simpledoc.py.
 import base64
 import os.path as path
 
-from utils.utils import export
+from utils.base import export
 from utils.simpledoc import SimpleDoc, _attributes
 
 class Encoder(object):

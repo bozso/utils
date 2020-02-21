@@ -37,7 +37,12 @@ def compose(*functions):
     return ft.reduce(compose2, functions)
 
 def namespace(**kwargs):
-    return type("namespace", (object,), kwargs)
+    name, inh = (
+        kwargs.pop("_name_", "namespace"),
+        kwargs.pop("_inherit_", (object,))
+    )
+    
+    return type(name, inh, kwargs)
 
 
 class Enum(object):

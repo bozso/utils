@@ -85,11 +85,11 @@ tags = {
     "ul", "var", "video", "wbr",
 }
 
-tags |= {"h%d" % ii for ii in range(7)}
+tags |= {"h%d" % ii for ii in range(1, 7)}
 
 
-tags = type("Tags", (object,),
-    {
+tags = namespace(_name_="Tags",
+    **{
         key: type(key, (Tag,), {})
         for key in tags
     }
@@ -103,8 +103,8 @@ stags = {
     
 }
 
-stags = type("SelfClosingTags", (object,),
-    {
+stags = namespace(_name_="SelfClosingTags",
+    **{
         key: type(key, (Tag,), {})
         for key in stags
     }
