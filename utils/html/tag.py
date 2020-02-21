@@ -1,4 +1,9 @@
-from utils import export, str_t, namespace
+from utils import str_t, namespace
+
+__all__ = (
+    "tags", "t", "stags", "st",
+)
+
 
 class BaseTag(object):
     __slots__ = (
@@ -65,17 +70,49 @@ tags = {
     "center",
     "cite", "code", "colgroup", "data", "dd", "del", "details",
     "dfn", "dialog",
+    # TODO: deprecation warning
+    "dir",
+    "div", "dl", "dt", "em", "fieldset", "figcaption", "figure",
+    "font", "footer", "form", "frameset", "head", "header", 
+    "html", "i", "iframe", "ins", "kbd", "label", "legend",
+    "li", "main", "map", "mark", "meter", "nav", "noframes",
+    "noscript", "object", "ol", "optgroup", "option", "output",
+    "p", "picture", "pre", "progress", "q", "rp", "rt", "ruby",
+    "s", "samp", "script", "section", "select", "small", "span",
+    "strike", "strong", "style", "sub", "summary", "sup",
+    "svg", "table", "tbody", "td", "template", "textarea",
+    "tfoot", "th", "thead", "time", "title", "tr", "tt", "u",
+    "ul", "var", "video", "wbr",
+}
+
+tags |= {"h%d" % ii for ii in range(7)}
+
+
+tags = type("Tags", (object,),
+    {
+        key: type(key, (Tag,), {})
+        for key in tags
+    }
+)
+
+t = tags
+
+stags = {
+    "area", "base", "basefont", "col", "embed", "frame", "img",
+    "input", "link", "meta", "param", "source", "track",
     
 }
 
+stags = type("SelfClosingTags", (object,),
+    {
+        key: type(key, (Tag,), {})
+        for key in stags
+    }
+)
 
-
-
-stags = {
-    "area", "base", "basefont", "col", "input",
-}
-
+st = stags
 
 symbols = namespace(
     linebreak = "<br>",
+    thematic_break = "<hr>",
 )

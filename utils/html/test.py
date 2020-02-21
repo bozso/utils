@@ -2,17 +2,24 @@ from utils.html.tag import *
 
 
 def main():
-    t = \
-    div(
-        p("a", klass="klass"),
-        p("b"),
-        div(
-            p("c"),
+    d = \
+    t.div(
+        t.p("a", klass="klass"),
+        t.p("b"),
+        t.div(
+            t.p("c"),
         ),
+        
+        
+        t.ul(
+            t.li("1"),
+            t.li("2"),
+        ),
+        
         controls=True, src="a/b"
     )
     
-    print(t.render())
+    print(d.render())
 
 if __name__ == "__main__":
     main()
