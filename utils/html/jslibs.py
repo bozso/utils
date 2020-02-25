@@ -30,6 +30,7 @@ class JSLib(Library):
 libs = namespace(
     shower=JSLib(path="https://shwr.me/shower/shower.min.js"),
     mathjax=JSLib(path="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
+    jquery=JSLib(path="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"),
 )
 
 @export
