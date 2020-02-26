@@ -1,7 +1,8 @@
 import os
-import os.path as pth
+import os.path as path
 import glob
 import subprocess as sub
+import shutil as sh
 
 __all__ = (
     "cd", "Path",
@@ -14,9 +15,9 @@ class cd(object):
         "newPath", "savedPath",
     )
     
-    def __init__(self, path):
+    def __init__(self, p):
         self.newPath, self.savedPath = (
-            pth.expanduser(path),
+            path.expanduser(p),
             None
         )
 
@@ -35,20 +36,24 @@ class cd(object):
 
 class Path(object):
     json_serialize = (
-        "path",
+        "_path",
     )
     
     __slots__ = json_serialize
     
     def __init__(self, path):
-        self.path = path
+        self._path = path
     
     @classmethod
     def joined(cls, *args):
-        return cls(pth.join(*args))
+        return cls(path.join(*args))
+    
+    @classmethod
+    def cwd(cls):
+        return cls(os.getcwd())
     
     def mkdir(self):
-        p = self.path
+        p = self._path
         
         if not self.exists():
             os.makedirs(p)
@@ -56,22 +61,38 @@ class Path(object):
         return Path(p)
     
     def join(self, *args):
-        return Path(pth.join(self.path, *args))
+        return Path(path.join(self._path, *args))
     
-    def iglob(self):
-        return glob.iglob(self.path)
-
+    def iglob(self, *args, **kwargs):
+        for elem in glob.iglob(self._path, *args, **kwargs):
+            yield Path(elem)
+    
+    def move(self, target):
+        try:
+            return Path(sh.move(self._path, target))
+        except sh.Error:
+            os.unlink(self._path)
+            return Path(target)
+    
+    def replace_ext(self, new_ext):
+        s = self._path.split(".")
+        
+        return Path.joined("%s.%s" % (".".join(s[:-1]), new_ext))
+    
     def glob(self):
         return tuple(self.iglob())
     
     def exists(self):
-        return pth.exists(self.path)
+        return path.exists(self._path)
     
     def isfile(self):
-        return pth.isfile(self.path)
+        return path.isfile(self._path)
+    
+    def basename(self):
+        return Path(path.basename(self._path))
     
     def __str__(self):
-        return self.path
+        return self._path
         
     def __fspath__(self):
-        return self.path
+        return self._path
