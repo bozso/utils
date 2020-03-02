@@ -1,50 +1,56 @@
 from utils import str_t, namespace
 
 __all__ = (
-    "tags", "t", "stags", "st",
+    "tags", "t", "stags", "st", "Children", "Options",
 )
 
 
-class BaseTag(object):
+class TagFactory(object):
     __slots__ = (
-        "options",
+        "options", "obj",
     )
     
-    def __init__(self, *args, **kwargs):
-        self.options = kwargs
+    def __init__(self, obj, **kwargs):
+        self.options, self.obj = kwargs, obj
+    
+    def __call__(self, *args):
+        return obj(*args, **self.options)
+    
+
+class Options(object):
+    template = '%s="%s"'
+    joiner = " "
     
     def parse_options(self):
-        opts = self.options
+        opts, tpl = self.options, self.template
         
         if "klass" in opts:
             opts["class"] = opts.pop("klass")
         
-        return " ".join(
-            "%s=%s" % (key, val)
+        return self.joiner.join(
+            tpl % (key, val)
             if val is not True
             else "%s" % key
             for key, val in opts.items()
         )
 
-    
-class Tag(BaseTag):
+
+class BaseTag(Options):
     __slots__ = (
-        "children",
+        "options",
     )
     
+    encode = None
+    
     def __init__(self, *args, **kwargs):
-        BaseTag.__init__(self, *args, **kwargs)
-        self.children = args
-        
+        self.options = kwargs
     
-    def render(self):
-        name = self.__class__.__name__
-        
-        return "<%s %s>%s</%s>" % (
-            name, self.parse_options(),
-            self.render_children(), name
-        )
+    @classmethod
+    def With(cls, **kwargs):
+        return TagFactory(cls, **kwargs)
     
+
+class Children(object):
     def render_children(self):
         return "".join(
             child.render()
@@ -54,6 +60,23 @@ class Tag(BaseTag):
         )
 
 
+class Tag(BaseTag, Children):
+    __slots__ = (
+        "children",
+    )
+    
+    def __init__(self, *args, **kwargs):
+        BaseTag.__init__(self, *args, **kwargs)
+        self.children = list(args)
+    
+    def render(self):
+        name = self.__class__.__name__
+        
+        return "<%s %s>%s</%s>" % (
+            name, self.parse_options(),
+            self.render_children(), name
+        )
+    
 class SelfClosingTag(BaseTag):
     def render(self):
         return "<%s %s>" % (
@@ -62,7 +85,7 @@ class SelfClosingTag(BaseTag):
         )
 
 
-tags = {
+_tags = {
     "a", "abbr", "acronym", "address", "applet", "article", "aside",
     "audio", "b", "bdi", "bdo", "big", "body", "button", "canvas",
     "caption",
@@ -85,30 +108,34 @@ tags = {
     "ul", "var", "video", "wbr",
 }
 
-tags |= {"h%d" % ii for ii in range(1, 7)}
+_tags |= {"h%d" % ii for ii in range(1, 7)}
 
 
 tags = namespace(_name_="Tags",
     **{
         key: type(key, (Tag,), {})
-        for key in tags
+        for key in _tags
     }
 )
 
 t = tags
 
-stags = {
-    "area", "base", "basefont", "col", "embed", "frame", "img",
+_stags = {
+    "area", "base", "basefont", "col", "embed", "frame", "meta", "img",
     "input", "link", "meta", "param", "source", "track",
     
 }
 
 stags = namespace(_name_="SelfClosingTags",
     **{
-        key: type(key, (Tag,), {})
-        for key in stags
+        key: type(key, (SelfClosingTag,), {})
+        for key in _stags
     }
 )
+
+stags.img.encode = "src"
+stags.source.encode = "src"
+stags.link.encode = "href"
 
 st = stags
 

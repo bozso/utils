@@ -1,9 +1,9 @@
-from utils import namespace, export
-from .html import Library
+from utils import namespace
+from utils.html import Library
 
-__all__ = [
-    "libs", "plotly",
-]
+__all__ = (
+    "libs", "plotly", "Plotly",
+)
 
 class JSLib(Library):
     __slots__ = (
@@ -33,7 +33,6 @@ libs = namespace(
     jquery=JSLib(path="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"),
 )
 
-@export
 class Plotly(JSLib):
     base = "https://cdn.plot.ly/plotly-{version}.min.js"
     partial = "https://cdn.plot.ly/plotly-{partial}-{version}.min.js"

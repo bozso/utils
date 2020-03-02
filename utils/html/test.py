@@ -2,10 +2,12 @@ from utils.html import *
 
 
 def main():
+    dd = t.div.With(klass="divine")
+    
     d = \
     t.html(
         t.h1("h"),
-        t.div(
+        dd(
             t.p("a", klass="klass"),
             t.p("b"),
             t.div(

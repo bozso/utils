@@ -3,64 +3,14 @@ HTML document generator based on https://github.com/leforestier/yattag's
 simpledoc.py.
 """
 
-import base64
 import os.path as path
 
 from utils.base import export
 from utils.simpledoc import SimpleDoc, _attributes
 
-class Encoder(object):
-    __slots__ = (
-        "encoder",
-    )
-    
-    klass2ext = {
-        "text" : frozenset({
-            "js", "css",
-        }),
-        
-        "video" : frozenset({
-            "mp4",
-        }),
-        
-        "image": frozenset({
-            "png", "jpg",
-        }),
-    }
-    
-    tpl = "data:{klass}/{mode};charset=utf-8;base64,{data}"
-    
-    ext2klass = {v: k for k, v in klass2ext.items()}
-    
-    convert = {
-        "js": "javascript",
-    }
-    
-    def __init__(self, *args, **kwargs):
-        self.encoder = kwargs.get("encoder", base64.b64encode)
-
-    
-    def __call__(self, media_path):
-        mode = ext = path.splitext(media_path)[1].strip(".")
-        
-        for key, val in self.ext2klass.items():
-            if ext in key:
-                klass = val
-                break
-        
-        if mode in self.convert:
-            mode = convert[ext]
-        
-        with open(media_path, "rb") as f:
-            data = self.encoder(f.read())
-        
-        return self.tpl.format(
-            klass=klass, mode=mode, data=data.decode("utf-8")
-        )
-
-
-encoder = Encoder()
-
+__all__ = (
+    "ImagePaths", "HTML", "Library",
+)
 
 class ImagePaths(object):
     __slots__ = ("paths", "doc", "width",)
@@ -122,7 +72,7 @@ class ImagePaths(object):
 def noencode(path):
     return path
 
-@export
+
 class HTML(SimpleDoc):
     __slots__ = (
         "encoder",
@@ -209,12 +159,12 @@ def make_tag(name):
     
     return inner
 
-tags = {
+_tags = {
     "div", "head", "header", "body", "html", "center", "ul", "ol",
     "script", "style", "section", "video", "table", "tr"
 }
 
-for tag in tags:
+for tag in _tags:
     setattr(HTML, tag, make_tag(tag))
 
 #########
@@ -227,11 +177,11 @@ def make_stag(name):
     
     return inner
 
-stags = {
+_stags = {
     "meta", "iframe",
 }
 
-for stag in stags:
+for stag in _stags:
     setattr(HTML, stag, make_stag(stag))
 
 
@@ -246,12 +196,12 @@ def make_line(name):
     
     return inner
 
-lines = {
+_lines = {
     "h1", "h2", "h3", "h4", "p", "li", "b", "q", "u", "em",
     "it", "del", "strong", "th", "td", "font",
 }
 
-for line in lines:
+for line in _lines:
     setattr(HTML, line, make_line(line))
 
         
