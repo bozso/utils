@@ -3,16 +3,16 @@ import argparse as ap
 def annot(**kwargs):
     parent = kwargs.pop("parent", None)
     
-    def annotate(f):
+    def annotated(f):
         f.__parent__ = parent
         f.__annotations__ = kwargs
         
         return f
         
-    return annotate
+    return annotated
 
 
-class CParse(object):
+class ArgParse(object):
     def __init__(self, **kwargs):
         self.argp, self.args = ap.ArgumentParser(**kwargs), None
         
