@@ -1,7 +1,8 @@
-from utils import str_t, namespace
+from utils import str_t, namespace, isiter
+from inspect import isgenerator
 
 __all__ = (
-    "tags", "t", "stags", "st", "Children", "Options",
+    "tags", "t", "stags", "st", "Children", "Options", "url", "doi",
 )
 
 
@@ -51,6 +52,21 @@ class BaseTag(Options):
     
 
 class Children(object):
+    def __call__(self, *items):
+        if isgenerator(items[0]):
+            items = tuple(items[0])
+        
+        self.children.extend(items)
+        
+    def append(self, item):
+        self.children.append(item)
+    
+    # @staticmethod
+    # def sum_impl(self):
+        # for child in self.children:
+            # try:
+                
+    
     def render_children(self):
         return "".join(
             child.render()
@@ -70,7 +86,7 @@ class Tag(BaseTag, Children):
         self.children = list(args)
     
     def render(self):
-        name = self.__class__.__name__
+        name = self.name
         
         return "<%s %s>%s</%s>" % (
             name, self.parse_options(),
@@ -80,7 +96,7 @@ class Tag(BaseTag, Children):
 class SelfClosingTag(BaseTag):
     def render(self):
         return "<%s %s>" % (
-            self.__class__.__name__,
+            self.name,
             self.parse_options()
         )
 
@@ -113,7 +129,7 @@ _tags |= {"h%d" % ii for ii in range(1, 7)}
 
 tags = namespace(_name_="Tags",
     **{
-        key: type(key, (Tag,), {})
+        key: type(key, (Tag,), {"name": key})
         for key in _tags
     }
 )
@@ -128,7 +144,7 @@ _stags = {
 
 stags = namespace(_name_="SelfClosingTags",
     **{
-        key: type(key, (SelfClosingTag,), {})
+        key: type(key, (SelfClosingTag,), {"name": key})
         for key in _stags
     }
 )
@@ -138,6 +154,13 @@ stags.source.encode = "src"
 stags.link.encode = "href"
 
 st = stags
+
+def url(address, txt, **kwargs):
+    return t.a(txt, href=address, **kwargs)
+
+def doi(number, **kwargs):
+    return url("https://doi.org/%s" % number, **kwargs)
+
 
 symbols = namespace(
     linebreak = "<br>",

@@ -11,6 +11,9 @@ __all__ = (
 py3 = sys.version_info[0] == 3
 
 
+from collections.abc import Iterable
+    
+
 if py3:
     str_t = str
 else:

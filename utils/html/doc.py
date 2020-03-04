@@ -1,4 +1,4 @@
-from utils.html import Children, st, Options
+from utils.html import Children, st, Options, t
 
 __all__ = (
     "Doc",
@@ -25,12 +25,12 @@ class Doc(Children):
     )
     
     def __init__(self, *args, filename=None, desc="", keywords=[],
-                 author="", viewport={}, encoder=None):
+                 author="", viewport={}, encoder=None, title=""):
         
         self.filename, self.description, self.keywords, self.author, \
-        self.viewport, self.encoder = (
+        self.viewport, self.encoder, self.title = (
             filename, desc, keywords, author,
-            Viewport(**viewport), encoder
+            Viewport(**viewport), encoder, title
         )
         
         self.children = ["<!DOCTYPE html>"] + list(args)
@@ -44,15 +44,13 @@ class Doc(Children):
             kw = ",".join(kw)
         
         return (
+            t.title(self.title),
             st.meta(charset="utf-8"),
             st.meta(name="description", content=self.description),
             st.meta(name="keywords", content=kw),
             st.meta(name="author", content=self.author),
             st.meta(name="viewport", content=self.viewport.parse_options()),
         )
-    
-    def append(self, *args):
-        self.children.append(args)
     
     def write_to(self, writer):
         enc = self.encoder

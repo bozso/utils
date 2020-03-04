@@ -1,5 +1,5 @@
 from utils import namespace
-from utils.html import Library
+from utils.html import Library, t
 
 __all__ = (
     "libs", "plotly", "Plotly",
@@ -15,16 +15,15 @@ class JSLib(Library):
         
         Library.__init__(self, kwargs["path"])
     
-    def add(self, doc, *args, **kwargs):
+    def add(self, *args, **kwargs):
         args = set(args)
         
         if self._async:
             args.add("async")
         
         kwargs["src"] = self.path
-            
-        with doc.tag("script", *args, **kwargs):
-            pass
+        
+        return t.script(**kwargs)
 
 
 libs = namespace(

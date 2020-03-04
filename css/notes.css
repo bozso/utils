@@ -56,24 +56,15 @@ h3 {
 }
 
 .center {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin: auto;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 table.center {
-    position: absolute;
-    top: 25px;
-    bottom: 25px;
-    left: 25px;
-    right: 25px;
-    margin: 10px;
-    width: 90%;
+    margin: 0px auto;
+    
 }
-
 
 li {
     margin-bottom: 6px;
@@ -293,6 +284,7 @@ table caption {
 
 table {
     border-collapse: collapse;
+    text-align: center;
 }
 
 th, td {
@@ -302,27 +294,9 @@ th, td {
 
 th {
     font-weight: bold;
-    background-color: bbbb77;
+    background-color: #bbbb77;
 }
 
 tr:nth-child(even) {
     background-color: #f2f2f2;
 }
-
-
-/*Targets the headings and first column*/
-/*
-th, td:nth-child(1) {
-    font-size: 1.1em;
-    font-weight: 500;
-}
-*/
-
-/*Targets footer explanation and attribution*/
-/*
-tfoot tr:nth-child(1n+2) {
-    font-size: 0.9em;
-    font-weight: normal;
-    text-align: left;
-}
-*/

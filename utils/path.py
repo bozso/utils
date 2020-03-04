@@ -45,6 +45,10 @@ class Path(object):
         self._path = path
     
     @classmethod
+    def expanduser(cls, p):
+        return cls(path.expanduser(p))
+
+    @classmethod
     def joined(cls, *args):
         return cls(path.join(*args))
     
@@ -96,3 +100,4 @@ class Path(object):
         
     def __fspath__(self):
         return self._path
+    
