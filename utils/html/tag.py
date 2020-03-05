@@ -61,12 +61,6 @@ class Children(object):
     def append(self, item):
         self.children.append(item)
     
-    # @staticmethod
-    # def sum_impl(self):
-        # for child in self.children:
-            # try:
-                
-    
     def render_children(self):
         return "".join(
             child.render()

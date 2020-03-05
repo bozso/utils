@@ -4,6 +4,8 @@ import glob
 import subprocess as sub
 import shutil as sh
 
+from shlex import split
+
 __all__ = (
     "cd", "Path",
 )
@@ -31,7 +33,7 @@ class cd(object):
     @classmethod
     def call(cls, cmd, *args, **kwargs):
         with cls(*args, **kwargs):
-            sub.call(cmd)
+            sub.call(split(cmd))
 
 
 class Path(object):
