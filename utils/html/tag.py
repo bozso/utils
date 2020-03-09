@@ -3,6 +3,7 @@ from inspect import isgenerator
 
 __all__ = (
     "tags", "t", "stags", "st", "Children", "Options", "url", "doi",
+    "collapsable",
 )
 
 
@@ -155,6 +156,15 @@ def url(address, txt, **kwargs):
 def doi(number, **kwargs):
     return url("https://doi.org/%s" % number, **kwargs)
 
+def collapsable(name, id, **kwargs):
+    b = t.button(name, **{
+        "data-toggle":"collapse",
+        "data_target":id
+    })
+    
+    d = t.div(id=id, klass="collapse")
+    
+    return b, d
 
 symbols = namespace(
     linebreak = "<br>",

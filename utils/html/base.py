@@ -220,17 +220,14 @@ def proc_yt_opt(kwargs):
 
 class Library(object):
     __slots__ = (
-        "path",
+        "path", "options",
     )
     
-    def __init__(self, path):
+    def __init__(self, path, *args, **kwargs):
         self.path = path
-    
+        self.options = kwargs
 
-class CSSLib(Library):
-    pass
     
-
 class Presentation(HTML):
     def slide(self, *args, **kwargs):
         kwargs["klass"] = "slide"

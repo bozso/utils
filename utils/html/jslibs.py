@@ -2,7 +2,7 @@ from utils import namespace
 from utils.html import Library, t
 
 __all__ = (
-    "libs", "plotly", "Plotly",
+    "js", "plotly", "Plotly",
 )
 
 class JSLib(Library):
@@ -10,26 +10,31 @@ class JSLib(Library):
         "_async",
     )
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, path, *args, **kwargs):
         self._async = bool(kwargs.get("async", True))
         
-        Library.__init__(self, kwargs["path"])
+        Library.__init__(self, path, *args, **kwargs)
     
-    def add(self, *args, **kwargs):
-        args = set(args)
+    def add(self, **kwargs):
+        kwargs.update(self.options)
         
         if self._async:
-            args.add("async")
+            kwargs["async"] = True
         
         kwargs["src"] = self.path
         
         return t.script(**kwargs)
 
 
-libs = namespace(
+js = namespace(
     shower=JSLib(path="https://shwr.me/shower/shower.min.js"),
     mathjax=JSLib(path="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
     jquery=JSLib(path="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"),
+    bootstrap = JSLib(
+        path="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js",
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6",
+        crossorigin="anonymous",
+    ),
 )
 
 class Plotly(JSLib):
@@ -47,9 +52,7 @@ class Plotly(JSLib):
         else:
             path = self.base.format(version=version)
         
-        kwargs["path"] = path
-        
-        JSLib.__init__(self, *args, **kwargs)
+        JSLib.__init__(self, path, *args, **kwargs)
 
 
 plotly = namespace(

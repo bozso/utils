@@ -21,19 +21,22 @@ class Viewport(Options):
 class Doc(Children):
     __slots__ = (
         "filename", "children", "description", "keywords", "author",
-        "viewport", "encoder",
+        "viewport", "encoder", "libs",
     )
     
     def __init__(self, *args, filename=None, desc="", keywords=[],
                  author="", viewport={}, encoder=None, title=""):
         
         self.filename, self.description, self.keywords, self.author, \
-        self.viewport, self.encoder, self.title = (
+        self.viewport, self.encoder, self.title, self.libs = (
             filename, desc, keywords, author,
-            Viewport(**viewport), encoder, title
+            Viewport(**viewport), encoder, title, None
         )
         
         self.children = ["<!DOCTYPE html>"] + list(args)
+    
+    def use(self, *args):
+        self.libs = args
     
     def meta(self):
         kw = self.keywords
@@ -43,6 +46,14 @@ class Doc(Children):
         else:
             kw = ",".join(kw)
         
+        l = self.libs
+        
+        if len(l) == 0:
+            l = ""
+        else:
+            l = t.div(id="libraries")
+            l(lib.add() for lib in self.libs)
+        
         return (
             t.title(self.title),
             st.meta(charset="utf-8"),
@@ -50,6 +61,7 @@ class Doc(Children):
             st.meta(name="keywords", content=kw),
             st.meta(name="author", content=self.author),
             st.meta(name="viewport", content=self.viewport.parse_options()),
+            l,
         )
     
     def write_to(self, writer):
@@ -66,4 +78,4 @@ class Doc(Children):
         
         with open(filename, "w") as f:
             self.write_to(f)
-        
+    
