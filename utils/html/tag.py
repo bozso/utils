@@ -159,7 +159,7 @@ def doi(number, **kwargs):
 def collapsable(name, id, **kwargs):
     b = t.button(name, **{
         "data-toggle":"collapse",
-        "data_target":id
+        "data-target":"#%s" % id,
     })
     
     d = t.div(id=id, klass="collapse")

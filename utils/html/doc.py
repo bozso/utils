@@ -7,7 +7,7 @@ __all__ = (
 class Viewport(Options):
     default_values = {
         "width": "device-width",
-        "initial_scale": 1.0,
+        "initial-scale": 1.0,
     }
     
     template = "%s=%s"
@@ -48,7 +48,7 @@ class Doc(Children):
         
         l = self.libs
         
-        if len(l) == 0:
+        if l is None or len(l) == 0:
             l = ""
         else:
             l = t.div(id="libraries")

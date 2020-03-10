@@ -11,7 +11,7 @@ class JSLib(Library):
     )
     
     def __init__(self, path, *args, **kwargs):
-        self._async = bool(kwargs.get("async", True))
+        self._async = bool(kwargs.get("_async_", True))
         
         Library.__init__(self, path, *args, **kwargs)
     
@@ -34,6 +34,19 @@ js = namespace(
         path="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js",
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6",
         crossorigin="anonymous",
+        _async_=False,
+    ),
+    bs_jquery=JSLib(
+        path="https://code.jquery.com/jquery-3.4.1.slim.min.js",
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n",
+        crossorigin="anonymous",
+        _async_=False,
+    ),
+    bs_popper = JSLib(
+        path="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js",
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo",
+        crossorigin="anonymous",
+        _async_=False,
     ),
 )
 
