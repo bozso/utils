@@ -3,6 +3,7 @@ import os.path as path
 import glob
 import subprocess as sub
 import shutil as sh
+import functools as ft
 
 from shlex import split
 
@@ -33,7 +34,7 @@ class cd(object):
     @classmethod
     def call(cls, cmd, *args, **kwargs):
         with cls(*args, **kwargs):
-            sub.call(split(cmd))
+            sub.call(split(cmd))        
 
 
 class Path(object):
@@ -45,6 +46,9 @@ class Path(object):
     
     def __init__(self, path):
         self._path = path
+    
+    def get_path(self):
+        return self._path
     
     @classmethod
     def expanduser(cls, p):
@@ -67,12 +71,17 @@ class Path(object):
         return Path(p)
     
     def join(self, *args):
-        return Path(path.join(self._path, *args))
+        p = path.join(*tuple(map(str, args)))
+        
+        return Path(path.join(self._path, p))
     
     def iglob(self, *args, **kwargs):
         for elem in glob.iglob(self._path, *args, **kwargs):
             yield Path(elem)
-    
+
+    def glob(self):
+        return tuple(self.iglob())
+
     def move(self, target):
         try:
             return Path(sh.move(self._path, target))
@@ -80,26 +89,33 @@ class Path(object):
             os.unlink(self._path)
             return Path(target)
     
+    def add_ext(self, ext):
+        return Path("%s.%s" % (self._path, ext))
+    
     def replace_ext(self, new_ext):
         s = self._path.split(".")
         
         return Path.joined("%s.%s" % (".".join(s[:-1]), new_ext))
-    
-    def glob(self):
-        return tuple(self.iglob())
-    
+        
     def exists(self):
         return path.exists(self._path)
     
     def isfile(self):
         return path.isfile(self._path)
-    
-    def basename(self):
-        return Path(path.basename(self._path))
-    
+        
     def __str__(self):
         return self._path
         
     def __fspath__(self):
-        return self._path
+        return self._path    
+
+def applier(fn):
+    @ft.wraps(fn)
+    def inner(self, *args, **kwargs):
+        return Path(fn(self._path, *args, **kwargs))
     
+    return inner
+    
+Path.dirname = applier(path.dirname)
+Path.basename = applier(path.basename)
+Path.abspath = applier(path.abspath)
