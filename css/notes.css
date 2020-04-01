@@ -1,6 +1,30 @@
 /*<meta />*/
 /*This stylesheet has styled boxes that are configured to use images*/
 
+@import url('//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css');
+
+.fbox {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+}
+
+.fbox figcaption, figure {
+    text-align: center;
+    position: relative;
+}
+
+.fbox img {
+    position: relative;
+    display: block;
+    page-break-before: auto;
+    page-break-after: auto;
+    page-break-inside: avoid;
+}
+
 /* Three image containers (use 25% for four, and 50% for two, etc) */
 .column2 {
   float: left;
@@ -87,194 +111,65 @@ p {
     margin-top: 8px;
 }
 
-p.note {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #f0f7fb;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #3498db;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.info, .success, .warning, .error {
+    padding:10px;
+    margin:10px 0;
+ 
 }
 
-p.warning {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #f9e7e5;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #c0392b;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.info:before, .success:before, .warning:before, .error:before {
+    font-family:FontAwesome;
+    font-style:normal;
+    font-weight:400;
+    speak:none;
+    display:inline-block;
+    text-decoration:inherit;
+    width:1em;
+    margin-right:.2em;
+    text-align:center;
+    font-variant:normal;
+    text-transform:none;
+    line-height:1em;
+    margin-left:.2em;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale
 }
 
-p.example {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #e7f6f0;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #27ae60;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.info:before {
+    content:"\f05a";
 }
 
-p.tip {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #fffbea;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #f1c40f;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.success:before {
+    content:'\f00c';
 }
 
-p.noteAlt {
-    background-color: #f0f7fb;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #3498db;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.warning:before {
+    content:'\f071';
 }
 
-p.warningAlt {
-    background-color: #fcf7f2;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #e74c3c;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.error:before {
+    content:'\f057';
 }
 
-p.exampleAlt {
-    background-color: #e7f6f0;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #2ecc71;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.info {
+    color: #00529B;
+    background-color: #BDE5F8;
 }
 
-p.tipAlt {
-    background-color: #fffbea;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #f1c40f;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.success {
+    color: #4F8A10;
+    background-color: #DFF2BF;
 }
 
-
-/*Div styles*/
-
-div.note {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #f0f7fb;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #3498db;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.warning {
+    color: #9F6000;
+    background-color: #FEEFB3;
 }
 
-div.warning {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #f9e7e5;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #c0392b;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
+.error {
+    color: #D8000C;
+    background-color: #FFD2D2;
 }
-
-div.example {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #e7f6f0;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #27ae60;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
-}
-
-div.tip {
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
-    background-color: #fffbea;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border: solid 1px #f1c40f;
-    border-radius: 6px;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
-}
-
-div.noteAlt {
-    background-color: #f0f7fb;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #3498db;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
-}
-
-div.warningAlt {
-    background-color: #fcf7f2;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #e74c3c;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
-}
-
-div.exampleAlt {
-    background-color: #e7f6f0;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #2ecc71;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
-}
-
-div.tipAlt {
-    background-color: #fffbea;
-    background-position: 9px 0px;
-    background-repeat: no-repeat;
-    border-left: solid 4px #f1c40f;
-    line-height: 18px;
-    overflow: hidden;
-    padding: 15px 60px;
-}
-
-
 
 /*Targets the caption text*/
 table caption {
@@ -285,6 +180,8 @@ table caption {
 table {
     border-collapse: collapse;
     text-align: center;
+    page-break-inside:avoid;
+    page-break-after:auto
 }
 
 th, td {

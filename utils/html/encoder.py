@@ -6,7 +6,7 @@ from base64 import b64encode
 from utils import str_t
 
 __all__ = (
-    "Encoder", "url_regex",
+    "Encoder", "url_regex", "encoder",
 )
 
 url_regex = re.compile("^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$")
@@ -93,3 +93,6 @@ class Encoder(object):
         return self.tpl.format(
             klass=klass, mode=mode, data=data.decode("utf-8")
         )
+
+
+encoder = Encoder()

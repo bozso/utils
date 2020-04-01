@@ -7,6 +7,7 @@ import os.path as path
 
 from utils.base import export
 from utils.simpledoc import SimpleDoc, _attributes
+from utils.html import encoder
 
 __all__ = (
     "ImagePaths", "HTML", "Library",
