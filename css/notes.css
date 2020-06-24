@@ -1,8 +1,6 @@
 /*<meta />*/
 /*This stylesheet has styled boxes that are configured to use images*/
 
-@import url('//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css');
-
 .fbox {
     display: flex;
     flex-direction: row;
@@ -118,7 +116,6 @@ p {
 }
 
 .info:before, .success:before, .warning:before, .error:before {
-    font-family:FontAwesome;
     font-style:normal;
     font-weight:400;
     speak:none;
@@ -136,19 +133,19 @@ p {
 }
 
 .info:before {
-    content:"\f05a";
+    content: 'Note:';
 }
 
 .success:before {
-    content:'\f00c';
+    content: 'Success';
 }
 
 .warning:before {
-    content:'\f071';
+    content: 'Warning';
 }
 
 .error:before {
-    content:'\f057';
+    content: 'Error';
 }
 
 .info {
