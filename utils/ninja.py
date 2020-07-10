@@ -174,7 +174,7 @@ class Ninja(object):
         ext = kwargs.get("ext", None)
         outdir = kwargs.get("outdir", "build")
         
-        ret = pth.join(outdir, pth.splitext(pth.basename(infile))[0])
+        ret = path.join(outdir, path.splitext(path.basename(infile))[0])
         
         if ext is not None:
             ret += ext
@@ -190,13 +190,13 @@ class Dependencies(object):
         self.pattern, self.include_paths, self.files = \
         kwargs["pattern"], kwargs["include_paths"], eset
     
-    def search_file(self, path):
+    def search_file(self, Path):
         for p in self.include_paths:
-            f = pth.join(p, path)
+            f = path.join(p, Path)
             
             # print(f, pth.isfile(f))
             
-            if pth.isfile(f):
+            if path.isfile(f):
                 return f
         
         return None
@@ -273,7 +273,7 @@ class HTML(Ninja):
         
     def sources(self, sources, **kwargs):
         for src in sources:
-            self.deps.include_paths.add(pth.abspath(pth.dirname(src)))
+            self.deps.include_paths.add(path.abspath(path.dirname(src)))
             
             self.deps.get_dependencies(src)
             
@@ -293,6 +293,15 @@ class HTML(Ninja):
         
         self.build(out, "html", inputs=infile, implicit=sources)
         self.newline()
+
+
+class Html(HTML):
+    ext = ".build.html"
+    
+    def out(self, src, **kwargs):
+        kwargs.setdefault("outdir", ".")
+
+        return super().out(src, **kwargs)
 
 
 class Compiled(Ninja):
