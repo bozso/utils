@@ -1,6 +1,12 @@
 /*<meta />*/
 /*This stylesheet has styled boxes that are configured to use images*/
 
+.fs75 p,
+.fs75 li,
+.fs75 figcaption {
+    font-size: 0.75em;
+}
+
 .fbox {
     display: flex;
     flex-direction: row;
@@ -10,7 +16,8 @@
     align-content: center;
 }
 
-.fbox figcaption, figure {
+.fbox figcaption,
+.fbox figure {
     text-align: center;
     position: relative;
 }
@@ -102,11 +109,6 @@ MadCap|xref {
 
 MadCap|xref:hover {
     color: #BED230;
-}
-
-p {
-    margin-bottom: 8px;
-    margin-top: 8px;
 }
 
 .info, .success, .warning, .error {
